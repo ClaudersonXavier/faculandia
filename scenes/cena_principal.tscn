@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dphs6jpg12a2n"]
+
+[ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player_moviment.gd" id="1_52c58"]
+[ext_resource type="Texture2D" uid="uid://bu45iy4ixe3ve" path="res://sprites/player_placeholder.png" id="2_i37il"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
+size = Vector2(16, 16)
+
+[node name="MainLoop" type="Node2D" unique_id=1447878274]
+
+[node name="game_control" type="Control" parent="." unique_id=748134722]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="game_control" unique_id=904006901]
+position = Vector2(548, 273)
+script = ExtResource("1_52c58")
+
+[node name="Sprite2D" type="Sprite2D" parent="game_control/CharacterBody2D" unique_id=1511402002]
+texture = ExtResource("2_i37il")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="game_control/CharacterBody2D" unique_id=445350731]
+shape = SubResource("RectangleShape2D_afkg8")
