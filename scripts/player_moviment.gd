@@ -1,12 +1,18 @@
 extends CharacterBody2D
 
+@export var cone_angle = 75;
+@export var vision_range = 600;
+
+var aim_angle = 0;
+
 const SPEED = 200.0
 
 func _physics_process(delta: float) -> void:
 	
 	var mouse_position = get_global_mouse_position()
 	var aim_direction = (mouse_position - global_position).normalized()
-	get_node("player_sprite").rotation = aim_direction.angle()
+	aim_angle = aim_direction.angle() 
+	get_node("player_sprite").rotation = aim_angle
 
 	# Handle jump.
 	var ydirection = Input.get_axis("ui_up", "ui_down")
@@ -24,3 +30,18 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 
 	move_and_slide()
+
+func is_in_vision(target_pos: Vector2) -> bool:
+	var to_target = target_pos - global_position
+	var dist = to_target.length()
+	
+	if dist > vision_range:
+		return false
+	
+	var half_angle = deg_to_rad(cone_angle / 2.0)
+	var target_angle = to_target.angle()
+	var diff = abs(target_angle - aim_angle)
+	if diff > PI:
+		diff = TAU - diff
+	
+	return diff < half_angle

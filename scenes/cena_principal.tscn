@@ -1,12 +1,22 @@
 [gd_scene format=3 uid="uid://dphs6jpg12a2n"]
 
 [ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player_moviment.gd" id="1_52c58"]
-[ext_resource type="Texture2D" uid="uid://bu45iy4ixe3ve" path="res://sprites/player_placeholder.png" id="2_i37il"]
+[ext_resource type="Texture2D" uid="uid://beh2ilxgswjrg" path="res://sprites/player_placeholder.png" id="2_4m1tu"]
 [ext_resource type="Texture2D" uid="uid://c4sqt5p8s02l7" path="res://sprites/mira_placeholder.png" id="3_afkg8"]
 [ext_resource type="Script" uid="uid://boff4cv6ld4l0" path="res://scripts/crosshair.gd" id="4_r3ap5"]
+[ext_resource type="Shader" uid="uid://b7x1p12l55vt2" path="res://shaders/visao_conica.gdshader" id="5_shader"]
+[ext_resource type="Script" uid="uid://b7825i7ntlmhv" path="res://scripts/visibilidade.gd" id="6_4m1tu"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
+shader = ExtResource("5_shader")
+shader_parameter/player_screen_pos = Vector2(0, 0)
+shader_parameter/player_angle = 0.0
+shader_parameter/cone_half_angle = 0.0
+shader_parameter/vision_range = 0.0
+shader_parameter/darkness_alpha = 0.7
 
 [node name="MainLoop" type="Node2D" unique_id=1447878274]
 
@@ -21,11 +31,26 @@ position = Vector2(548, 273)
 script = ExtResource("1_52c58")
 
 [node name="player_sprite" type="Sprite2D" parent="game_control/Player" unique_id=1511402002]
-texture = ExtResource("2_i37il")
+texture = ExtResource("2_4m1tu")
 
 [node name="player_collision" type="CollisionShape2D" parent="game_control/Player" unique_id=445350731]
 shape = SubResource("RectangleShape2D_afkg8")
 
+[node name="camera_player" type="Camera2D" parent="game_control/Player" unique_id=312255178]
+
 [node name="crosshair" type="Sprite2D" parent="game_control" unique_id=698244504]
 texture = ExtResource("3_afkg8")
 script = ExtResource("4_r3ap5")
+
+[node name="camada_ui" type="CanvasLayer" parent="." unique_id=1246862772]
+
+[node name="visibilidade" type="ColorRect" parent="camada_ui" unique_id=1446528238 node_paths=PackedStringArray("player")]
+material = SubResource("ShaderMaterial_visao")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_4m1tu")
+player = NodePath("../../game_control/Player")
+metadata/_edit_use_anchors_ = true
