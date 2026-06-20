@@ -5,7 +5,7 @@ extends CharacterBody2D
 
 var aim_angle = 0;
 
-const SPEED = 200.0
+const SPEED = 150.0
 
 func _physics_process(delta: float) -> void:
 	
@@ -30,6 +30,14 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 
 	move_and_slide()
+	
+	var camera := $camera_player
+	var half_col: Vector2 = $player_collision.shape.size / 2.0
+	var min_pos: Vector2 = Vector2(camera.limit_left, camera.limit_top) + half_col
+	var max_pos: Vector2 = Vector2(camera.limit_right, camera.limit_bottom) - half_col
+
+	global_position.x = clamp(global_position.x, min_pos.x, max_pos.x)
+	global_position.y = clamp(global_position.y, min_pos.y, max_pos.y)
 
 func is_in_vision(target_pos: Vector2) -> bool:
 	var to_target = target_pos - global_position

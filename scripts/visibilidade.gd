@@ -12,7 +12,9 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
 	var viewport_size = get_viewport().get_visible_rect().size
-	var player_screen = viewport_size / 2.0
+	
+	var camera = get_viewport().get_camera_2d()
+	var player_screen = viewport_size / 2.0 + (player.global_position - camera.get_screen_center_position()) * camera.zoom
 	
 	var mouse_screen = get_viewport().get_mouse_position()
 	var aim_direction = (mouse_screen  - player_screen).normalized()
