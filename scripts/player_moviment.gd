@@ -3,16 +3,21 @@ extends CharacterBody2D
 @export var cone_angle = 75;
 @export var vision_range = 600;
 
+@onready var weapon = $Weapon
+
 var aim_angle = 0;
+var aim_direction: Vector2
+
 
 const SPEED = 150.0
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	
 	var mouse_position = get_global_mouse_position()
-	var aim_direction = (mouse_position - global_position).normalized()
+	aim_direction = (mouse_position - global_position).normalized()
 	aim_angle = aim_direction.angle() 
 	get_node("player_sprite").rotation = aim_angle
+	weapon.rotation = aim_angle
 
 	# Handle jump.
 	var ydirection = Input.get_axis("ui_up", "ui_down")
@@ -38,6 +43,10 @@ func _physics_process(delta: float) -> void:
 
 	global_position.x = clamp(global_position.x, min_pos.x, max_pos.x)
 	global_position.y = clamp(global_position.y, min_pos.y, max_pos.y)
+	
+	if Input.is_action_just_pressed("shoot"):
+		weapon.shoot(aim_direction, aim_angle)
+
 
 func is_in_vision(target_pos: Vector2) -> bool:
 	var to_target = target_pos - global_position

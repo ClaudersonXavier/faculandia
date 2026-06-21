@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://boff4cv6ld4l0" path="res://scripts/crosshair.gd" id="4_r3ap5"]
 [ext_resource type="Shader" uid="uid://b7x1p12l55vt2" path="res://shaders/visao_conica.gdshader" id="5_shader"]
 [ext_resource type="Script" uid="uid://b7825i7ntlmhv" path="res://scripts/visibilidade.gd" id="6_4m1tu"]
+[ext_resource type="Script" uid="uid://bb406q67khtjw" path="res://scripts/pistol.gd" id="6_8ncq5"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
@@ -48,6 +49,13 @@ limit_left = 0
 limit_top = 0
 limit_right = 1152
 limit_bottom = 648
+
+[node name="Weapon" type="Node2D" parent="Mundo/Player" unique_id=1477404983]
+script = ExtResource("6_8ncq5")
+metadata/_custom_type_script = "uid://bv64gsgtlb5ju"
+
+[node name="muzzle_marker" type="Marker2D" parent="Mundo/Player/Weapon" unique_id=1550793928]
+position = Vector2(12, 0)
 
 [node name="camada_ui" type="CanvasLayer" parent="." unique_id=1246862772]
 
