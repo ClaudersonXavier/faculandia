@@ -25,7 +25,11 @@ bool point_in_polygon(vec2 point) {
 		}
 		vec2 pi = vision_points[i];
 		vec2 pj = vision_points[j];
-		bool intersect = ((pi.y > point.y) != (pj.y > point.y)) && (point.x < (pj.x - pi.x) * (point.y - pi.y) / max(pj.y - pi.y, 0.0001) + pi.x);
+		float dy = pj.y - pi.y;
+		if (abs(dy) < 0.0001) {
+			continue;
+		}
+		bool intersect = ((pi.y > point.y) != (pj.y > point.y)) && (point.x < (pj.x - pi.x) * (point.y - pi.y) / dy + pi.x);
 		if (intersect) {
 			inside = !inside;
 		}
@@ -47,6 +51,9 @@ float polygon_edge_fade(vec2 point) {
 			break;
 		}
 		nearest = min(nearest, distance_to_segment(point, vision_points[i - 1], vision_points[i]));
+	}
+	if (vision_point_count > 2) {
+		nearest = min(nearest, distance_to_segment(point, vision_points[vision_point_count - 1], vision_points[0]));
 	}
 	return smoothstep(0.0, fade_edge, nearest);
 }

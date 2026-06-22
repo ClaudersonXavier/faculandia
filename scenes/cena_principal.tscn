@@ -37,7 +37,7 @@ tile_map_data = PackedByteArray("AAAAAAAAAAAAAAMAAAABAAAAAAAAAAMAAAAAAAEAAAAAAAM
 tile_set = ExtResource("1_qivkf")
 
 [node name="Player" type="CharacterBody2D" parent="Mundo" unique_id=904006901]
-position = Vector2(60, 20)
+position = Vector2(260, 260)
 collision_layer = 2
 script = ExtResource("1_52c58")
 

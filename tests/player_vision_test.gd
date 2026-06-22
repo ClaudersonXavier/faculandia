@@ -15,6 +15,7 @@ func _run() -> void:
 	await _test_ameaca_atras_fora_da_percepcao_periferica_fica_invisivel()
 	await _test_ameaca_atras_dentro_da_percepcao_periferica_fica_visivel()
 	await _test_bloqueador_de_visao_oculta_ameaca()
+	await _test_jogador_inicia_com_percepcao_periferica_sem_corte()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -75,6 +76,24 @@ func _test_bloqueador_de_visao_oculta_ameaca() -> void:
 	)
 
 	fixture.root.queue_free()
+
+
+func _test_jogador_inicia_com_percepcao_periferica_sem_corte() -> void:
+	var packed_scene := load("res://scenes/cena_principal.tscn") as PackedScene
+	var scene := packed_scene.instantiate()
+	get_root().add_child(scene)
+	await process_frame
+
+	var player := scene.get_node("Mundo/Player") as CharacterBody2D
+	var vision := player.get_node("PlayerVision")
+	var required_margin: float = vision.inner_light_radius
+
+	_assert_true(
+		player.global_position.x >= required_margin and player.global_position.y >= required_margin,
+		"Jogador inicia com Percepcao Periferica sem corte no canto da cena"
+	)
+
+	scene.queue_free()
 
 
 func _create_fixture() -> Dictionary:
