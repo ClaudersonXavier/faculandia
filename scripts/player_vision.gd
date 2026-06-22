@@ -21,6 +21,8 @@ var _inner_polygon: Polygon2D
 var _last_position := Vector2.INF
 var _last_angle := INF
 var _last_hit_points: PackedVector2Array = []
+var _custom_aim_position: Vector2
+var _uses_custom_aim_position := false
 
 
 func _ready() -> void:
@@ -54,6 +56,11 @@ func is_position_visible(target_position: Vector2) -> bool:
 		return false
 
 	return _has_clear_line(target_position)
+
+
+func set_aim_position(target_position: Vector2) -> void:
+	_custom_aim_position = target_position
+	_uses_custom_aim_position = true
 
 
 func _create_visuals() -> void:
@@ -157,4 +164,6 @@ func _build_circle_polygon(radius: float, segments: int) -> PackedVector2Array:
 
 
 func _get_aim_angle() -> float:
+	if _uses_custom_aim_position:
+		return (_custom_aim_position - player.global_position).angle()
 	return (get_global_mouse_position() - player.global_position).angle()
