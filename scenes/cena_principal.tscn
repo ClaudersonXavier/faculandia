@@ -30,6 +30,7 @@ tile_set = ExtResource("1_qivkf")
 
 [node name="Player" type="CharacterBody2D" parent="Mundo" unique_id=904006901]
 position = Vector2(60, 20)
+collision_layer = 2
 script = ExtResource("1_52c58")
 
 [node name="crosshair" type="Sprite2D" parent="Mundo/Player" unique_id=698244504]
