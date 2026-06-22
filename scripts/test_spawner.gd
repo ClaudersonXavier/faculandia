@@ -9,6 +9,8 @@ const TEST_ENTITY_SCRIPT: Script = preload("res://scripts/test_entity.gd")
 @export var initial_lights: Array[Vector2] = [Vector2(320, 360)]
 @export var zombie_scale: float = 0.045
 @export var light_scale: float = 0.045
+@export var light_radius: float = 280.0
+@export var light_emitter_radius: float = 24.0
 @export var delete_radius: float = 80.0
 
 
@@ -48,27 +50,13 @@ func _spawn_light(position: Vector2) -> void:
 	light_source.texture = _load_png_texture(LIGHT_TEXTURE_PATH)
 	light_source.script = TEST_ENTITY_SCRIPT
 	light_source.set("test_kind", &"light")
+	light_source.set_meta("light_radius", light_radius)
+	light_source.set_meta("light_emitter_radius", light_emitter_radius)
 	light_source.centered = true
 	light_source.z_index = 18
 	light_source.global_position = position
 	light_source.call("set_test_scale", light_scale)
 	world.add_child(light_source)
-
-	var light := PointLight2D.new()
-	light.name = "GlowTeste"
-	light.energy = 0.65
-	light.texture_scale = 1.4
-	light.color = Color(1.0, 0.72, 0.35)
-	var gradient := Gradient.new()
-	gradient.set_color(0, Color(1, 1, 1, 1))
-	gradient.set_color(1, Color(1, 1, 1, 0))
-	var texture := GradientTexture2D.new()
-	texture.gradient = gradient
-	texture.width = 256
-	texture.height = 256
-	texture.fill = GradientTexture2D.FILL_RADIAL
-	light.texture = texture
-	light_source.add_child(light)
 
 
 func _delete_nearest_test_object(position: Vector2) -> void:

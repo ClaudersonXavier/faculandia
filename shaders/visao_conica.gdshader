@@ -6,6 +6,17 @@ uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
 uniform vec2 player_screen_pos;
 uniform vec2 vision_points[MAX_VISION_POINTS];
 uniform int vision_point_count = 0;
+
+const int MAX_OMNI_POINTS = 1152;
+uniform vec2 omni_points[MAX_OMNI_POINTS];
+uniform int omni_point_count = 0;
+
+const int MAX_LIGHT_SOURCES = 16;
+const int MAX_TOTAL_LIGHT_POINTS = 1024;
+uniform int light_count = 0;
+uniform int light_starts[MAX_LIGHT_SOURCES];
+uniform int light_ends[MAX_LIGHT_SOURCES];
+uniform vec2 light_points[MAX_TOTAL_LIGHT_POINTS];
 uniform float inner_light_radius = 80.0;
 uniform float darkness_alpha : hint_range(0.0, 1.0) = 0.7;
 uniform float outside_saturation : hint_range(0.0, 1.0) = 0.24;
@@ -58,6 +69,53 @@ float polygon_edge_fade(vec2 point) {
 	return smoothstep(0.0, fade_edge, nearest);
 }
 
+bool point_in_omni_polygon(vec2 point) {
+	bool inside = false;
+	for (int i = 0; i < MAX_OMNI_POINTS; i++) {
+		if (i >= omni_point_count) break;
+		int j = i - 1;
+		if (i == 0) j = omni_point_count - 1;
+		vec2 pi = omni_points[i];
+		vec2 pj = omni_points[j];
+		float dy = pj.y - pi.y;
+		if (abs(dy) < 0.0001) continue;
+		bool intersect = ((pi.y > point.y) != (pj.y > point.y)) && (point.x < (pj.x - pi.x) * (point.y - pi.y) / dy + pi.x);
+		if (intersect) inside = !inside;
+	}
+	return inside;
+}
+
+bool point_in_light_polygon(vec2 point, int start_idx, int end_idx) {
+	bool inside = false;
+	int count = end_idx - start_idx;
+	for(int k = 0; k < MAX_TOTAL_LIGHT_POINTS; k++) {
+		if (k >= count) break;
+		int i = start_idx + k;
+		int j = i - 1;
+		if (k == 0) j = end_idx - 1;
+		vec2 pi = light_points[i];
+		vec2 pj = light_points[j];
+		float dy = pj.y - pi.y;
+		if (abs(dy) < 0.0001) continue;
+		bool intersect = ((pi.y > point.y) != (pj.y > point.y)) && (point.x < (pj.x - pi.x) * (point.y - pi.y) / dy + pi.x);
+		if (intersect) inside = !inside;
+	}
+	return inside;
+}
+
+float light_polygon_edge_fade(vec2 point, int start_idx, int end_idx) {
+	float nearest = 999999.0;
+	int count = end_idx - start_idx;
+	for(int k = 0; k < MAX_TOTAL_LIGHT_POINTS; k++) {
+		if (k >= count) break;
+		int i = start_idx + k;
+		int j = i - 1;
+		if (k == 0) j = end_idx - 1;
+		nearest = min(nearest, distance_to_segment(point, light_points[j], light_points[i]));
+	}
+	return smoothstep(0.0, fade_edge, nearest);
+}
+
 void fragment() {
 	vec2 pixel_pos = SCREEN_UV / SCREEN_PIXEL_SIZE;
 	vec4 base = texture(screen_texture, SCREEN_UV);
@@ -68,7 +126,21 @@ void fragment() {
 
 	float inner_dist = length(pixel_pos - player_screen_pos);
 	float inner_visible = 1.0 - smoothstep(inner_light_radius * 0.45, inner_light_radius, inner_dist);
-	float visible_amount = clamp(max(cone_visible, inner_visible), 0.0, 1.0);
+	
+	float total_light_visible = 0.0;
+	if (omni_point_count > 2 && point_in_omni_polygon(pixel_pos)) {
+		for(int l = 0; l < MAX_LIGHT_SOURCES; l++) {
+			if (l >= light_count) break;
+			int start = light_starts[l];
+			int end = light_ends[l];
+			if (end - start > 2 && point_in_light_polygon(pixel_pos, start, end)) {
+				float light_visible = light_polygon_edge_fade(pixel_pos, start, end);
+				total_light_visible = max(total_light_visible, light_visible);
+			}
+		}
+	}
+
+	float visible_amount = clamp(max(max(cone_visible, inner_visible), total_light_visible), 0.0, 1.0);
 
 	float gray = dot(base.rgb, vec3(0.299, 0.587, 0.114));
 	float outside_darkness = mix(1.0, outside_brightness, darkness_alpha);
