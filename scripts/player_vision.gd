@@ -1,6 +1,8 @@
 class_name PlayerVision
 extends Node2D
 
+const FRAGMENTO_PERCEPTIVEL_SHADER: Shader = preload("res://shaders/fragmento_perceptivel.gdshader")
+
 @export var player: CharacterBody2D
 @export var overlay: ColorRect
 @export_range(1.0, 180.0, 1.0) var vision_angle: float = 70.0
@@ -27,9 +29,12 @@ var _last_hit_points: PackedVector2Array = []
 var _last_omnidirectional_points: PackedVector2Array = []
 var _custom_aim_position: Vector2
 var _uses_custom_aim_position := false
+var _fragmento_perceptivel_material: ShaderMaterial
 
 
 func _ready() -> void:
+	_fragmento_perceptivel_material = ShaderMaterial.new()
+	_fragmento_perceptivel_material.shader = FRAGMENTO_PERCEPTIVEL_SHADER
 	_create_visuals()
 	_rebuild(true)
 
@@ -232,10 +237,24 @@ func _get_obstacle_corners_near(source_pos: Vector2, radius: float) -> PackedVec
 
 
 func _update_visible_entities() -> void:
+	_update_fragmento_perceptivel_material()
 	for entity in get_tree().get_nodes_in_group(visible_entity_group):
 		if not entity is CanvasItem:
 			continue
-		entity.visible = is_position_visible(entity.global_position)
+		entity.visible = true
+		entity.material = _fragmento_perceptivel_material
+
+
+func _update_fragmento_perceptivel_material() -> void:
+	if _fragmento_perceptivel_material == null:
+		return
+
+	var viewport_size := get_viewport().get_visible_rect().size
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return
+
+	_apply_perception_shader_parameters(_fragmento_perceptivel_material, viewport_size, camera)
 
 
 func _update_overlay_points() -> void:
@@ -247,29 +266,33 @@ func _update_overlay_points() -> void:
 	if camera == null:
 		return
 
+	var mat = overlay.material as ShaderMaterial
+	mat.set_shader_parameter("darkness_alpha", darkness_alpha)
+	_apply_perception_shader_parameters(mat, viewport_size, camera)
+
+
+func _apply_perception_shader_parameters(mat: ShaderMaterial, viewport_size: Vector2, camera: Camera2D) -> void:
 	var screen_points := PackedVector2Array()
 	screen_points.append(_world_to_screen(player.global_position, viewport_size, camera))
 	for point in _last_hit_points:
 		screen_points.append(_world_to_screen(point, viewport_size, camera))
 
-	var mat = overlay.material as ShaderMaterial
 	mat.set_shader_parameter("vision_points", screen_points)
 	mat.set_shader_parameter("vision_point_count", screen_points.size())
 	mat.set_shader_parameter("player_screen_pos", screen_points[0])
 	mat.set_shader_parameter("inner_light_radius", inner_light_radius * camera.zoom.x)
-	mat.set_shader_parameter("darkness_alpha", darkness_alpha)
 
 	var omni_screen_points := PackedVector2Array()
 	for point in _last_omnidirectional_points:
 		omni_screen_points.append(_world_to_screen(point, viewport_size, camera))
-		
+
 	mat.set_shader_parameter("omni_points", omni_screen_points)
 	mat.set_shader_parameter("omni_point_count", omni_screen_points.size())
-	
+
 	var light_starts := PackedInt32Array()
 	var light_ends := PackedInt32Array()
 	var all_light_points := PackedVector2Array()
-	
+
 	var light_nodes = get_tree().get_nodes_in_group(light_source_group)
 	for l_node in light_nodes:
 		var source = l_node as Node2D

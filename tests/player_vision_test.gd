@@ -39,6 +39,7 @@ func _run() -> void:
 	await _test_malha_da_fonte_para_no_bloqueador()
 	await _test_fonte_ilumina_do_corpo_inteiro()
 	await _test_malha_da_fonte_usa_quinas_do_bloqueador()
+	await _test_ameaca_parcialmente_percebida_recebe_fragmento_perceptivel()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -329,6 +330,26 @@ func _test_malha_da_fonte_usa_quinas_do_bloqueador() -> void:
 	fixture.root.queue_free()
 
 
+func _test_ameaca_parcialmente_percebida_recebe_fragmento_perceptivel() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	var ameaca := Sprite2D.new()
+	ameaca.name = "AmeacaParcial"
+	ameaca.centered = true
+	ameaca.global_position = Vector2(210, 0)
+	ameaca.add_to_group(&"visible_entities")
+	fixture.root.add_child(ameaca)
+	await physics_frame
+
+	_assert_true(ameaca.visible, "Ameaca parcialmente percebida continua existindo visualmente")
+	_assert_true(ameaca.material is ShaderMaterial, "Ameaca parcialmente percebida recebe mascara de Fragmento Perceptivel")
+	var material := ameaca.material as ShaderMaterial
+	_assert_true(material.get_shader_parameter("vision_point_count") > 2, "Mascara do Fragmento Perceptivel usa Visao Direta")
+	_assert_true(material.get_shader_parameter("omni_point_count") > 2, "Mascara do Fragmento Perceptivel usa Percepcao Periferica")
+
+	fixture.root.queue_free()
+
+
 func _create_fixture() -> Dictionary:
 	var scene_root := Node2D.new()
 	scene_root.name = "PlayerVisionFixture"
@@ -392,4 +413,3 @@ func _assert_true(value: bool, message: String) -> void:
 
 func _assert_false(value: bool, message: String) -> void:
 	_assert_true(not value, message)
-

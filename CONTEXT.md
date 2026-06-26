@@ -29,7 +29,8 @@ Elemento que o jogador pode examinar, coletar ou acionar quando esta ao alcance 
 _Avoid_: Item, objeto clicavel, loot
 
 **Vestigio**:
-Rastro visual de uma acao recente ou passada que pode permanecer parcialmente perceptivel fora da visao direta.
+Rastro visual de uma acao recente ou passada que so e exibido quando esta dentro da percepcao atual do jogador.
+Uma Ameaca morta passa a ser tratada como Vestigio.
 _Avoid_: Efeito, decalque, marca
 
 **Visao Direta**:
@@ -52,3 +53,10 @@ _Avoid_: Luz interna, circulo de luz, visao circular
 **Andavel**:
 Area do cenario onde o jogador pode se mover livremente.
 _Avoid_: Chao livre, passavel
+
+**Fragmento Perceptivel**:
+Parte visual de uma Ameaca, Interativo ou Vestigio que esta dentro de qualquer forma de percepcao do jogador.
+Partes fora da percepcao do jogador nao sao exibidas.
+A existencia, movimento, ataque e colisao da Ameaca nao dependem do Fragmento Perceptivel.
+O limite entre parte exibida e nao exibida e seco.
+_Avoid_: Zumbi cortado, parte visivel, recorte de inimigo
