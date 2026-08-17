@@ -6,11 +6,15 @@ Glossario do contexto de jogo para manter linguagem consistente sobre mapa, movi
 
 **Obstaculo**:
 Elemento do cenario que bloqueia movimento do jogador e projeteis.
-_Avoid_: Parede, bloqueio, colisao
+_Avoid_: Bloqueio, colisao
 
 **Bloqueador de Visao**:
 Elemento do cenario que impede o jogador de perceber o que esta atras dele.
-_Avoid_: Obstaculo, parede, bloqueio
+_Avoid_: Obstaculo, bloqueio
+
+**Parede**:
+Elemento construtivo do cenario que funciona como Obstaculo e Bloqueador de Visao.
+_Avoid_: Chao, tile de chao, decoracao
 
 **Cenario**:
 Ambiente fisico do jogo que permanece parcialmente perceptivel mesmo fora da Visao Direta.
