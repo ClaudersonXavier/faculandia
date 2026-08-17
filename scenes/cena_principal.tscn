@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player_vision.gd" id="7_player_vision"]
 [ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/test_spawner.gd" id="8_test_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="10_enemy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
@@ -39,6 +40,12 @@ script = ExtResource("8_test_spawner")
 world = NodePath("../Mundo")
 
 [node name="Mundo" type="Node2D" parent="." unique_id=1643876960]
+
+[node name="Enemy" parent="Mundo" instance=ExtResource("10_enemy")]
+position = Vector2(400, 200)
+
+[node name="Enemy2" parent="Mundo" instance=ExtResource("10_enemy")]
+position = Vector2(500, 260)
 
 [node name="Parede" parent="Mundo" unique_id=1676833241 instance=ExtResource("9_8ncq5")]
 position = Vector2(590, 77)

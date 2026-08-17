@@ -11,6 +11,10 @@ var aim_direction: Vector2
 
 const SPEED = 150.0
 
+func _ready() -> void:
+	add_to_group(&"player")
+
+
 func _physics_process(_delta: float) -> void:
 	
 	var mouse_position = get_global_mouse_position()

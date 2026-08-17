@@ -30,16 +30,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_delete_nearest_test_object(_mouse_world_position())
 
 
+const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
+
 func _spawn_zombie(position: Vector2) -> void:
-	var zombie := Sprite2D.new()
-	zombie.name = "ZumbiTeste"
-	zombie.texture = _load_png_texture(ZOMBIE_TEXTURE_PATH)
-	zombie.script = TEST_ENTITY_SCRIPT
-	zombie.set("test_kind", &"zombie")
-	zombie.centered = true
-	zombie.z_index = 20
+	var zombie = ENEMY_SCENE.instantiate()
 	zombie.global_position = position
-	zombie.call("set_test_scale", zombie_scale)
 	world.add_child(zombie)
 
 

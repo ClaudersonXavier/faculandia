@@ -239,10 +239,18 @@ func _get_obstacle_corners_near(source_pos: Vector2, radius: float) -> PackedVec
 func _update_visible_entities() -> void:
 	_update_fragmento_perceptivel_material()
 	for entity in get_tree().get_nodes_in_group(visible_entity_group):
-		if not entity is CanvasItem:
-			continue
-		entity.visible = true
-		entity.material = _fragmento_perceptivel_material
+		_apply_material_to_canvas_items(entity)
+
+
+func _apply_material_to_canvas_items(node: Node) -> void:
+	if node is CanvasItem:
+		node.visible = true
+		if not node is CharacterBody2D and not node is RigidBody2D and not node is StaticBody2D:
+			node.material = _fragmento_perceptivel_material
+	for child in node.get_children():
+		if child is CanvasItem:
+			child.visible = true
+			child.material = _fragmento_perceptivel_material
 
 
 func _update_fragmento_perceptivel_material() -> void:

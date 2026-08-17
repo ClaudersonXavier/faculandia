@@ -29,7 +29,7 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 	collision_layer = 0
-	collision_mask = 1
+	collision_mask = 1 | 2
 
 
 func _physics_process(delta: float) -> void:
@@ -44,7 +44,9 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, 4.5, Color(1.0, 0.7, 0.0, 0.25))
 
 
-func _on_body_entered(_b: Node2D) -> void:
+func _on_body_entered(body: Node2D) -> void:
+	if body.has_method("take_damage"):
+		body.take_damage(damage)
 	queue_free()
 
 
