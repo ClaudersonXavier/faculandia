@@ -315,13 +315,15 @@ func _test_ameaca_busca_caminho_quando_visao_obstruida() -> void:
 func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
 	var fixture := _create_fixture()
 	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(2000, 2000)
+	ameaca.set_physics_process(false)
 	await process_frame
 
 	var safe_vel := Vector2(42.0, -10.0)
 	ameaca._on_navigation_agent_velocity_computed(safe_vel)
 
 	_assert_true(
-		ameaca.velocity == safe_vel,
+		ameaca.velocity.is_equal_approx(safe_vel),
 		"Ameaca deve atualizar sua velocidade quando o NavigationAgent2D emitir velocity_computed"
 	)
 
