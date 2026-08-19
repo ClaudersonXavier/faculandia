@@ -6,6 +6,8 @@ const LAYER_OBSTACULO := 1
 const LAYER_JOGADOR := 2
 const LAYER_AMEACA := 4
 
+const MIN_MOVEMENT_DISTANCE_SQUARED: float = 0.001
+
 @export var max_health: float = 24.0
 @export var speed: float = 70.0
 @export var hit_flash_color: Color = Color(1.0, 0.3, 0.3, 1.0)
@@ -33,10 +35,17 @@ func _physics_process(_delta: float) -> void:
 		_find_player()
 
 	if is_instance_valid(target_player):
-		var direction := (target_player.global_position - global_position).normalized()
-		velocity = direction * speed
-		rotation = direction.angle()
-		move_and_slide()
+		var to_player := target_player.global_position - global_position
+		if to_player.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
+			var direction := to_player.normalized()
+			velocity = direction * speed
+			rotation = direction.angle()
+		else:
+			velocity = Vector2.ZERO
+	else:
+		velocity = Vector2.ZERO
+
+	move_and_slide()
 
 
 func _find_player() -> void:

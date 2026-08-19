@@ -13,6 +13,7 @@ script = ExtResource("1_ameaca_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1753819644]
 z_index = 5
+rotation = -1.5707964
 scale = Vector2(0.045, 0.045)
 texture = ExtResource("2_zombie_tex")
 

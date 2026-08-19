@@ -15,6 +15,9 @@ func _run() -> void:
 	await _test_flash_visual_retorna_para_cor_base()
 	await _test_multiplos_danos_reiniciam_flash()
 	await _test_morte_da_ameaca_apos_dano_letal()
+	await _test_sprite_orientacao_compensada_na_cena()
+	await _test_ameaca_rotaciona_na_direcao_do_jogador()
+	await _test_ameaca_mantem_rotacao_sem_direcao()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -115,6 +118,74 @@ func _test_morte_da_ameaca_apos_dano_letal() -> void:
 
 	if is_instance_valid(fixture.root):
 		fixture.root.queue_free()
+
+
+func _test_sprite_orientacao_compensada_na_cena() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	var sprite: Sprite2D = ameaca.get_node_or_null("Sprite2D")
+	_assert_true(sprite != null, "Ameaca deve possuir nó Sprite2D")
+	if sprite:
+		var expected_rotation: float = -PI / 2.0
+		_assert_true(
+			is_equal_approx(sprite.rotation, expected_rotation),
+			"Sprite2D deve ter compensacao de rotacao de -90 graus (-PI/2), atual: %f" % sprite.rotation
+		)
+
+	fixture.root.queue_free()
+
+
+func _test_ameaca_rotaciona_na_direcao_do_jogador() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fixture.root.add_child(fake_player)
+
+	var scenarios: Array[Dictionary] = [
+		{"target_pos": Vector2(200, 100), "expected_angle": 0.0, "desc": "direita"},
+		{"target_pos": Vector2(100, 200), "expected_angle": PI / 2.0, "desc": "baixo"},
+		{"target_pos": Vector2(100, 0), "expected_angle": -PI / 2.0, "desc": "cima"},
+	]
+
+	for scenario in scenarios:
+		ameaca.global_position = Vector2(100, 100)
+		fake_player.global_position = scenario.target_pos
+		ameaca._physics_process(0.016)
+		_assert_true(
+			is_equal_approx(ameaca.rotation, scenario.expected_angle),
+			"Rotacao da ameaca deve ser %f rad ao perseguir para %s" % [scenario.expected_angle, scenario.desc]
+		)
+
+	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_mantem_rotacao_sem_direcao() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	ameaca.rotation = 1.234
+	ameaca.velocity = Vector2(50, 50)
+	ameaca.target_player = null
+	ameaca._physics_process(0.016)
+
+	_assert_true(
+		is_equal_approx(ameaca.rotation, 1.234),
+		"Ameaca sem alvo/direcao valida deve preservar a ultima rotacao"
+	)
+	_assert_true(
+		ameaca.velocity == Vector2.ZERO,
+		"Ameaca sem alvo/direcao valida deve zerar a velocidade"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
 
 
 func _assert_true(value: bool, message: String) -> void:
