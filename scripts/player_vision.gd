@@ -21,6 +21,8 @@ const FRAGMENTO_PERCEPTIVEL_SHADER: Shader = preload("res://shaders/fragmento_pe
 @export var min_angle_to_rebuild: float = 0.01
 @export var draw_debug_polygons: bool = false
 
+var debug_vision_active: bool = false
+
 var _vision_polygon: Polygon2D
 var _inner_polygon: Polygon2D
 var _last_position := Vector2.INF
@@ -40,6 +42,12 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if Input.is_action_just_pressed(&"debug_vision"):
+		debug_vision_active = not debug_vision_active
+		if overlay:
+			overlay.visible = not debug_vision_active
+		print("[DEBUG] Visao debug: %s" % ("LIGADA" if debug_vision_active else "DESLIGADA"))
+
 	if player == null:
 		return
 
@@ -237,9 +245,24 @@ func _get_obstacle_corners_near(source_pos: Vector2, radius: float) -> PackedVec
 
 
 func _update_visible_entities() -> void:
-	_update_fragmento_perceptivel_material()
+	if not debug_vision_active:
+		_update_fragmento_perceptivel_material()
 	for entity in get_tree().get_nodes_in_group(visible_entity_group):
-		_apply_material_to_canvas_items(entity)
+		if debug_vision_active:
+			_clear_material_from_canvas_items(entity)
+		else:
+			_apply_material_to_canvas_items(entity)
+
+
+func _clear_material_from_canvas_items(node: Node) -> void:
+	if node is CanvasItem:
+		node.visible = true
+		if not node is CharacterBody2D and not node is RigidBody2D and not node is StaticBody2D:
+			node.material = null
+	for child in node.get_children():
+		if child is CanvasItem:
+			child.visible = true
+			child.material = null
 
 
 func _apply_material_to_canvas_items(node: Node) -> void:
