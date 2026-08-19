@@ -8,6 +8,10 @@ var bullet_texture: Texture2D
 var collision_size: Vector2
 
 
+const LAYER_OBSTACULO := 1
+const LAYER_AMEACA := 4
+
+
 func _ready() -> void:
 	rotation = direction.angle() + PI / 2
 	if bullet_texture:
@@ -29,7 +33,7 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 	collision_layer = 0
-	collision_mask = 5
+	collision_mask = LAYER_OBSTACULO | LAYER_AMEACA
 
 
 func _physics_process(delta: float) -> void:

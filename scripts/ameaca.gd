@@ -1,5 +1,10 @@
-class_name Enemy
+class_name Ameaca
 extends CharacterBody2D
+
+# Camadas de fisica do projeto
+const LAYER_OBSTACULO := 1
+const LAYER_JOGADOR := 2
+const LAYER_AMEACA := 4
 
 @export var max_health: float = 24.0
 @export var speed: float = 70.0
@@ -9,18 +14,25 @@ extends CharacterBody2D
 var health: float = 24.0
 var target_player: Node2D = null
 var _hit_flash_tween: Tween = null
+var _is_dead: bool = false
+
 
 func _ready() -> void:
 	health = max_health
+	collision_layer = LAYER_AMEACA
+	collision_mask = LAYER_OBSTACULO | LAYER_JOGADOR | LAYER_AMEACA
 	add_to_group(&"visible_entities")
 	_find_player()
 
 
 func _physics_process(_delta: float) -> void:
-	if target_player == null or not is_instance_valid(target_player):
+	if _is_dead:
+		return
+
+	if not is_instance_valid(target_player):
 		_find_player()
-			
-	if target_player != null and is_instance_valid(target_player):
+
+	if is_instance_valid(target_player):
 		var direction := (target_player.global_position - global_position).normalized()
 		velocity = direction * speed
 		rotation = direction.angle()
@@ -34,6 +46,9 @@ func _find_player() -> void:
 
 
 func take_damage(amount: float) -> void:
+	if _is_dead:
+		return
+
 	health -= amount
 	_play_hit_flash()
 	if health <= 0.0:
@@ -50,4 +65,13 @@ func _play_hit_flash() -> void:
 
 
 func die() -> void:
+	_is_dead = true
+	set_physics_process(false)
+	var col_shape = get_node_or_null("CollisionShape2D")
+	if col_shape:
+		col_shape.set_deferred("disabled", true)
+
+	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
+		await _hit_flash_tween.finished
+
 	queue_free()

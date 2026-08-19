@@ -30,12 +30,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_delete_nearest_test_object(_mouse_world_position())
 
 
-const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
+const AMEACA_SCENE: PackedScene = preload("res://scenes/ameaca.tscn")
 
 func _spawn_zombie(position: Vector2) -> void:
-	var zombie = ENEMY_SCENE.instantiate()
-	zombie.global_position = position
-	world.add_child(zombie)
+	var ameaca = AMEACA_SCENE.instantiate()
+	ameaca.global_position = position
+	world.add_child(ameaca)
 
 
 func _spawn_light(position: Vector2) -> void:
