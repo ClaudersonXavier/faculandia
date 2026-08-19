@@ -11,9 +11,16 @@
 [ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/test_spawner.gd" id="8_test_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
 [ext_resource type="PackedScene" path="res://scenes/ameaca.tscn" id="10_ameaca"]
+[ext_resource type="Script" path="res://scripts/map_navigation.gd" id="11_nav"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
+vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)
+polygons = [PackedInt32Array(0, 1, 2, 3)]
+outlines = [PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)]
+parsed_collision_mask = 1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("5_shader")
@@ -40,6 +47,10 @@ script = ExtResource("8_test_spawner")
 world = NodePath("../Mundo")
 
 [node name="Mundo" type="Node2D" parent="." unique_id=1643876960]
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="Mundo" unique_id=987654321]
+script = ExtResource("11_nav")
+navigation_polygon = SubResource("NavigationPolygon_mundo")
 
 [node name="Ameaca" parent="Mundo" instance=ExtResource("10_ameaca")]
 position = Vector2(400, 200)

@@ -18,6 +18,11 @@ func _run() -> void:
 	await _test_sprite_orientacao_compensada_na_cena()
 	await _test_ameaca_rotaciona_na_direcao_do_jogador()
 	await _test_ameaca_mantem_rotacao_sem_direcao()
+	await _test_ameaca_detecta_linha_de_visao_direta_livre_e_obstruida()
+	await _test_ameaca_possui_navigation_agent_configurado()
+	await _test_ameaca_para_ao_atingir_distancia_desejada()
+	await _test_ameaca_busca_caminho_quando_visao_obstruida()
+	await _test_ameaca_aplica_velocidade_segura_avoidance()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -182,6 +187,142 @@ func _test_ameaca_mantem_rotacao_sem_direcao() -> void:
 	_assert_true(
 		ameaca.velocity == Vector2.ZERO,
 		"Ameaca sem alvo/direcao valida deve zerar a velocidade"
+	)
+
+func _test_ameaca_detecta_linha_de_visao_direta_livre_e_obstruida() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+
+	# Cria uma parede intermediaria na camada 1 (LAYER_OBSTACULO)
+	var obstacle := StaticBody2D.new()
+	obstacle.collision_layer = Ameaca.LAYER_OBSTACULO
+	obstacle.collision_mask = 0
+	var col_shape := CollisionShape2D.new()
+	var rect_shape := RectangleShape2D.new()
+	rect_shape.size = Vector2(40, 40)
+	col_shape.shape = rect_shape
+	obstacle.add_child(col_shape)
+	obstacle.global_position = Vector2(200, 100)
+	fixture.root.add_child(obstacle)
+
+	await process_frame
+
+	# Alvo com obstaculo entre ameaca (100, 100) e alvo (300, 100)
+	var obstructed_pos := Vector2(300, 100)
+	_assert_false(
+		ameaca.has_direct_line_of_sight_to(obstructed_pos),
+		"Ameaca nao deve ter linha de visao direta atraves de uma Parede/Obstaculo"
+	)
+
+	# Alvo livre acima
+	var clear_pos := Vector2(100, 200)
+	_assert_true(
+		ameaca.has_direct_line_of_sight_to(clear_pos),
+		"Ameaca deve ter linha de visao direta para posicao desobstruida"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_possui_navigation_agent_configurado() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	var nav_agent: NavigationAgent2D = ameaca.get_node_or_null("NavigationAgent2D")
+	_assert_true(nav_agent != null, "Ameaca deve possuir um nó filho NavigationAgent2D")
+	if nav_agent:
+		_assert_true(nav_agent.avoidance_enabled, "NavigationAgent2D deve ter avoidance_enabled ativo")
+		_assert_true(nav_agent.target_desired_distance > 0.0, "NavigationAgent2D deve ter target_desired_distance configurado")
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_para_ao_atingir_distancia_desejada() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fixture.root.add_child(fake_player)
+
+	# Posiciona ameaca muito proxima do player (dentro da distancia de parada)
+	ameaca.global_position = Vector2(100, 100)
+	fake_player.global_position = Vector2(105, 100) # 5px de distancia
+
+	await process_frame
+	ameaca._physics_process(0.016)
+
+	_assert_true(
+		ameaca.velocity == Vector2.ZERO,
+		"Ameaca deve zerar velocidade quando estiver na distancia de parada do alvo"
+	)
+
+	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_busca_caminho_quando_visao_obstruida() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fixture.root.add_child(fake_player)
+
+	ameaca.global_position = Vector2(100, 100)
+	fake_player.global_position = Vector2(400, 100)
+
+	# Cria obstaculo bloqueando a visao direta
+	var obstacle := StaticBody2D.new()
+	obstacle.collision_layer = Ameaca.LAYER_OBSTACULO
+	obstacle.collision_mask = 0
+	var col_shape := CollisionShape2D.new()
+	var rect_shape := RectangleShape2D.new()
+	rect_shape.size = Vector2(50, 50)
+	col_shape.shape = rect_shape
+	obstacle.add_child(col_shape)
+	obstacle.global_position = Vector2(250, 100)
+	fixture.root.add_child(obstacle)
+
+	await process_frame
+
+	_assert_false(
+		ameaca.has_direct_line_of_sight_to(fake_player.global_position),
+		"Visao direta deve estar bloqueada pelo obstaculo"
+	)
+
+	# Executa passo de fisica
+	ameaca._physics_process(0.016)
+
+	var nav_agent: NavigationAgent2D = ameaca.get_node_or_null("NavigationAgent2D")
+	_assert_true(nav_agent != null, "Ameaca deve ter NavigationAgent2D")
+	if nav_agent:
+		_assert_true(
+			nav_agent.target_position == fake_player.global_position,
+			"Ao ter visao bloqueada, ameaca deve definir a posicao do jogador como target_position do NavigationAgent2D"
+		)
+
+	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	var safe_vel := Vector2(42.0, -10.0)
+	ameaca._on_navigation_agent_velocity_computed(safe_vel)
+
+	_assert_true(
+		ameaca.velocity == safe_vel,
+		"Ameaca deve atualizar sua velocidade quando o NavigationAgent2D emitir velocity_computed"
 	)
 
 	fixture.root.queue_free()

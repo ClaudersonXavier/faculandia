@@ -55,8 +55,12 @@ Bloqueadores de Visao impedem essa percepcao.
 _Avoid_: Luz interna, circulo de luz, visao circular
 
 **Andavel**:
-Area do cenario onde o jogador pode se mover livremente.
+Area do cenario onde o jogador e as ameacas podem se mover livremente.
 _Avoid_: Chao livre, passavel
+
+**Rota de Perseguicao**:
+Trajetoria calculada pela Ameaca atraves de areas Andaveis, contornando Obstaculos para alcancar o jogador ou a origem de um estimulo percebido.
+_Avoid_: Pathfinding, caminho do zumbi, rota de IA
 
 **Fragmento Perceptivel**:
 Parte visual de uma Ameaca, Interativo ou Vestigio que esta dentro de qualquer forma de percepcao do jogador.
