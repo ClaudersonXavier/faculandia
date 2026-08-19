@@ -234,7 +234,6 @@ func _test_ameaca_possui_navigation_agent_configurado() -> void:
 	var nav_agent: NavigationAgent2D = ameaca.get_node_or_null("NavigationAgent2D")
 	_assert_true(nav_agent != null, "Ameaca deve possuir um nó filho NavigationAgent2D")
 	if nav_agent:
-		_assert_true(nav_agent.avoidance_enabled, "NavigationAgent2D deve ter avoidance_enabled ativo")
 		_assert_true(nav_agent.target_desired_distance > 0.0, "NavigationAgent2D deve ter target_desired_distance configurado")
 
 	fixture.root.queue_free()
@@ -313,20 +312,30 @@ func _test_ameaca_busca_caminho_quando_visao_obstruida() -> void:
 
 
 func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
+	# Regression test: ameaca must actually move toward the player, not just face them.
 	var fixture := _create_fixture()
 	var ameaca: Ameaca = fixture.ameaca
-	ameaca.global_position = Vector2(2000, 2000)
-	ameaca.set_physics_process(false)
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fixture.root.add_child(fake_player)
+
+	ameaca.global_position = Vector2(100, 100)
+	fake_player.global_position = Vector2(500, 100)
 	await process_frame
 
-	var safe_vel := Vector2(42.0, -10.0)
-	ameaca._on_navigation_agent_velocity_computed(safe_vel)
+	var initial_pos := ameaca.global_position
+	for i in range(10):
+		ameaca._physics_process(0.016)
+		await process_frame
 
+	var moved := initial_pos.distance_to(ameaca.global_position)
 	_assert_true(
-		ameaca.velocity.is_equal_approx(safe_vel),
-		"Ameaca deve atualizar sua velocidade quando o NavigationAgent2D emitir velocity_computed"
+		moved > 1.0,
+		"Ameaca deve se mover em direcao ao jogador (moveu %.2f px)" % moved
 	)
 
+	fake_player.remove_from_group(&"player")
 	fixture.root.queue_free()
 	await process_frame
 

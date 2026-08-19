@@ -30,8 +30,6 @@ func _ready() -> void:
 	collision_mask = LAYER_OBSTACULO | LAYER_JOGADOR | LAYER_AMEACA
 	add_to_group(&"visible_entities")
 	_find_player()
-	if navigation_agent:
-		navigation_agent.velocity_computed.connect(_on_navigation_agent_velocity_computed)
 
 
 func _physics_process(delta: float) -> void:
@@ -82,28 +80,14 @@ func _physics_process(delta: float) -> void:
 
 	if move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 		rotation = move_direction.angle()
-		var intended_velocity := move_direction * speed
-
-		if navigation_agent and navigation_agent.avoidance_enabled:
-			navigation_agent.set_velocity(intended_velocity)
-		else:
-			velocity = intended_velocity
-			move_and_slide()
+		velocity = move_direction * speed
+		move_and_slide()
 	else:
 		_stop_moving()
 
 
 func _stop_moving() -> void:
 	velocity = Vector2.ZERO
-	if navigation_agent and navigation_agent.avoidance_enabled:
-		navigation_agent.set_velocity(Vector2.ZERO)
-
-
-func _on_navigation_agent_velocity_computed(safe_velocity: Vector2) -> void:
-	if _is_dead:
-		return
-	velocity = safe_velocity
-	move_and_slide()
 
 
 
