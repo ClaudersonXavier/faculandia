@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://blww5f1h5aa1p" path="res://sprites/test/zumbi-de-teste.png" id="2_zombie_tex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ameaca"]
-radius = 44.011364
+radius = 30.0
 
 [node name="Ameaca" type="CharacterBody2D" unique_id=785134973]
 collision_layer = 4
@@ -14,14 +14,13 @@ script = ExtResource("1_ameaca_script")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1753819644]
 z_index = 5
 rotation = -1.5707964
-scale = Vector2(0.045, 0.045)
+scale = Vector2(0.03, 0.03)
 texture = ExtResource("2_zombie_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1594868540]
-position = Vector2(-1, 0)
+position = Vector2(1, 0)
 shape = SubResource("CircleShape2D_ameaca")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1684920150]
 path_desired_distance = 10.0
 target_desired_distance = 60.0
-

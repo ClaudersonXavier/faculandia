@@ -25,4 +25,5 @@ func _ready() -> void:
 	# estejam registrados no PhysicsServer antes do bake.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	bake_navigation_polygon()
+	if not is_baking():
+		bake_navigation_polygon()
