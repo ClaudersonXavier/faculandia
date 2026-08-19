@@ -1,11 +1,14 @@
 extends Area2D
 
+const NoiseBus := preload("res://scripts/noise_bus.gd")
+
 var direction: Vector2 = Vector2.ZERO
 var speed: float = 600.0
 var damage: float = 0.0
 var lifetime: float = 2.0
 var bullet_texture: Texture2D
 var collision_size: Vector2
+var impact_noise_radius: float = 250.0
 
 
 func _ready() -> void:
@@ -45,8 +48,10 @@ func _draw() -> void:
 
 
 func _on_body_entered(_b: Node2D) -> void:
+	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()
 
 
 func _on_area_entered(_a: Area2D) -> void:
+	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()

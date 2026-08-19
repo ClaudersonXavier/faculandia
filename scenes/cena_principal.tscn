@@ -10,6 +10,8 @@
 [ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player_vision.gd" id="7_player_vision"]
 [ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/test_spawner.gd" id="8_test_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
+[ext_resource type="Script" path="res://scripts/noise_visualizer.gd" id="10_noise_visualizer"]
+[ext_resource type="Script" path="res://scripts/noise_bus.gd" id="11_noise_bus"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
@@ -34,11 +36,17 @@ shader_parameter/warm_light = Vector3(1, 0.78, 0.42)
 
 [node name="MainLoop" type="Node2D" unique_id=1447878274]
 
+[node name="NoiseBus" type="Node" parent="." unique_id=1982736451]
+script = ExtResource("11_noise_bus")
+
 [node name="TestSpawner" type="Node" parent="." unique_id=756826817 node_paths=PackedStringArray("world")]
 script = ExtResource("8_test_spawner")
 world = NodePath("../Mundo")
 
 [node name="Mundo" type="Node2D" parent="." unique_id=1643876960]
+
+[node name="NoiseVisualizer" type="Node2D" parent="Mundo" unique_id=1982736452]
+script = ExtResource("10_noise_visualizer")
 
 [node name="Parede" parent="Mundo" unique_id=1676833241 instance=ExtResource("9_8ncq5")]
 position = Vector2(590, 77)
