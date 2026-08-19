@@ -1,20 +1,21 @@
 [gd_scene format=3 uid="uid://cmhnq8g5l5k6n"]
 
-[ext_resource type="Script" path="res://scripts/ameaca.gd" id="1_ameaca_script"]
-[ext_resource type="Texture2D" path="res://sprites/test/zumbi-de-teste.png" id="2_zombie_tex"]
+[ext_resource type="Script" uid="uid://colugkboy581j" path="res://scripts/ameaca.gd" id="1_ameaca_script"]
+[ext_resource type="Texture2D" uid="uid://blww5f1h5aa1p" path="res://sprites/test/zumbi-de-teste.png" id="2_zombie_tex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ameaca"]
-radius = 12.0
+radius = 44.011364
 
-[node name="Ameaca" type="CharacterBody2D"]
+[node name="Ameaca" type="CharacterBody2D" unique_id=785134973]
 collision_layer = 4
 collision_mask = 7
 script = ExtResource("1_ameaca_script")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1753819644]
 z_index = 5
 scale = Vector2(0.045, 0.045)
 texture = ExtResource("2_zombie_tex")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1594868540]
+position = Vector2(-1, 0)
 shape = SubResource("CircleShape2D_ameaca")
