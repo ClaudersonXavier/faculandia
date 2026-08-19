@@ -101,23 +101,26 @@ func _do_emit(
 
 
 static func is_noise_heard(listener_pos: Vector2, event: NoiseEvent, hearing_multiplier: float = 1.0) -> bool:
-	var effective_radius := event.radius * hearing_multiplier
-	return listener_pos.distance_to(event.position) <= effective_radius
+	if event == null:
+		return false
+	return event.is_heard_at(listener_pos, hearing_multiplier)
 
 
 static func get_noises_in_range(
 	listener_pos: Vector2,
+	listener_radius: float = 0.0,
 	hearing_multiplier: float = 1.0,
 	max_age_ms: float = 1000.0
 ) -> Array[NoiseEvent]:
 	var bus := get_instance()
 	if bus != null:
-		return bus._get_noises_in_range(listener_pos, hearing_multiplier, max_age_ms)
+		return bus._get_noises_in_range(listener_pos, listener_radius, hearing_multiplier, max_age_ms)
 	return []
 
 
 func _get_noises_in_range(
 	listener_pos: Vector2,
+	listener_radius: float,
 	hearing_multiplier: float,
 	max_age_ms: float
 ) -> Array[NoiseEvent]:
@@ -126,8 +129,7 @@ func _get_noises_in_range(
 	for event in _recent_noises:
 		if max_age_ms > 0.0 and (now - event.timestamp) > max_age_ms:
 			continue
-		var effective_radius := event.radius * hearing_multiplier
-		if listener_pos.distance_to(event.position) <= effective_radius:
+		if event.is_heard_at(listener_pos, hearing_multiplier, listener_radius):
 			result.append(event)
 	return result
 

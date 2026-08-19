@@ -258,11 +258,16 @@ func _test_noise_bus_history_and_query() -> void:
 	NoiseBus.emit(Vector2(0, 0), 100.0, &"footstep")
 	NoiseBus.emit(Vector2(50, 0), 300.0, &"gunshot")
 
-	var nearby := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, 5000.0)
+	var nearby := NoiseBus.get_noises_in_range(Vector2(0, 0), 0.0, 1.0, 5000.0)
 	_assert_true(nearby.size() >= 2, "Ambos os sons alcancam o ponto (0,0)")
 
-	var far_away := NoiseBus.get_noises_in_range(Vector2(5000, 5000), 1.0, 5000.0)
+	var far_away := NoiseBus.get_noises_in_range(Vector2(5000, 5000), 0.0, 1.0, 5000.0)
 	_assert_true(far_away.size() == 0, "Ponto distante nao deve detectar os sons")
+
+	# Teste de consulta com listener_radius personalizado
+	NoiseBus.emit(Vector2(1000, 0), 100.0, &"footstep")
+	var heard_with_sensor := NoiseBus.get_noises_in_range(Vector2(500, 0), 600.0, 1.0, 5000.0)
+	_assert_true(heard_with_sensor.size() >= 1, "Sensor com raio proprio deve detectar som proximo de seu alcance")
 
 
 func _test_noise_bus_ttl_filtering() -> void:
@@ -278,7 +283,7 @@ func _test_noise_bus_ttl_filtering() -> void:
 	bus._recent_noises.append(old_event)
 
 	# Query com TTL padrão de 1000ms (1 segundo)
-	var fresh_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, 1000.0)
+	var fresh_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 0.0, 1.0, 1000.0)
 	var contains_old := false
 	for n in fresh_noises:
 		if n == old_event:
@@ -287,7 +292,7 @@ func _test_noise_bus_ttl_filtering() -> void:
 	_assert_false(contains_old, "Evento antigo (> TTL) nao deve ser retornado na consulta")
 
 	# Query com TTL desativado (-1)
-	var all_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, -1.0)
+	var all_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 0.0, 1.0, -1.0)
 	var contains_old_unfiltered := false
 	for n in all_noises:
 		if n == old_event:

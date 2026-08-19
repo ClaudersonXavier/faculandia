@@ -66,7 +66,7 @@ func _physics_process(_delta: float) -> void:
 
 	if _distance_walked >= footstep_distance_threshold:
 		NoiseBus.emit(global_position, footstep_noise_radius, &"footstep", self)
-		_distance_walked = 0.0
+		_distance_walked -= footstep_distance_threshold
 	
 	if Input.is_action_just_pressed("shoot") and weapon != null:
 		weapon.shoot(aim_direction, aim_angle)

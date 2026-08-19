@@ -23,3 +23,8 @@ func _init(
 	emitter = p_emitter
 	intensity = p_intensity
 	timestamp = p_timestamp if p_timestamp != 0 else Time.get_ticks_msec()
+
+
+func is_heard_at(listener_pos: Vector2, hearing_multiplier: float = 1.0, extra_radius: float = 0.0) -> bool:
+	var effective_radius := (radius * hearing_multiplier) + extra_radius
+	return listener_pos.distance_to(position) <= effective_radius
