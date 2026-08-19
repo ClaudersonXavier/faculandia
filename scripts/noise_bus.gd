@@ -7,6 +7,10 @@ static var instance: NoiseBus
 
 @export var max_history: int = 50
 @export var play_sfx: bool = true
+@export_range(-40.0, 6.0, 0.5) var master_sfx_volume_db: float = -12.0
+@export_range(-40.0, 6.0, 0.5) var footstep_volume_db: float = -26.0
+@export_range(-40.0, 6.0, 0.5) var gunshot_volume_db: float = -18.0
+@export_range(-40.0, 6.0, 0.5) var impact_volume_db: float = -20.0
 
 var _recent_noises: Array[Dictionary] = []
 var _audio_streams: Dictionary = {}
@@ -135,16 +139,21 @@ func _play_sfx_for_event(event: Dictionary) -> void:
 	player.stream = stream
 	player.global_position = event.get("position", Vector2.ZERO)
 	player.bus = &"Master"
+	player.max_distance = 1200.0
+	player.attenuation = 1.8
+
+	var base_db: float
+	if n_type == &"footstep":
+		base_db = footstep_volume_db
+	elif n_type == &"gunshot":
+		base_db = gunshot_volume_db
+	elif n_type == &"bullet_impact":
+		base_db = impact_volume_db
+	else:
+		base_db = -20.0
 
 	var intensity: float = float(event.get("intensity", 1.0))
-	if n_type == &"footstep":
-		player.volume_db = -16.0 + (intensity - 1.0) * 6.0
-	elif n_type == &"gunshot":
-		player.volume_db = -10.0 + (intensity - 1.0) * 6.0
-	elif n_type == &"bullet_impact":
-		player.volume_db = -8.0 + (intensity - 1.0) * 6.0
-	else:
-		player.volume_db = -10.0
+	player.volume_db = base_db + master_sfx_volume_db + (intensity - 1.0) * 4.0
 
 	add_child(player)
 	player.play()
@@ -158,12 +167,12 @@ func _init_default_sfx() -> void:
 
 
 func _create_footstep_sfx() -> AudioStreamWAV:
-	return _generate_procedural_wav(65.0, 0.05, 40.0, false)
+	return _generate_procedural_wav(60.0, 0.04, 50.0, false)
 
 
 func _create_gunshot_sfx() -> AudioStreamWAV:
 	var sample_rate := 22050
-	var duration := 0.12
+	var duration := 0.10
 	var total_samples := int(sample_rate * duration)
 	var byte_array := PackedByteArray()
 	byte_array.resize(total_samples)
@@ -171,16 +180,15 @@ func _create_gunshot_sfx() -> AudioStreamWAV:
 	var phase: float = 0.0
 	for i in total_samples:
 		var t := float(i) / float(sample_rate)
-		var envelope := exp(-26.0 * t)
-		# Frequencia cai rapidamente de 420Hz para ~70Hz para dar impacto sem estridencia
-		var freq := 70.0 + 350.0 * exp(-32.0 * t)
+		var envelope := exp(-30.0 * t)
+		var freq := 65.0 + 300.0 * exp(-38.0 * t)
 		phase += TAU * freq / float(sample_rate)
 		
 		var tone := sin(phase)
-		var noise := (randf() * 2.0 - 1.0) * exp(-50.0 * t) * 0.3
+		var noise := (randf() * 2.0 - 1.0) * exp(-55.0 * t) * 0.25
 		
-		var val := (tone * 0.7 + noise) * envelope
-		var byte_val := clampi(int((val * 0.35 + 0.5) * 255.0), 0, 255)
+		var val := (tone * 0.6 + noise) * envelope
+		var byte_val := clampi(int((val * 0.18 + 0.5) * 255.0), 0, 255)
 		byte_array[i] = byte_val
 
 	var wav := AudioStreamWAV.new()
@@ -191,7 +199,7 @@ func _create_gunshot_sfx() -> AudioStreamWAV:
 
 
 func _create_impact_sfx() -> AudioStreamWAV:
-	return _generate_procedural_wav(320.0, 0.06, 35.0, false)
+	return _generate_procedural_wav(280.0, 0.05, 45.0, false)
 
 
 func _generate_procedural_wav(frequency: float, duration: float, decay: float, is_noise: bool) -> AudioStreamWAV:
@@ -208,7 +216,7 @@ func _generate_procedural_wav(frequency: float, duration: float, decay: float, i
 			val = (randf() * 2.0 - 1.0) * envelope
 		else:
 			val = sin(TAU * frequency * t) * envelope
-		var byte_val := clampi(int((val * 0.35 + 0.5) * 255.0), 0, 255)
+		var byte_val := clampi(int((val * 0.18 + 0.5) * 255.0), 0, 255)
 		byte_array[i] = byte_val
 
 	var wav := AudioStreamWAV.new()
