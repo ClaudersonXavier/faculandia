@@ -7,10 +7,10 @@ static var instance: NoiseBus
 
 @export var max_history: int = 50
 @export var play_sfx: bool = true
-@export_range(-40.0, 6.0, 0.5) var master_sfx_volume_db: float = -12.0
-@export_range(-40.0, 6.0, 0.5) var footstep_volume_db: float = -26.0
-@export_range(-40.0, 6.0, 0.5) var gunshot_volume_db: float = -18.0
-@export_range(-40.0, 6.0, 0.5) var impact_volume_db: float = -20.0
+@export_range(-40.0, 6.0, 0.5) var master_sfx_volume_db: float = -8.0
+@export_range(-40.0, 6.0, 0.5) var footstep_volume_db: float = -23.0
+@export_range(-40.0, 6.0, 0.5) var gunshot_volume_db: float = -15.0
+@export_range(-40.0, 6.0, 0.5) var impact_volume_db: float = -17.0
 
 var _recent_noises: Array[Dictionary] = []
 var _audio_streams: Dictionary = {}
@@ -188,7 +188,7 @@ func _create_gunshot_sfx() -> AudioStreamWAV:
 		var noise := (randf() * 2.0 - 1.0) * exp(-55.0 * t) * 0.25
 		
 		var val := (tone * 0.6 + noise) * envelope
-		var byte_val := clampi(int((val * 0.18 + 0.5) * 255.0), 0, 255)
+		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
 		byte_array[i] = byte_val
 
 	var wav := AudioStreamWAV.new()
@@ -216,7 +216,7 @@ func _generate_procedural_wav(frequency: float, duration: float, decay: float, i
 			val = (randf() * 2.0 - 1.0) * envelope
 		else:
 			val = sin(TAU * frequency * t) * envelope
-		var byte_val := clampi(int((val * 0.18 + 0.5) * 255.0), 0, 255)
+		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
 		byte_array[i] = byte_val
 
 	var wav := AudioStreamWAV.new()
