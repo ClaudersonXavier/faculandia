@@ -10,6 +10,10 @@ static func create_wav(sample_rate: int, byte_array: PackedByteArray) -> AudioSt
 	return wav
 
 
+static func quantize_sample(sample_val: float) -> int:
+	return clampi(int((sample_val * 0.23 + 0.5) * 255.0), 0, 255)
+
+
 static func create_footstep_sfx() -> AudioStreamWAV:
 	return create_procedural_wav(60.0, 0.04, 50.0, false)
 
@@ -33,8 +37,7 @@ static func create_gunshot_sfx() -> AudioStreamWAV:
 		var noise := (randf() * 2.0 - 1.0) * exp(-55.0 * t) * 0.25
 
 		var val := (tone * 0.6 + noise) * envelope
-		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
-		byte_array[i] = byte_val
+		byte_array[i] = quantize_sample(val)
 
 	return create_wav(sample_rate, byte_array)
 
@@ -62,7 +65,6 @@ static func create_procedural_wav(
 			val = (randf() * 2.0 - 1.0) * envelope
 		else:
 			val = sin(TAU * frequency * t) * envelope
-		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
-		byte_array[i] = byte_val
+		byte_array[i] = quantize_sample(val)
 
 	return create_wav(sample_rate, byte_array)

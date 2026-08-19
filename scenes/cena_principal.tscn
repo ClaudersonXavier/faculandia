@@ -124,6 +124,9 @@ limit_top = -1
 limit_right = 1152
 limit_bottom = 647
 
+[node name="AudioListener2D" type="AudioListener2D" parent="Mundo/Player" unique_id=312255179]
+current = true
+
 [node name="Weapon" type="Node2D" parent="Mundo/Player" unique_id=1477404983]
 script = ExtResource("6_8ncq5")
 metadata/_custom_type_script = "uid://bv64gsgtlb5ju"

@@ -48,6 +48,8 @@ func _draw() -> void:
 
 
 func _handle_impact() -> void:
+	if is_queued_for_deletion():
+		return
 	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()
 
