@@ -7,7 +7,7 @@ const NoiseBus := preload("res://scripts/noise_bus.gd")
 @export var footstep_noise_radius: float = 120.0
 @export var footstep_distance_threshold: float = 40.0
 
-@onready var weapon = $Weapon
+@onready var weapon = get_node_or_null("Weapon")
 
 var aim_angle = 0;
 var aim_direction: Vector2
@@ -61,9 +61,6 @@ func _physics_process(_delta: float) -> void:
 		_last_step_position = global_position
 
 	var moved_dist: float = global_position.distance_to(_last_step_position)
-	if moved_dist == 0.0 and velocity.length_squared() > 0.0:
-		moved_dist = velocity.length() * _delta
-
 	_distance_walked += moved_dist
 	_last_step_position = global_position
 
@@ -71,7 +68,7 @@ func _physics_process(_delta: float) -> void:
 		NoiseBus.emit(global_position, footstep_noise_radius, &"footstep", self)
 		_distance_walked = 0.0
 	
-	if Input.is_action_just_pressed("shoot"):
+	if Input.is_action_just_pressed("shoot") and weapon != null:
 		weapon.shoot(aim_direction, aim_angle)
 
 

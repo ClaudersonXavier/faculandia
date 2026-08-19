@@ -2,6 +2,7 @@ class_name NoiseVisualizer
 extends Node2D
 
 const NoiseBus := preload("res://scripts/noise_bus.gd")
+const NoiseEventScript := preload("res://scripts/noise_event.gd")
 
 @export var enabled: bool = true
 @export var default_duration: float = 0.6
@@ -37,24 +38,47 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 
 
-func _on_noise_emitted(event: Dictionary) -> void:
-	var ring := NoiseRing.new()
-	ring.position = event.get("position", Vector2.ZERO)
-	ring.max_radius = float(event.get("radius", 100.0))
-	var n_type: StringName = event.get("type", &"generic")
+func _get_ring_style(n_type: StringName) -> Dictionary:
+	match n_type:
+		&"footstep":
+			return {
+				"color": Color(0.2, 0.8, 1.0), # Azul claro
+				"duration": footstep_duration
+			}
+		&"gunshot":
+			return {
+				"color": Color(1.0, 0.25, 0.2), # Vermelho / Laranja
+				"duration": gunshot_duration
+			}
+		&"bullet_impact":
+			return {
+				"color": Color(1.0, 0.85, 0.25), # Amarelo ouro
+				"duration": default_duration
+			}
+		_:
+			return {
+				"color": Color(1.0, 1.0, 1.0),
+				"duration": default_duration
+			}
 
-	if n_type == &"footstep":
-		ring.color = Color(0.2, 0.8, 1.0) # Azul claro
-		ring.duration = footstep_duration
-	elif n_type == &"gunshot":
-		ring.color = Color(1.0, 0.25, 0.2) # Vermelho / Laranja
-		ring.duration = gunshot_duration
-	elif n_type == &"bullet_impact":
-		ring.color = Color(1.0, 0.85, 0.25) # Amarelo ouro
-		ring.duration = default_duration
-	else:
-		ring.color = Color(1.0, 1.0, 1.0)
-		ring.duration = default_duration
+
+func _on_noise_emitted(event: Variant) -> void:
+	var ring := NoiseRing.new()
+	var n_type: StringName = &"generic"
+
+	if event is NoiseEventScript:
+		var noise_evt: NoiseEvent = event as NoiseEvent
+		ring.position = noise_evt.position
+		ring.max_radius = noise_evt.radius
+		n_type = noise_evt.type
+	elif event is Dictionary:
+		ring.position = (event as Dictionary).get("position", Vector2.ZERO)
+		ring.max_radius = float((event as Dictionary).get("radius", 100.0))
+		n_type = (event as Dictionary).get("type", &"generic")
+
+	var style := _get_ring_style(n_type)
+	ring.color = style.get("color", Color.WHITE)
+	ring.duration = float(style.get("duration", default_duration))
 
 	_rings.append(ring)
 	queue_redraw()

@@ -1,6 +1,7 @@
 extends SceneTree
 
 const NoiseBus := preload("res://scripts/noise_bus.gd")
+const NoiseEventScript := preload("res://scripts/noise_event.gd")
 const WeaponScript := preload("res://scripts/weapon.gd")
 const BulletScript := preload("res://scripts/bullet.gd")
 const PlayerMovementScript := preload("res://scripts/player_moviment.gd")
@@ -18,10 +19,16 @@ func _run() -> void:
 	await _test_noise_bus_emit_and_receive()
 	await _test_is_noise_heard_within_radius()
 	await _test_player_emits_footstep_on_movement()
+	await _test_player_stationary_does_not_emit_footstep()
 	await _test_weapon_emits_gunshot_on_shoot()
 	await _test_bullet_emits_impact_on_collision()
 	await _test_noise_visualizer_registers_rings()
 	await _test_noise_bus_history_and_query()
+	await _test_noise_bus_ttl_filtering()
+
+	var bus := NoiseBus.get_instance()
+	if is_instance_valid(bus) and bus.is_inside_tree():
+		bus.free()
 
 	if failures > 0:
 		printerr("%d teste(s) de som falharam" % failures)
@@ -33,30 +40,24 @@ func _run() -> void:
 
 func _test_noise_bus_emit_and_receive() -> void:
 	var bus := NoiseBus.get_instance()
-	var received_events: Array[Dictionary] = []
-	var on_event = func(event: Dictionary) -> void:
+	var received_events: Array[NoiseEvent] = []
+	var on_event = func(event: NoiseEvent) -> void:
 		received_events.append(event)
 	bus.noise_emitted.connect(on_event)
 
 	var emitted := NoiseBus.emit(Vector2(100, 200), 150.0, &"footstep", null, 0.8)
 
 	_assert_true(received_events.size() >= 1, "NoiseBus deve emitir o sinal noise_emitted")
-	_assert_true(emitted.get("position") == Vector2(100, 200), "Evento deve conter a posicao correta")
-	_assert_true(emitted.get("radius") == 150.0, "Evento deve conter o raio correto")
-	_assert_true(emitted.get("type") == &"footstep", "Evento deve conter o tipo de som correto")
-	_assert_true(emitted.get("intensity") == 0.8, "Evento deve conter a intensidade correta")
+	_assert_true(emitted.position == Vector2(100, 200), "Evento deve conter a posicao correta")
+	_assert_true(emitted.radius == 150.0, "Evento deve conter o raio correto")
+	_assert_true(emitted.type == &"footstep", "Evento deve conter o tipo de som correto")
+	_assert_true(emitted.intensity == 0.8, "Evento deve conter a intensidade correta")
 
 	bus.noise_emitted.disconnect(on_event)
 
 
 func _test_is_noise_heard_within_radius() -> void:
-	var event := {
-		"position": Vector2(100, 100),
-		"radius": 120.0,
-		"type": &"footstep",
-		"intensity": 1.0,
-		"emitter": null
-	}
+	var event := NoiseEventScript.new(Vector2(100, 100), 120.0, &"footstep", null, 1.0)
 
 	# Dentro do raio
 	_assert_true(
@@ -74,10 +75,20 @@ func _test_is_noise_heard_within_radius() -> void:
 		"Ouvinte a 150px de distancia nao deve ouvir som com raio de 120px"
 	)
 
-	# Com multiplicador de sensibilidade de audicao (ex: zumbi com audicao apurada)
+	# Com multiplicador de sensibilidade de audicao (ex: Ameaca com percepcao apurada)
 	_assert_true(
 		NoiseBus.is_noise_heard(Vector2(250, 100), event, 1.5),
 		"Ouvinte a 150px com sensibilidade 1.5 deve ouvir som de 120px (180px efetivos)"
+	)
+
+	# Compatibilidade com dicionário legado
+	var dict_event := {
+		"position": Vector2(100, 100),
+		"radius": 120.0
+	}
+	_assert_true(
+		NoiseBus.is_noise_heard(Vector2(150, 100), dict_event),
+		"Dicionario de evento deve ser aceito em is_noise_heard"
 	)
 
 
@@ -115,9 +126,9 @@ func _test_player_emits_footstep_on_movement() -> void:
 	scene_root.add_child(player)
 	await process_frame
 
-	var footstep_events: Array[Dictionary] = []
-	var on_event = func(event: Dictionary) -> void:
-		if event.get("type") == &"footstep":
+	var footstep_events: Array[NoiseEvent] = []
+	var on_event = func(event: NoiseEvent) -> void:
+		if event.type == &"footstep":
 			footstep_events.append(event)
 	var bus := NoiseBus.get_instance()
 	bus.noise_emitted.connect(on_event)
@@ -139,6 +150,35 @@ func _test_player_emits_footstep_on_movement() -> void:
 	scene_root.free()
 
 
+func _test_player_stationary_does_not_emit_footstep() -> void:
+	var scene_root := Node2D.new()
+	get_root().add_child(scene_root)
+
+	var player := CharacterBody2D.new()
+	player.set_script(PlayerMovementScript)
+	player.global_position = Vector2(100, 100)
+	
+	scene_root.add_child(player)
+	await process_frame
+
+	var footstep_events: Array[NoiseEvent] = []
+	var on_event = func(event: NoiseEvent) -> void:
+		if event.type == &"footstep":
+			footstep_events.append(event)
+	var bus := NoiseBus.get_instance()
+	bus.noise_emitted.connect(on_event)
+
+	# Configura velocidade simulada mas sem deslocamento real (bloqueado por obstáculo)
+	player.velocity = Vector2(150.0, 0.0)
+	for i in 10:
+		player._physics_process(0.1) # Mantem a mesma global_position
+	
+	_assert_true(footstep_events.is_empty(), "Jogador parado contra obstaculo nao deve emitir passos")
+
+	bus.noise_emitted.disconnect(on_event)
+	scene_root.free()
+
+
 func _test_weapon_emits_gunshot_on_shoot() -> void:
 	var scene_root := Node2D.new()
 	get_root().add_child(scene_root)
@@ -152,9 +192,9 @@ func _test_weapon_emits_gunshot_on_shoot() -> void:
 	weapon.global_position = Vector2(200, 200)
 	await process_frame
 
-	var gunshot_events: Array[Dictionary] = []
-	var on_event = func(event: Dictionary) -> void:
-		if event.get("type") == &"gunshot":
+	var gunshot_events: Array[NoiseEvent] = []
+	var on_event = func(event: NoiseEvent) -> void:
+		if event.type == &"gunshot":
 			gunshot_events.append(event)
 	var bus := NoiseBus.get_instance()
 	bus.noise_emitted.connect(on_event)
@@ -164,8 +204,8 @@ func _test_weapon_emits_gunshot_on_shoot() -> void:
 	_assert_true(gunshot_events.size() == 1, "Disparo de arma deve emitir evento de gunshot")
 	if not gunshot_events.is_empty():
 		var gunshot_event := gunshot_events[0]
-		_assert_true(gunshot_event.get("position", Vector2.ZERO) == muzzle.global_position, "Posicao do som deve ser a do cano da arma")
-		_assert_true(float(gunshot_event.get("radius", 0.0)) >= 500.0, "Raio do tiro deve ser longo (>= 500px)")
+		_assert_true(gunshot_event.position == muzzle.global_position, "Posicao do som deve ser a do cano da arma")
+		_assert_true(gunshot_event.radius >= 500.0, "Raio do tiro deve ser longo (>= 500px)")
 
 	bus.noise_emitted.disconnect(on_event)
 	scene_root.free()
@@ -181,9 +221,9 @@ func _test_bullet_emits_impact_on_collision() -> void:
 	scene_root.add_child(bullet)
 	await process_frame
 
-	var impact_events: Array[Dictionary] = []
-	var on_event = func(event: Dictionary) -> void:
-		if event.get("type") == &"bullet_impact":
+	var impact_events: Array[NoiseEvent] = []
+	var on_event = func(event: NoiseEvent) -> void:
+		if event.type == &"bullet_impact":
 			impact_events.append(event)
 	var bus := NoiseBus.get_instance()
 	bus.noise_emitted.connect(on_event)
@@ -195,8 +235,8 @@ func _test_bullet_emits_impact_on_collision() -> void:
 	_assert_true(impact_events.size() == 1, "Colisao do projetil deve emitir som de impacto")
 	if not impact_events.is_empty():
 		var impact_event := impact_events[0]
-		_assert_true(impact_event.get("position", Vector2.ZERO) == Vector2(350, 400), "Posicao do impacto deve ser a posicao do projetil")
-		_assert_true(float(impact_event.get("radius", 0.0)) >= 200.0, "Raio de impacto deve ser medio (>= 200px)")
+		_assert_true(impact_event.position == Vector2(350, 400), "Posicao do impacto deve ser a posicao do projetil")
+		_assert_true(impact_event.radius >= 200.0, "Raio de impacto deve ser medio (>= 200px)")
 
 	bus.noise_emitted.disconnect(on_event)
 	scene_root.free()
@@ -228,11 +268,42 @@ func _test_noise_bus_history_and_query() -> void:
 	NoiseBus.emit(Vector2(0, 0), 100.0, &"footstep")
 	NoiseBus.emit(Vector2(50, 0), 300.0, &"gunshot")
 
-	var nearby := NoiseBus.get_noises_in_range(Vector2(0, 0), 150.0)
+	var nearby := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, 5000.0)
 	_assert_true(nearby.size() >= 2, "Ambos os sons alcancam o ponto (0,0)")
 
-	var far_away := NoiseBus.get_noises_in_range(Vector2(5000, 5000), 50.0)
+	var far_away := NoiseBus.get_noises_in_range(Vector2(5000, 5000), 1.0, 5000.0)
 	_assert_true(far_away.size() == 0, "Ponto distante nao deve detectar os sons")
+
+
+func _test_noise_bus_ttl_filtering() -> void:
+	var bus := NoiseBus.get_instance()
+	var old_event := NoiseEventScript.new(
+		Vector2(0, 0),
+		200.0,
+		&"footstep",
+		null,
+		1.0,
+		Time.get_ticks_msec() - 5000 # 5 segundos atrás
+	)
+	bus._recent_noises.append(old_event)
+
+	# Query com TTL padrão de 1000ms (1 segundo)
+	var fresh_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, 1000.0)
+	var contains_old := false
+	for n in fresh_noises:
+		if n == old_event:
+			contains_old = true
+			break
+	_assert_false(contains_old, "Evento antigo (> TTL) nao deve ser retornado na consulta")
+
+	# Query com TTL desativado (-1)
+	var all_noises := NoiseBus.get_noises_in_range(Vector2(0, 0), 1.0, -1.0)
+	var contains_old_unfiltered := false
+	for n in all_noises:
+		if n == old_event:
+			contains_old_unfiltered = true
+			break
+	_assert_true(contains_old_unfiltered, "Evento antigo deve ser retornado se TTL for desativado")
 
 
 func _assert_true(value: bool, message: String) -> void:
