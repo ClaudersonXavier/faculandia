@@ -11,7 +11,7 @@
 [ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/test_spawner.gd" id="8_test_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
 [ext_resource type="PackedScene" path="res://scenes/ameaca.tscn" id="10_ameaca"]
-[ext_resource type="Script" path="res://scripts/map_navigation.gd" id="11_nav"]
+[ext_resource type="Script" path="res://scripts/navegacao_cenario.gd" id="11_nav"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)

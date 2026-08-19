@@ -48,28 +48,37 @@ func _physics_process(delta: float) -> void:
 	var target_pos := target_player.global_position
 	var to_player := target_pos - global_position
 	var distance_squared := to_player.length_squared()
-
 	var stop_dist := navigation_agent.target_desired_distance if navigation_agent else DEFAULT_STOP_DISTANCE
-	if distance_squared <= stop_dist * stop_dist:
-		_stop_moving()
-		if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
-			rotation = to_player.angle()
-		return
 
 	var has_direct_vision := has_direct_line_of_sight_to(target_pos)
-	var move_direction := to_player.normalized()
+	var move_direction := Vector2.ZERO
 
-	if not has_direct_vision and navigation_agent:
+	if has_direct_vision:
+		if distance_squared <= stop_dist * stop_dist:
+			_stop_moving()
+			if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
+				rotation = to_player.angle()
+			return
+		move_direction = to_player.normalized()
+	elif navigation_agent:
 		_path_timer -= delta
 		if _path_timer <= 0.0:
 			_path_timer = path_update_interval
 			navigation_agent.target_position = target_pos
 
-		if not navigation_agent.is_navigation_finished():
-			var next_pos := navigation_agent.get_next_path_position()
-			var to_next := next_pos - global_position
-			if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
-				move_direction = to_next.normalized()
+		if navigation_agent.is_navigation_finished():
+			_stop_moving()
+			return
+
+		var next_pos := navigation_agent.get_next_path_position()
+		var to_next := next_pos - global_position
+		if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
+			move_direction = to_next.normalized()
+	else:
+		if distance_squared <= stop_dist * stop_dist:
+			_stop_moving()
+			return
+		move_direction = to_player.normalized()
 
 	if move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 		rotation = move_direction.angle()
