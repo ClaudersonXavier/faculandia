@@ -2,6 +2,7 @@ class_name NoiseBus
 extends Node
 
 const NoiseEventScript := preload("res://scripts/noise_event.gd")
+const NoiseSynthesizerScript := preload("res://scripts/noise_synthesizer.gd")
 
 signal noise_emitted(event: NoiseEvent)
 
@@ -99,21 +100,9 @@ func _do_emit(
 	return event
 
 
-static func is_noise_heard(listener_pos: Vector2, event: Variant, hearing_multiplier: float = 1.0) -> bool:
-	var noise_pos: Vector2
-	var noise_radius: float
-
-	if event is NoiseEventScript:
-		noise_pos = (event as NoiseEventScript).position
-		noise_radius = (event as NoiseEventScript).radius
-	elif event is Dictionary:
-		noise_pos = (event as Dictionary).get("position", Vector2.ZERO)
-		noise_radius = float((event as Dictionary).get("radius", 0.0))
-	else:
-		return false
-
-	var effective_radius := noise_radius * hearing_multiplier
-	return listener_pos.distance_to(noise_pos) <= effective_radius
+static func is_noise_heard(listener_pos: Vector2, event: NoiseEvent, hearing_multiplier: float = 1.0) -> bool:
+	var effective_radius := event.radius * hearing_multiplier
+	return listener_pos.distance_to(event.position) <= effective_radius
 
 
 static func get_noises_in_range(
@@ -179,67 +168,6 @@ func _play_sfx_for_event(event: NoiseEvent) -> void:
 
 
 func _init_default_sfx() -> void:
-	_audio_streams[&"footstep"] = _create_footstep_sfx()
-	_audio_streams[&"gunshot"] = _create_gunshot_sfx()
-	_audio_streams[&"bullet_impact"] = _create_impact_sfx()
-
-
-func _create_wav(sample_rate: int, byte_array: PackedByteArray) -> AudioStreamWAV:
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = sample_rate
-	wav.data = byte_array
-	return wav
-
-
-func _create_footstep_sfx() -> AudioStreamWAV:
-	return _generate_procedural_wav(60.0, 0.04, 50.0, false)
-
-
-func _create_gunshot_sfx() -> AudioStreamWAV:
-	var sample_rate := 22050
-	var duration := 0.10
-	var total_samples := int(sample_rate * duration)
-	var byte_array := PackedByteArray()
-	byte_array.resize(total_samples)
-
-	var phase: float = 0.0
-	for i in total_samples:
-		var t := float(i) / float(sample_rate)
-		var envelope := exp(-30.0 * t)
-		# 420Hz descendo para 70Hz
-		var freq := 70.0 + 350.0 * exp(-38.0 * t)
-		phase += TAU * freq / float(sample_rate)
-
-		var tone := sin(phase)
-		var noise := (randf() * 2.0 - 1.0) * exp(-55.0 * t) * 0.25
-
-		var val := (tone * 0.6 + noise) * envelope
-		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
-		byte_array[i] = byte_val
-
-	return _create_wav(sample_rate, byte_array)
-
-
-func _create_impact_sfx() -> AudioStreamWAV:
-	return _generate_procedural_wav(280.0, 0.05, 45.0, false)
-
-
-func _generate_procedural_wav(frequency: float, duration: float, decay: float, is_noise: bool) -> AudioStreamWAV:
-	var sample_rate := 22050
-	var total_samples := int(sample_rate * duration)
-	var byte_array := PackedByteArray()
-	byte_array.resize(total_samples)
-
-	for i in total_samples:
-		var t := float(i) / float(sample_rate)
-		var envelope := exp(-decay * t)
-		var val: float = 0.0
-		if is_noise:
-			val = (randf() * 2.0 - 1.0) * envelope
-		else:
-			val = sin(TAU * frequency * t) * envelope
-		var byte_val := clampi(int((val * 0.23 + 0.5) * 255.0), 0, 255)
-		byte_array[i] = byte_val
-
-	return _create_wav(sample_rate, byte_array)
+	_audio_streams[&"footstep"] = NoiseSynthesizerScript.create_footstep_sfx()
+	_audio_streams[&"gunshot"] = NoiseSynthesizerScript.create_gunshot_sfx()
+	_audio_streams[&"bullet_impact"] = NoiseSynthesizerScript.create_impact_sfx()

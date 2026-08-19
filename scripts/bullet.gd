@@ -47,11 +47,14 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, 4.5, Color(1.0, 0.7, 0.0, 0.25))
 
 
-func _on_body_entered(_b: Node2D) -> void:
+func _handle_impact() -> void:
 	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()
+
+
+func _on_body_entered(_b: Node2D) -> void:
+	_handle_impact()
 
 
 func _on_area_entered(_a: Area2D) -> void:
-	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
-	queue_free()
+	_handle_impact()

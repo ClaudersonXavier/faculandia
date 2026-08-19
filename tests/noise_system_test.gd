@@ -81,16 +81,6 @@ func _test_is_noise_heard_within_radius() -> void:
 		"Ouvinte a 150px com sensibilidade 1.5 deve ouvir som de 120px (180px efetivos)"
 	)
 
-	# Compatibilidade com dicionário legado
-	var dict_event := {
-		"position": Vector2(100, 100),
-		"radius": 120.0
-	}
-	_assert_true(
-		NoiseBus.is_noise_heard(Vector2(150, 100), dict_event),
-		"Dicionario de evento deve ser aceito em is_noise_heard"
-	)
-
 
 func _test_player_emits_footstep_on_movement() -> void:
 	var scene_root := Node2D.new()

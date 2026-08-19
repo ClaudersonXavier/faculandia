@@ -62,21 +62,12 @@ func _get_ring_style(n_type: StringName) -> Dictionary:
 			}
 
 
-func _on_noise_emitted(event: Variant) -> void:
+func _on_noise_emitted(event: NoiseEvent) -> void:
 	var ring := NoiseRing.new()
-	var n_type: StringName = &"generic"
+	ring.position = event.position
+	ring.max_radius = event.radius
 
-	if event is NoiseEventScript:
-		var noise_evt: NoiseEvent = event as NoiseEvent
-		ring.position = noise_evt.position
-		ring.max_radius = noise_evt.radius
-		n_type = noise_evt.type
-	elif event is Dictionary:
-		ring.position = (event as Dictionary).get("position", Vector2.ZERO)
-		ring.max_radius = float((event as Dictionary).get("radius", 100.0))
-		n_type = (event as Dictionary).get("type", &"generic")
-
-	var style := _get_ring_style(n_type)
+	var style := _get_ring_style(event.type)
 	ring.color = style.get("color", Color.WHITE)
 	ring.duration = float(style.get("duration", default_duration))
 
