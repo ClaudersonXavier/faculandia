@@ -5,7 +5,7 @@ const LIGHT_TEXTURE_PATH := "res://sprites/test/fonte-de-luz-teste.png"
 const TEST_ENTITY_SCRIPT: Script = preload("res://scripts/test_entity.gd")
 
 @export var world: Node2D
-@export var initial_zombies: Array[Vector2] = [Vector2(430, 260), Vector2(180, 260)]
+@export var initial_zombies: Array[Vector2] = [Vector2(320, 360), Vector2(180, 260)]
 @export var initial_light_position: Vector2 = Vector2(320, 260)
 @export var zombie_scale: float = 0.045
 @export var light_scale: float = 0.045

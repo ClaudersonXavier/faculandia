@@ -23,6 +23,10 @@ func _run() -> void:
 	await _test_ameaca_para_ao_atingir_distancia_desejada()
 	await _test_ameaca_busca_caminho_quando_visao_obstruida()
 	await _test_ameaca_aplica_velocidade_segura_avoidance()
+	await _test_ameaca_usa_modo_movimento_floating()
+	await _test_ameaca_mascara_de_colisao_ignora_outras_ameacas()
+	await _test_ameaca_navigation_agent_distancias_adequadas()
+	await _test_multiplas_ameacas_possuem_separacao_suave_sem_picos()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -337,6 +341,117 @@ func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
 
 	fake_player.remove_from_group(&"player")
 	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_usa_modo_movimento_floating() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	_assert_true(
+		ameaca.motion_mode == CharacterBody2D.MOTION_MODE_FLOATING,
+		"Ameaca deve usar MOTION_MODE_FLOATING para movimento top-down 2D, atual: %d" % ameaca.motion_mode
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_mascara_de_colisao_ignora_outras_ameacas() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	_assert_true(
+		(ameaca.collision_mask & Ameaca.LAYER_OBSTACULO) != 0,
+		"Ameaca deve colidir com LAYER_OBSTACULO"
+	)
+	_assert_true(
+		(ameaca.collision_mask & Ameaca.LAYER_JOGADOR) != 0,
+		"Ameaca deve colidir com LAYER_JOGADOR"
+	)
+	_assert_true(
+		(ameaca.collision_mask & Ameaca.LAYER_AMEACA) == 0,
+		"Ameaca nao deve ter LAYER_AMEACA na collision_mask de fisica rigida (para evitar picos de velocidade por despenatracao)"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_navigation_agent_distancias_adequadas() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	var nav_agent: NavigationAgent2D = ameaca.get_node_or_null("NavigationAgent2D")
+	_assert_true(nav_agent != null, "NavigationAgent2D deve existir")
+	if nav_agent:
+		_assert_true(
+			nav_agent.path_desired_distance >= 30.0,
+			"path_desired_distance (%.1f) deve ser >= ao raio do colisor (30.0) para contornar quinas sem travar" % nav_agent.path_desired_distance
+		)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_multiplas_ameacas_possuem_separacao_suave_sem_picos() -> void:
+	var scene_root := Node2D.new()
+	scene_root.name = "SeparationTestFixture"
+	scene_root.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_root().add_child(scene_root)
+
+	var ameaca1: Ameaca = AmeacaScene.instantiate()
+	var ameaca2: Ameaca = AmeacaScene.instantiate()
+	ameaca1.debug_logging = false
+	ameaca2.debug_logging = false
+
+	# Posiciona ambas muito proximas (distancia 20px, menor que o raio combinado de 60px)
+	ameaca1.global_position = Vector2(100, 100)
+	ameaca2.global_position = Vector2(120, 100)
+	scene_root.add_child(ameaca1)
+	scene_root.add_child(ameaca2)
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fake_player.global_position = Vector2(500, 100)
+	scene_root.add_child(fake_player)
+
+	await process_frame
+	ameaca1.set_physics_process(false)
+	ameaca2.set_physics_process(false)
+
+	var delta := 0.016
+	for i in range(15):
+		var p1_before := ameaca1.global_position
+		var p2_before := ameaca2.global_position
+
+		ameaca1._physics_process(delta)
+		ameaca2._physics_process(delta)
+
+		var speed1 := (ameaca1.global_position - p1_before).length() / delta
+		var speed2 := (ameaca2.global_position - p2_before).length() / delta
+
+		_assert_true(
+			speed1 <= ameaca1.speed * 1.15,
+			"Velocidade da Ameaca 1 (%.1f px/s) nao deve ultrapassar o limite maximo (%.1f px/s)" % [speed1, ameaca1.speed * 1.15]
+		)
+		_assert_true(
+			speed2 <= ameaca2.speed * 1.15,
+			"Velocidade da Ameaca 2 (%.1f px/s) nao deve ultrapassar o limite maximo (%.1f px/s)" % [speed2, ameaca2.speed * 1.15]
+		)
+
+	# A separacao deve ter afastado verticalmente ou mantido distancia saudavel entre elas
+	var final_dist_y: float = absf(ameaca1.global_position.y - ameaca2.global_position.y)
+	_assert_true(
+		final_dist_y > 1.0 or ameaca1.global_position.distance_to(ameaca2.global_position) >= 20.0,
+		"Ameacas devem aplicar separacao e nao se fundir em um unico ponto"
+	)
+
+	fake_player.remove_from_group(&"player")
+	scene_root.queue_free()
 	await process_frame
 
 

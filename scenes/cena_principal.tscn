@@ -56,7 +56,7 @@ navigation_polygon = SubResource("NavigationPolygon_mundo")
 position = Vector2(400, 200)
 
 [node name="Ameaca2" parent="Mundo" instance=ExtResource("10_ameaca")]
-position = Vector2(500, 260)
+position = Vector2(550, 160)
 
 [node name="Parede" parent="Mundo" unique_id=1676833241 instance=ExtResource("9_8ncq5")]
 position = Vector2(590, 77)

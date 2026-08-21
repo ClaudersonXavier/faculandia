@@ -14,6 +14,9 @@ const DEFAULT_STOP_DISTANCE: float = 60.0
 @export var hit_flash_color: Color = Color(1.0, 0.3, 0.3, 1.0)
 @export var hit_flash_duration: float = 0.1
 @export var path_update_interval: float = 0.2
+@export var separation_radius: float = 60.0
+@export var separation_weight: float = 0.6
+@export var debug_logging: bool = true
 
 var health: float = 24.0
 var target_player: Node2D = null
@@ -21,15 +24,26 @@ var _hit_flash_tween: Tween = null
 var _is_dead: bool = false
 var _path_timer: float = 0.0
 
+# Variaveis de rastreamento para debug
+var _debug_prev_rotation: float = 0.0
+var _debug_prev_has_direct_vision: bool = false
+var _debug_heartbeat_timer: float = 0.0
+var _debug_prev_next_waypoint: Vector2 = Vector2.ZERO
+
 @onready var navigation_agent: NavigationAgent2D = get_node_or_null("NavigationAgent2D")
 
 
 func _ready() -> void:
 	health = max_health
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	collision_layer = LAYER_AMEACA
-	collision_mask = LAYER_OBSTACULO | LAYER_JOGADOR | LAYER_AMEACA
+	collision_mask = LAYER_OBSTACULO | LAYER_JOGADOR
+	add_to_group(&"ameacas")
 	add_to_group(&"visible_entities")
 	_find_player()
+	_debug_prev_rotation = rotation
+	if is_instance_valid(target_player):
+		_debug_prev_has_direct_vision = has_direct_line_of_sight_to(target_player.global_position)
 
 
 func _physics_process(delta: float) -> void:
@@ -50,12 +64,15 @@ func _physics_process(delta: float) -> void:
 
 	var has_direct_vision := has_direct_line_of_sight_to(target_pos)
 	var move_direction := Vector2.ZERO
+	var nav_next_pos := Vector2.ZERO
 
 	if has_direct_vision:
 		if distance_squared <= stop_dist * stop_dist:
 			_stop_moving()
 			if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
 				rotation = to_player.angle()
+			if debug_logging:
+				_debug_log_frame(delta, has_direct_vision, move_direction, nav_next_pos, global_position, rotation)
 			return
 		move_direction = to_player.normalized()
 	elif navigation_agent:
@@ -66,17 +83,32 @@ func _physics_process(delta: float) -> void:
 
 		if navigation_agent.is_navigation_finished():
 			_stop_moving()
+			if debug_logging:
+				_debug_log_frame(delta, has_direct_vision, move_direction, nav_next_pos, global_position, rotation)
 			return
 
-		var next_pos := navigation_agent.get_next_path_position()
-		var to_next := next_pos - global_position
+		nav_next_pos = navigation_agent.get_next_path_position()
+		var to_next := nav_next_pos - global_position
 		if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 			move_direction = to_next.normalized()
 	else:
 		if distance_squared <= stop_dist * stop_dist:
 			_stop_moving()
+			if debug_logging:
+				_debug_log_frame(delta, has_direct_vision, move_direction, nav_next_pos, global_position, rotation)
 			return
 		move_direction = to_player.normalized()
+
+	# Aplica forca de separacao suave entre ameacas para evitar sobreposicao sem colisoes rigidas
+	var separation_vector := _calculate_separation_vector()
+	if separation_vector != Vector2.ZERO:
+		if move_direction != Vector2.ZERO:
+			move_direction = (move_direction + separation_vector * separation_weight).normalized()
+		else:
+			move_direction = separation_vector.normalized()
+
+	var prev_pos := global_position
+	var prev_rot := rotation
 
 	if move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 		rotation = move_direction.angle()
@@ -85,9 +117,105 @@ func _physics_process(delta: float) -> void:
 	else:
 		_stop_moving()
 
+	if debug_logging:
+		_debug_log_frame(delta, has_direct_vision, move_direction, nav_next_pos, prev_pos, prev_rot)
+
+
+func _calculate_separation_vector() -> Vector2:
+	var separation := Vector2.ZERO
+	var ameacas = get_tree().get_nodes_in_group(&"ameacas")
+	for other in ameacas:
+		if other == self or not is_instance_valid(other):
+			continue
+		var to_me := global_position - (other as Node2D).global_position
+		var dist := to_me.length()
+		if dist < separation_radius:
+			if dist > 0.001:
+				var strength := (1.0 - dist / separation_radius)
+				separation += (to_me / dist) * strength
+			else:
+				separation += Vector2(1.0, 0.0)
+	return separation
+
 
 func _stop_moving() -> void:
 	velocity = Vector2.ZERO
+
+
+func _debug_log_frame(
+	delta: float,
+	has_direct_vision: bool,
+	move_direction: Vector2,
+	nav_next_pos: Vector2,
+	prev_pos: Vector2,
+	prev_rot: float
+) -> void:
+	var me_id := name
+	var moved_vec := global_position - prev_pos
+	var actual_speed := (moved_vec.length() / delta) if delta > 0.0 else 0.0
+	var mode_name := "DIRECT" if has_direct_vision else "NAVMESH"
+	var real_vel := get_real_velocity()
+	var slide_count := get_slide_collision_count()
+
+	# 1. Detectar mudanca de estado de visao direta
+	if has_direct_vision != _debug_prev_has_direct_vision:
+		var dist_to_p := global_position.distance_to(target_player.global_position) if is_instance_valid(target_player) else 0.0
+		print("[DEBUG-AMEACA][VISION-SWITCH] %s | modo mudou para: %s | pos=(%.1f, %.1f) | dist_player=%.1f" % [
+			me_id, mode_name, global_position.x, global_position.y, dist_to_p
+		])
+		_debug_prev_has_direct_vision = has_direct_vision
+
+	# 2. Detectar mudanca brusca de direcao / curva fechada
+	var rot_diff_deg := rad_to_deg(abs(wrapf(rotation - prev_rot, -PI, PI)))
+	if rot_diff_deg > 25.0 and move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
+		var waypoint_dist := global_position.distance_to(nav_next_pos) if nav_next_pos != Vector2.ZERO else 0.0
+		print("[DEBUG-AMEACA][SHARP-TURN] %s | virou %.1f deg (de %.2f para %.2f rad) | modo=%s | waypoint=(%.1f, %.1f), dist_waypoint=%.1f | vel=(%.1f, %.1f)" % [
+			me_id, rot_diff_deg, prev_rot, rotation, mode_name, nav_next_pos.x, nav_next_pos.y, waypoint_dist, velocity.x, velocity.y
+		])
+
+	# 3. Detectar colisoes (com enfase em colisao entre ameacas)
+	var ameaca_collisions: Array[String] = []
+	var other_collisions: Array[String] = []
+	for i in range(slide_count):
+		var col := get_slide_collision(i)
+		var collider := col.get_collider()
+		var col_name: String = str(collider.name) if collider != null else "null"
+		var col_normal := col.get_normal()
+		var depth := col.get_depth()
+		if collider is Ameaca:
+			var other_pos := (collider as Node2D).global_position
+			var dist_between := global_position.distance_to(other_pos)
+			var other_vel := (collider as CharacterBody2D).velocity
+			ameaca_collisions.append("%s(dist=%.1f, n=(%.2f, %.2f), depth=%.2f, other_vel=(%.1f, %.1f))" % [
+				col_name, dist_between, col_normal.x, col_normal.y, depth, other_vel.x, other_vel.y
+			])
+			print("[DEBUG-AMEACA][PUSH-AMEACA] %s EMPURRA %s | pos=(%.1f, %.1f) other_pos=(%.1f, %.1f) dist=%.1f | normal=(%.2f, %.2f) depth=%.2f | minha_vel=(%.1f, %.1f) outra_vel=(%.1f, %.1f)" % [
+				me_id, col_name, global_position.x, global_position.y, other_pos.x, other_pos.y, dist_between,
+				col_normal.x, col_normal.y, depth, velocity.x, velocity.y, other_vel.x, other_vel.y
+			])
+		else:
+			other_collisions.append("%s(n=(%.2f, %.2f), depth=%.2f)" % [
+				col_name, col_normal.x, col_normal.y, depth
+			])
+
+	# 4. Detectar pico anormal de velocidade
+	if actual_speed > (speed * 1.25):
+		print("[DEBUG-AMEACA][SPEED-SPIKE] %s | VELOCIDADE ANORMAL: %.1f px/s (esperado %.1f px/s, fator %.2fx) | real_vel=(%.1f, %.1f) | modo=%s | pos=(%.1f, %.1f) | colisoes_ameaca=%s | outras_colisoes=%s" % [
+			me_id, actual_speed, speed, (actual_speed / speed), real_vel.x, real_vel.y, mode_name, global_position.x, global_position.y,
+			str(ameaca_collisions), str(other_collisions)
+		])
+
+	# 5. Heartbeat a cada 1.0s para referencia de estado estavel
+	_debug_heartbeat_timer += delta
+	if _debug_heartbeat_timer >= 1.0:
+		_debug_heartbeat_timer = 0.0
+		var dist_player := global_position.distance_to(target_player.global_position) if is_instance_valid(target_player) else 0.0
+		print("[DEBUG-AMEACA][HEARTBEAT] %s | pos=(%.1f, %.1f) | modo=%s | vel=(%.1f, %.1f) | speed_medida=%.1f | dist_player=%.1f | rot=%.2f rad" % [
+			me_id, global_position.x, global_position.y, mode_name, velocity.x, velocity.y, actual_speed, dist_player, rotation
+		])
+
+	_debug_prev_rotation = rotation
+	_debug_prev_next_waypoint = nav_next_pos
 
 
 
