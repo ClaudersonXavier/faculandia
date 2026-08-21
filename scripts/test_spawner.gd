@@ -5,7 +5,7 @@ const LIGHT_TEXTURE_PATH := "res://sprites/test/fonte-de-luz-teste.png"
 const TEST_ENTITY_SCRIPT: Script = preload("res://scripts/test_entity.gd")
 
 @export var world: Node2D
-@export var initial_zombies: Array[Vector2] = [Vector2(430, 260), Vector2(180, 260)]
+@export var initial_zombies: Array[Vector2] = [Vector2(320, 360), Vector2(180, 260)]
 @export var initial_light_position: Vector2 = Vector2(320, 260)
 @export var zombie_scale: float = 0.045
 @export var light_scale: float = 0.045
@@ -30,17 +30,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_delete_nearest_test_object(_mouse_world_position())
 
 
+const AMEACA_SCENE: PackedScene = preload("res://scenes/ameaca.tscn")
+
 func _spawn_zombie(position: Vector2) -> void:
-	var zombie := Sprite2D.new()
-	zombie.name = "ZumbiTeste"
-	zombie.texture = _load_png_texture(ZOMBIE_TEXTURE_PATH)
-	zombie.script = TEST_ENTITY_SCRIPT
-	zombie.set("test_kind", &"zombie")
-	zombie.centered = true
-	zombie.z_index = 20
-	zombie.global_position = position
-	zombie.call("set_test_scale", zombie_scale)
-	world.add_child(zombie)
+	var ameaca = AMEACA_SCENE.instantiate()
+	ameaca.global_position = position
+	world.add_child(ameaca)
 
 
 func _spawn_light(position: Vector2) -> void:

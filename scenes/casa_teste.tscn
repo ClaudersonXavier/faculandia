@@ -4,8 +4,19 @@
 [ext_resource type="Script" path="res://scripts/test_entity.gd" id="2_test_entity"]
 [ext_resource type="Texture2D" path="res://sprites/test/fonte-de-luz-teste.png" id="3_light_tex"]
 [ext_resource type="Texture2D" path="res://sprites/test/zumbi-de-teste.png" id="4_zombie_tex"]
+[ext_resource type="Script" path="res://scripts/navegacao_cenario.gd" id="5_nav_cenario"]
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_casa"]
+vertices = PackedVector2Array(0, 0, 1200, 0, 1200, 700, 0, 700)
+polygons = [PackedInt32Array(0, 1, 2, 3)]
+outlines = [PackedVector2Array(0, 0, 1200, 0, 1200, 700, 0, 700)]
+parsed_collision_mask = 1
 
 [node name="CasaTeste" type="Node2D"]
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+script = ExtResource("5_nav_cenario")
+navigation_polygon = SubResource("NavigationPolygon_casa")
 
 [node name="Paredes" type="Node2D" parent="."]
 

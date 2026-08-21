@@ -12,9 +12,17 @@
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
 [ext_resource type="Script" path="res://scripts/noise_visualizer.gd" id="10_noise_visualizer"]
 [ext_resource type="Script" path="res://scripts/noise_bus.gd" id="11_noise_bus"]
+[ext_resource type="PackedScene" path="res://scenes/ameaca.tscn" id="12_ameaca"]
+[ext_resource type="Script" path="res://scripts/navegacao_cenario.gd" id="13_nav"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
+vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)
+polygons = [PackedInt32Array(0, 1, 2, 3)]
+outlines = [PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)]
+parsed_collision_mask = 1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("5_shader")
@@ -47,6 +55,16 @@ world = NodePath("../Mundo")
 
 [node name="NoiseVisualizer" type="Node2D" parent="Mundo" unique_id=1982736452]
 script = ExtResource("10_noise_visualizer")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="Mundo" unique_id=987654321]
+script = ExtResource("13_nav")
+navigation_polygon = SubResource("NavigationPolygon_mundo")
+
+[node name="Ameaca" parent="Mundo" instance=ExtResource("12_ameaca")]
+position = Vector2(400, 200)
+
+[node name="Ameaca2" parent="Mundo" instance=ExtResource("12_ameaca")]
+position = Vector2(550, 160)
 
 [node name="Parede" parent="Mundo" unique_id=1676833241 instance=ExtResource("9_8ncq5")]
 position = Vector2(590, 77)

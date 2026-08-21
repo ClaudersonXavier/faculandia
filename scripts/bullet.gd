@@ -10,6 +10,9 @@ var bullet_texture: Texture2D
 var collision_size: Vector2
 var impact_noise_radius: float = 250.0
 
+const LAYER_OBSTACULO := 1
+const LAYER_AMEACA := 4
+
 
 func _ready() -> void:
 	rotation = direction.angle() + PI / 2
@@ -32,7 +35,7 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 	collision_layer = 0
-	collision_mask = 1
+	collision_mask = LAYER_OBSTACULO | LAYER_AMEACA
 
 
 func _physics_process(delta: float) -> void:
@@ -41,22 +44,25 @@ func _physics_process(delta: float) -> void:
 	if lifetime <= 0:
 		queue_free()
 
+
 func _draw() -> void:
 	if not bullet_texture:
 		draw_circle(Vector2.ZERO, 3.0, Color.YELLOW)
 		draw_circle(Vector2.ZERO, 4.5, Color(1.0, 0.7, 0.0, 0.25))
 
 
-func _handle_impact() -> void:
+func _handle_impact(target: Node = null) -> void:
 	if is_queued_for_deletion():
 		return
+	if target != null and target.has_method("take_damage"):
+		target.take_damage(damage)
 	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()
 
 
-func _on_body_entered(_b: Node2D) -> void:
-	_handle_impact()
+func _on_body_entered(body: Node2D) -> void:
+	_handle_impact(body)
 
 
-func _on_area_entered(_a: Area2D) -> void:
-	_handle_impact()
+func _on_area_entered(area: Area2D) -> void:
+	_handle_impact(area)

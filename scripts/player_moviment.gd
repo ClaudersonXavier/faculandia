@@ -17,6 +17,10 @@ var _last_step_position: Vector2 = Vector2.INF
 
 const SPEED = 150.0
 
+func _ready() -> void:
+	add_to_group(&"player")
+
+
 func _physics_process(_delta: float) -> void:
 	
 	var mouse_position = get_global_mouse_position()

@@ -18,3 +18,5 @@ editor-nvidia:
 test:
 	$(GODOT) --path . --headless --script res://tests/player_vision_test.gd
 	$(GODOT) --path . --headless --script res://tests/noise_system_test.gd
+	$(GODOT) --path . --headless --script res://tests/ameaca_test.gd
+	$(GODOT) --path . --headless --script res://tests/navigation_integration_test.gd
