@@ -28,7 +28,14 @@ func _physics_process(_delta: float) -> void:
 	aim_angle = aim_direction.angle() 
 	var spr = get_node_or_null("player_sprite")
 	if spr != null:
-		spr.rotation = aim_angle
+		spr.rotation = aim_angle - PI / 2.0
+		if spr is AnimatedSprite2D:
+			if velocity.length() > 5.0:
+				if spr.animation != &"walk" or not spr.is_playing():
+					spr.play(&"walk")
+			else:
+				if spr.animation != &"idle":
+					spr.play(&"idle")
 
 	var w = get_node_or_null("Weapon")
 	if w != null:

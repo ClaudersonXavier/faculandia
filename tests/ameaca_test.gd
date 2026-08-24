@@ -134,13 +134,15 @@ func _test_sprite_orientacao_compensada_na_cena() -> void:
 	var ameaca: Ameaca = fixture.ameaca
 	await process_frame
 
-	var sprite: Sprite2D = ameaca.get_node_or_null("Sprite2D")
-	_assert_true(sprite != null, "Ameaca deve possuir nó Sprite2D")
+	var sprite: Node2D = ameaca.get_node_or_null("AnimatedSprite2D")
+	if sprite == null:
+		sprite = ameaca.get_node_or_null("Sprite2D")
+	_assert_true(sprite != null, "Ameaca deve possuir nó de sprite (AnimatedSprite2D ou Sprite2D)")
 	if sprite:
 		var expected_rotation: float = -PI / 2.0
 		_assert_true(
 			is_equal_approx(sprite.rotation, expected_rotation),
-			"Sprite2D deve ter compensacao de rotacao de -90 graus (-PI/2), atual: %f" % sprite.rotation
+			"Sprite deve ter compensacao de rotacao de -90 graus (-PI/2), atual: %f" % sprite.rotation
 		)
 
 	fixture.root.queue_free()

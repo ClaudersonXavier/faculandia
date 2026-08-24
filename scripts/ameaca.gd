@@ -31,6 +31,7 @@ var _debug_heartbeat_timer: float = 0.0
 var _debug_prev_next_waypoint: Vector2 = Vector2.ZERO
 
 @onready var navigation_agent: NavigationAgent2D = get_node_or_null("NavigationAgent2D")
+@onready var sprite = get_node_or_null("AnimatedSprite2D")
 
 
 func _ready() -> void:
@@ -112,6 +113,9 @@ func _physics_process(delta: float) -> void:
 		if not is_at_target:
 			rotation = move_direction.angle()
 		velocity = move_direction * speed
+		if sprite and sprite is AnimatedSprite2D:
+			if sprite.animation != &"walk" or not sprite.is_playing():
+				sprite.play(&"walk")
 		move_and_slide()
 	else:
 		_stop_moving()
@@ -145,6 +149,9 @@ func _calculate_separation_vector(forward_dir: Vector2) -> Vector2:
 
 func _stop_moving() -> void:
 	velocity = Vector2.ZERO
+	if sprite and sprite is AnimatedSprite2D:
+		if sprite.animation != &"idle":
+			sprite.play(&"idle")
 
 
 func _debug_log_frame(

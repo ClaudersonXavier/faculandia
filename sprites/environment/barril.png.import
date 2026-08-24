@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfchs8sb82s2x"
-path="res://.godot/imported/tileset_chao.png-e0d1547e233b6b221133155cd753637a.ctex"
+uid="uid://bgxhbqr35ekbc"
+path="res://.godot/imported/barril.png-17970571cfdb4fe285a666593510ee92.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tileset_chao.png"
-dest_files=["res://.godot/imported/tileset_chao.png-e0d1547e233b6b221133155cd753637a.ctex"]
+source_file="res://sprites/environment/barril.png"
+dest_files=["res://.godot/imported/barril.png-17970571cfdb4fe285a666593510ee92.ctex"]
 
 [params]
 

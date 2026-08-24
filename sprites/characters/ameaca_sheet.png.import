@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://beh2ilxgswjrg"
-path="res://.godot/imported/player_placeholder.png-a372bcd672a114447bf59c50ffae4193.ctex"
+uid="uid://bdjmfq0apaf0a"
+path="res://.godot/imported/ameaca_sheet.png-eb9d633e226bacc9532098bb3b35ec0d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/player_placeholder.png"
-dest_files=["res://.godot/imported/player_placeholder.png-a372bcd672a114447bf59c50ffae4193.ctex"]
+source_file="res://sprites/characters/ameaca_sheet.png"
+dest_files=["res://.godot/imported/ameaca_sheet.png-eb9d633e226bacc9532098bb3b35ec0d.ctex"]
 
 [params]
 
