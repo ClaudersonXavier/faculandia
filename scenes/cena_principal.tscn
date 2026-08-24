@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player_vision.gd" id="7_player_vision"]
 [ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/test_spawner.gd" id="8_test_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/parede.tscn" id="9_8ncq5"]
+[ext_resource type="Script" uid="uid://baamqyjj7y8iv" path="res://scripts/hud.gd" id="10_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_afkg8"]
 size = Vector2(16, 16)
@@ -138,3 +139,35 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 metadata/_edit_use_anchors_ = true
+
+[node name="HUD" type="Control" parent="camada_ui" unique_id=826443305 node_paths=PackedStringArray("weapon")]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("10_hud")
+weapon = NodePath("../../Mundo/Player/Weapon")
+
+[node name="WeaponSprite" type="Sprite2D" parent="camada_ui/HUD" unique_id=1640729492]
+
+[node name="AmmoLabel" type="Label" parent="camada_ui/HUD" unique_id=805069062]
+layout_mode = 0
+offset_left = -49.0
+offset_top = -12.0
+offset_right = 37.0
+offset_bottom = 33.0
+theme_override_font_sizes/font_size = 32
+
+[node name="ReloadLabel" type="Label" parent="camada_ui/HUD" unique_id=1800009601]
+layout_mode = 0
+offset_left = -92.0
+offset_top = -41.0
+offset_right = 1.0
+offset_bottom = -10.0
+theme_override_font_sizes/font_size = 16
