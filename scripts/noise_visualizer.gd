@@ -4,7 +4,7 @@ extends Node2D
 const NoiseBus := preload("res://scripts/noise_bus.gd")
 const NoiseEventScript := preload("res://scripts/noise_event.gd")
 
-@export var enabled: bool = true
+@export var enabled: bool = false
 @export var default_duration: float = 0.6
 @export var gunshot_duration: float = 1.0
 @export var footstep_duration: float = 0.4
@@ -36,6 +36,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_F3:
 			enabled = not enabled
 			queue_redraw()
+			print("[DEBUG] Visualizador de som: %s" % ("LIGADO" if enabled else "DESLIGADO"))
 
 
 func _get_ring_style(n_type: StringName) -> Dictionary:
