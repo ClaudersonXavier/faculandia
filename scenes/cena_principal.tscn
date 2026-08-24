@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" path="res://scenes/barril.tscn" id="16_rc00d"]
 [ext_resource type="PackedScene" path="res://scenes/caixa.tscn" id="17_d82hk"]
 [ext_resource type="Texture2D" uid="uid://cbk4cauan8rwa" path="res://sprites/items/pistola.png" id="18_pistola"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="19_hud"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
 vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)
@@ -280,3 +281,35 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 metadata/_edit_use_anchors_ = true
+
+[node name="HUD" type="Control" parent="camada_ui" unique_id=826443305 node_paths=PackedStringArray("weapon")]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("19_hud")
+weapon = NodePath("../../Mundo/Player/Weapon")
+
+[node name="WeaponSprite" type="Sprite2D" parent="camada_ui/HUD" unique_id=1640729492]
+
+[node name="AmmoLabel" type="Label" parent="camada_ui/HUD" unique_id=805069062]
+layout_mode = 0
+offset_left = -49.0
+offset_top = -12.0
+offset_right = 37.0
+offset_bottom = 33.0
+theme_override_font_sizes/font_size = 32
+
+[node name="ReloadLabel" type="Label" parent="camada_ui/HUD" unique_id=1800009601]
+layout_mode = 0
+offset_left = -92.0
+offset_top = -41.0
+offset_right = 1.0
+offset_bottom = -10.0
+theme_override_font_sizes/font_size = 16

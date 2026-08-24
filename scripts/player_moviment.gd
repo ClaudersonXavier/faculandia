@@ -111,6 +111,9 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("shoot") and weapon != null:
 		weapon.shoot(aim_direction, aim_angle)
+		
+	if Input.is_action_just_pressed("reload") and weapon != null:
+		weapon.reload()
 
 
 func is_in_vision(target_pos: Vector2) -> bool:
