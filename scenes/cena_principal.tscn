@@ -109,123 +109,175 @@ navigation_polygon = SubResource("NavigationPolygon_mundo")
 script = ExtResource("13_nav")
 
 [node name="Ameaca" type="CharacterBody2D" parent="Mundo" unique_id=1469968353 instance=ExtResource("12_ameaca")]
-position = Vector2(400, 200)
+position = Vector2(400, 208)
 collision_layer = 4
 collision_mask = 3
 motion_mode = 1
 script = ExtResource("6_xcb7i")
 
 [node name="Ameaca2" type="CharacterBody2D" parent="Mundo" unique_id=1781864779 instance=ExtResource("12_ameaca")]
-position = Vector2(550, 160)
+position = Vector2(688, 176)
 collision_layer = 4
 collision_mask = 3
 motion_mode = 1
 script = ExtResource("6_xcb7i")
 
 [node name="Parede_Norte1" type="StaticBody2D" parent="Mundo" unique_id=1676833200 instance=ExtResource("9_8ncq5")]
-position = Vector2(480, 80)
+position = Vector2(464, 80)
 collision_mask = 0
 
 [node name="Parede_Norte2" type="StaticBody2D" parent="Mundo" unique_id=1676833201 instance=ExtResource("9_8ncq5")]
-position = Vector2(528, 80)
+position = Vector2(496, 80)
 collision_mask = 0
 
 [node name="Parede_Norte3" type="StaticBody2D" parent="Mundo" unique_id=1676833202 instance=ExtResource("9_8ncq5")]
-position = Vector2(576, 80)
+position = Vector2(528, 80)
 collision_mask = 0
 
 [node name="Parede_Norte4" type="StaticBody2D" parent="Mundo" unique_id=1676833203 instance=ExtResource("9_8ncq5")]
-position = Vector2(624, 80)
+position = Vector2(560, 80)
 collision_mask = 0
 
 [node name="Parede_Norte5" type="StaticBody2D" parent="Mundo" unique_id=1676833204 instance=ExtResource("9_8ncq5")]
-position = Vector2(672, 80)
+position = Vector2(592, 80)
 collision_mask = 0
 
 [node name="Parede_Norte6" type="StaticBody2D" parent="Mundo" unique_id=1676833205 instance=ExtResource("9_8ncq5")]
-position = Vector2(720, 80)
+position = Vector2(624, 80)
 collision_mask = 0
 
 [node name="Parede_Norte7" type="StaticBody2D" parent="Mundo" unique_id=1676833206 instance=ExtResource("9_8ncq5")]
-position = Vector2(768, 80)
+position = Vector2(656, 80)
 collision_mask = 0
 
 [node name="Parede_Norte8" type="StaticBody2D" parent="Mundo" unique_id=1676833207 instance=ExtResource("9_8ncq5")]
-position = Vector2(816, 80)
+position = Vector2(688, 80)
 collision_mask = 0
 
 [node name="Parede_Norte9" type="StaticBody2D" parent="Mundo" unique_id=1676833208 instance=ExtResource("9_8ncq5")]
-position = Vector2(864, 80)
+position = Vector2(720, 80)
 collision_mask = 0
 
 [node name="Parede_Norte10" type="StaticBody2D" parent="Mundo" unique_id=1676833209 instance=ExtResource("9_8ncq5")]
+position = Vector2(752, 80)
+collision_mask = 0
+
+[node name="Parede_Norte11" type="StaticBody2D" parent="Mundo" unique_id=1676833230 instance=ExtResource("9_8ncq5")]
+position = Vector2(784, 80)
+collision_mask = 0
+
+[node name="Parede_Norte12" type="StaticBody2D" parent="Mundo" unique_id=1676833231 instance=ExtResource("9_8ncq5")]
+position = Vector2(816, 80)
+collision_mask = 0
+
+[node name="Parede_Norte13" type="StaticBody2D" parent="Mundo" unique_id=1676833232 instance=ExtResource("9_8ncq5")]
+position = Vector2(848, 80)
+collision_mask = 0
+
+[node name="Parede_Norte14" type="StaticBody2D" parent="Mundo" unique_id=1676833233 instance=ExtResource("9_8ncq5")]
+position = Vector2(880, 80)
+collision_mask = 0
+
+[node name="Parede_Norte15" type="StaticBody2D" parent="Mundo" unique_id=1676833234 instance=ExtResource("9_8ncq5")]
 position = Vector2(912, 80)
 collision_mask = 0
 
 [node name="Parede_Sul1" type="StaticBody2D" parent="Mundo" unique_id=1676833210 instance=ExtResource("9_8ncq5")]
-position = Vector2(480, 272)
+position = Vector2(464, 272)
 collision_mask = 0
 
 [node name="Parede_Sul2" type="StaticBody2D" parent="Mundo" unique_id=1676833211 instance=ExtResource("9_8ncq5")]
-position = Vector2(528, 272)
+position = Vector2(496, 272)
 collision_mask = 0
 
 [node name="Parede_Sul3" type="StaticBody2D" parent="Mundo" unique_id=1676833212 instance=ExtResource("9_8ncq5")]
-position = Vector2(576, 272)
+position = Vector2(528, 272)
 collision_mask = 0
 
 [node name="Parede_Sul4" type="StaticBody2D" parent="Mundo" unique_id=1676833213 instance=ExtResource("9_8ncq5")]
-position = Vector2(624, 272)
+position = Vector2(560, 272)
 collision_mask = 0
 
 [node name="Parede_Sul5" type="StaticBody2D" parent="Mundo" unique_id=1676833214 instance=ExtResource("9_8ncq5")]
-position = Vector2(672, 272)
+position = Vector2(592, 272)
 collision_mask = 0
 
 [node name="Parede_Sul6" type="StaticBody2D" parent="Mundo" unique_id=1676833215 instance=ExtResource("9_8ncq5")]
-position = Vector2(720, 272)
+position = Vector2(624, 272)
 collision_mask = 0
 
 [node name="Parede_Sul7" type="StaticBody2D" parent="Mundo" unique_id=1676833216 instance=ExtResource("9_8ncq5")]
-position = Vector2(768, 272)
+position = Vector2(656, 272)
 collision_mask = 0
 
 [node name="Parede_Sul8" type="StaticBody2D" parent="Mundo" unique_id=1676833217 instance=ExtResource("9_8ncq5")]
-position = Vector2(816, 272)
+position = Vector2(688, 272)
 collision_mask = 0
 
 [node name="Parede_Sul9" type="StaticBody2D" parent="Mundo" unique_id=1676833218 instance=ExtResource("9_8ncq5")]
-position = Vector2(864, 272)
+position = Vector2(720, 272)
 collision_mask = 0
 
 [node name="Parede_Sul10" type="StaticBody2D" parent="Mundo" unique_id=1676833219 instance=ExtResource("9_8ncq5")]
+position = Vector2(752, 272)
+collision_mask = 0
+
+[node name="Parede_Sul11" type="StaticBody2D" parent="Mundo" unique_id=1676833235 instance=ExtResource("9_8ncq5")]
+position = Vector2(784, 272)
+collision_mask = 0
+
+[node name="Parede_Sul12" type="StaticBody2D" parent="Mundo" unique_id=1676833236 instance=ExtResource("9_8ncq5")]
+position = Vector2(816, 272)
+collision_mask = 0
+
+[node name="Parede_Sul13" type="StaticBody2D" parent="Mundo" unique_id=1676833237 instance=ExtResource("9_8ncq5")]
+position = Vector2(848, 272)
+collision_mask = 0
+
+[node name="Parede_Sul14" type="StaticBody2D" parent="Mundo" unique_id=1676833238 instance=ExtResource("9_8ncq5")]
+position = Vector2(880, 272)
+collision_mask = 0
+
+[node name="Parede_Sul15" type="StaticBody2D" parent="Mundo" unique_id=1676833239 instance=ExtResource("9_8ncq5")]
 position = Vector2(912, 272)
 collision_mask = 0
 
 [node name="Parede_Oeste1" type="StaticBody2D" parent="Mundo" unique_id=1676833220 instance=ExtResource("9_8ncq5")]
-position = Vector2(456, 128)
-rotation = 1.5707964
+position = Vector2(464, 112)
 collision_mask = 0
 
 [node name="Parede_Oeste2" type="StaticBody2D" parent="Mundo" unique_id=1676833221 instance=ExtResource("9_8ncq5")]
-position = Vector2(456, 224)
-rotation = 1.5707964
+position = Vector2(464, 144)
+collision_mask = 0
+
+[node name="Parede_Oeste3" type="StaticBody2D" parent="Mundo" unique_id=1676833240 instance=ExtResource("9_8ncq5")]
+position = Vector2(464, 208)
+collision_mask = 0
+
+[node name="Parede_Oeste4" type="StaticBody2D" parent="Mundo" unique_id=1676833241 instance=ExtResource("9_8ncq5")]
+position = Vector2(464, 240)
 collision_mask = 0
 
 [node name="Parede_Leste1" type="StaticBody2D" parent="Mundo" unique_id=1676833222 instance=ExtResource("9_8ncq5")]
-position = Vector2(936, 128)
-rotation = 1.5707964
+position = Vector2(912, 112)
 collision_mask = 0
 
 [node name="Parede_Leste2" type="StaticBody2D" parent="Mundo" unique_id=1676833223 instance=ExtResource("9_8ncq5")]
-position = Vector2(936, 176)
-rotation = 1.5707964
+position = Vector2(912, 144)
 collision_mask = 0
 
 [node name="Parede_Leste3" type="StaticBody2D" parent="Mundo" unique_id=1676833224 instance=ExtResource("9_8ncq5")]
-position = Vector2(936, 224)
-rotation = 1.5707964
+position = Vector2(912, 176)
 collision_mask = 0
+
+[node name="Parede_Leste4" type="StaticBody2D" parent="Mundo" unique_id=1676833242 instance=ExtResource("9_8ncq5")]
+position = Vector2(912, 208)
+collision_mask = 0
+
+[node name="Parede_Leste5" type="StaticBody2D" parent="Mundo" unique_id=1676833243 instance=ExtResource("9_8ncq5")]
+position = Vector2(912, 240)
+collision_mask = 0
+
 
 [node name="chao" type="TileMapLayer" parent="Mundo" unique_id=230393895]
 z_index = -10
@@ -233,7 +285,7 @@ tile_map_data = PackedByteArray("AAAAAAAAAAABAAIAAAABAAAAAAABAAAAAAAAAAEAAAABAAA
 tile_set = ExtResource("1_qivkf")
 
 [node name="Player" type="CharacterBody2D" parent="Mundo" unique_id=904006901]
-position = Vector2(260, 260)
+position = Vector2(272, 272)
 collision_layer = 2
 collision_mask = 13
 script = ExtResource("1_52c58")
@@ -281,19 +333,19 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="Barril1" type="StaticBody2D" parent="Mundo" unique_id=1916485371 instance=ExtResource("16_rc00d")]
-position = Vector2(350, 150)
+position = Vector2(368, 144)
 collision_mask = 0
 
 [node name="Barril2" type="StaticBody2D" parent="Mundo" unique_id=1550652596 instance=ExtResource("16_rc00d")]
-position = Vector2(385, 150)
+position = Vector2(400, 144)
 collision_mask = 0
 
 [node name="Caixa1" type="StaticBody2D" parent="Mundo" unique_id=357911904 instance=ExtResource("17_d82hk")]
-position = Vector2(300, 150)
+position = Vector2(304, 144)
 collision_mask = 0
 
 [node name="Caixa2" type="StaticBody2D" parent="Mundo" unique_id=261803195 instance=ExtResource("17_d82hk")]
-position = Vector2(300, 185)
+position = Vector2(304, 176)
 collision_mask = 0
 
 [node name="camada_ui" type="CanvasLayer" parent="." unique_id=1246862772]
