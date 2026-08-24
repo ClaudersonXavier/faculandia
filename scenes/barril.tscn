@@ -50,8 +50,8 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_3fk83"]
-radius = 13.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_barril"]
+size = Vector2(32, 32)
 
 [node name="Barril" type="StaticBody2D" unique_id=1916485371]
 collision_layer = 8
@@ -62,4 +62,4 @@ sprite_frames = SubResource("SpriteFrames_4f8ii")
 autoplay = "default"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=789720108]
-shape = SubResource("CircleShape2D_3fk83")
+shape = SubResource("RectangleShape2D_barril")

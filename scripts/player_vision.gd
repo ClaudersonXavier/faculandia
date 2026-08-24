@@ -188,8 +188,12 @@ func _cast_cone(aim_angle: float) -> PackedVector2Array:
 		var query := PhysicsRayQueryParameters2D.create(player.global_position, end, obstacle_layer, [player.get_rid()])
 		var hit := space_state.intersect_ray(query)
 		if not hit.is_empty():
-			var exit_pos := _get_collider_ray_exit_point(hit["collider"], player.global_position, ray_dir, hit["position"])
-			result.append(exit_pos + ray_dir * 1.5)
+			var collider = hit["collider"]
+			if collider is CollisionObject2D and (collider.collision_layer & obstacle_layer) != 0:
+				var exit_pos := _get_collider_ray_exit_point(collider, player.global_position, ray_dir, hit["position"], obstacle_layer)
+				result.append(exit_pos)
+			else:
+				result.append(hit["position"])
 		else:
 			result.append(end)
 
@@ -208,8 +212,12 @@ func _cast_omnidirectional_visibility() -> PackedVector2Array:
 		var query := PhysicsRayQueryParameters2D.create(player.global_position, end, peripheral_obstacle_layer, [player.get_rid()])
 		var hit := space_state.intersect_ray(query)
 		if not hit.is_empty():
-			var exit_pos := _get_collider_ray_exit_point(hit["collider"], player.global_position, ray_dir, hit["position"])
-			result.append(exit_pos + ray_dir * 1.5)
+			var collider = hit["collider"]
+			if collider is CollisionObject2D and (collider.collision_layer & peripheral_obstacle_layer) != 0:
+				var exit_pos := _get_collider_ray_exit_point(collider, player.global_position, ray_dir, hit["position"], peripheral_obstacle_layer)
+				result.append(exit_pos)
+			else:
+				result.append(hit["position"])
 		else:
 			result.append(end)
 
@@ -266,8 +274,12 @@ func _cast_light(source_pos: Vector2, radius: float) -> PackedVector2Array:
 			query.exclude = [player.get_rid()]
 		var hit := space_state.intersect_ray(query)
 		if not hit.is_empty():
-			var exit_pos := _get_collider_ray_exit_point(hit["collider"], source_pos, ray_dir, hit["position"])
-			result.append(exit_pos + ray_dir * 1.5)
+			var collider = hit["collider"]
+			if collider is CollisionObject2D and (collider.collision_layer & obstacle_layer) != 0:
+				var exit_pos := _get_collider_ray_exit_point(collider, source_pos, ray_dir, hit["position"], obstacle_layer)
+				result.append(exit_pos)
+			else:
+				result.append(hit["position"])
 		else:
 			result.append(end)
 
@@ -295,10 +307,15 @@ func _get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: 
 					var trans = collider.global_transform * collider.shape_owner_get_transform(owner_id)
 					if col_shape is RectangleShape2D:
 						var ext = col_shape.size / 2.0
-						corners.append(trans * Vector2(-ext.x, -ext.y))
-						corners.append(trans * Vector2(ext.x, -ext.y))
-						corners.append(trans * Vector2(ext.x, ext.y))
-						corners.append(trans * Vector2(-ext.x, ext.y))
+						var raw_corners := [
+							trans * Vector2(-ext.x, -ext.y),
+							trans * Vector2(ext.x, -ext.y),
+							trans * Vector2(ext.x, ext.y),
+							trans * Vector2(-ext.x, ext.y)
+						]
+						for c: Vector2 in raw_corners:
+							if _is_exposed_corner(space_state, c, layer_mask):
+								corners.append(c)
 					elif col_shape is CircleShape2D:
 						var r = col_shape.radius
 						for k in 8:
@@ -307,11 +324,69 @@ func _get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: 
 	return corners
 
 
-func _get_collider_ray_exit_point(collider: Object, ray_origin: Vector2, ray_dir: Vector2, hit_pos: Vector2) -> Vector2:
+func _is_exposed_corner(space_state: PhysicsDirectSpaceState2D, corner: Vector2, layer_mask: int) -> bool:
+	var q_nw := _is_point_in_obstacle(space_state, corner + Vector2(-2.0, -2.0), layer_mask)
+	var q_ne := _is_point_in_obstacle(space_state, corner + Vector2(2.0, -2.0), layer_mask)
+	var q_sw := _is_point_in_obstacle(space_state, corner + Vector2(-2.0, 2.0), layer_mask)
+	var q_se := _is_point_in_obstacle(space_state, corner + Vector2(2.0, 2.0), layer_mask)
+
+	var wall_count := int(q_nw) + int(q_ne) + int(q_sw) + int(q_se)
+	if wall_count == 4:
+		return false
+	if (q_nw and q_ne and not q_sw and not q_se) or (q_sw and q_se and not q_nw and not q_ne):
+		return false
+	if (q_nw and q_sw and not q_ne and not q_se) or (q_ne and q_se and not q_nw and not q_sw):
+		return false
+	return true
+
+
+func _is_point_in_obstacle(space_state: PhysicsDirectSpaceState2D, point: Vector2, layer_mask: int) -> bool:
+	var point_query := PhysicsPointQueryParameters2D.new()
+	point_query.position = point
+	point_query.collision_mask = layer_mask
+	return not space_state.intersect_point(point_query, 1).is_empty()
+
+
+func _get_collider_ray_exit_point(collider: Object, ray_origin: Vector2, ray_dir: Vector2, hit_pos: Vector2, layer_mask: int = 0) -> Vector2:
 	if not (collider is CollisionObject2D):
 		return hit_pos
 
-	var col_obj := collider as CollisionObject2D
+	var current_col: CollisionObject2D = collider as CollisionObject2D
+	var mask := layer_mask
+	if mask == 0:
+		mask = current_col.collision_layer
+
+	var space_state := get_world_2d().direct_space_state
+	var final_exit_pos := hit_pos
+	var visited_rids: Array[RID] = []
+
+	for _step in 16:
+		visited_rids.append(current_col.get_rid())
+		var exit_pt := _calculate_col_obj_ray_exit(current_col, ray_origin, ray_dir, hit_pos)
+		final_exit_pos = exit_pt
+
+		# Verifica se na saída do bloco atual o raio entra imediatamente em um bloco vizinho da mesma camada
+		var check_pos := exit_pt + ray_dir * 0.5
+		var point_query := PhysicsPointQueryParameters2D.new()
+		point_query.position = check_pos
+		point_query.collision_mask = mask
+		var results := space_state.intersect_point(point_query, 4)
+
+		var found_next := false
+		for res in results:
+			var hit_collider = res.get("collider")
+			if hit_collider is CollisionObject2D and not visited_rids.has(hit_collider.get_rid()):
+				current_col = hit_collider as CollisionObject2D
+				found_next = true
+				break
+
+		if not found_next:
+			break
+
+	return final_exit_pos
+
+
+func _calculate_col_obj_ray_exit(col_obj: CollisionObject2D, ray_origin: Vector2, ray_dir: Vector2, hit_pos: Vector2) -> Vector2:
 	var max_exit_point := hit_pos
 	var max_dist_sq := (hit_pos - ray_origin).length_squared()
 
@@ -448,6 +523,7 @@ func _apply_perception_shader_parameters(mat: ShaderMaterial, viewport_size: Vec
 	mat.set_shader_parameter("vision_points", screen_points)
 	mat.set_shader_parameter("vision_point_count", screen_points.size())
 	mat.set_shader_parameter("player_screen_pos", screen_points[0])
+	mat.set_shader_parameter("vision_distance_screen", vision_distance * camera.zoom.x)
 	mat.set_shader_parameter("inner_light_radius", inner_light_radius * camera.zoom.x)
 
 	var omni_screen_points := PackedVector2Array()
@@ -459,6 +535,8 @@ func _apply_perception_shader_parameters(mat: ShaderMaterial, viewport_size: Vec
 
 	var light_starts := PackedInt32Array()
 	var light_ends := PackedInt32Array()
+	var light_centers := PackedVector2Array()
+	var light_radii := PackedFloat32Array()
 	var all_light_points := PackedVector2Array()
 
 	var light_nodes = get_tree().get_nodes_in_group(light_source_group)
@@ -475,6 +553,9 @@ func _apply_perception_shader_parameters(mat: ShaderMaterial, viewport_size: Vec
 
 		light_starts.append(start_idx)
 		light_ends.append(end_idx)
+		light_centers.append(_world_to_screen(source.global_position, viewport_size, camera))
+		var radius: float = source.get_meta("light_radius", 0.0)
+		light_radii.append(radius * camera.zoom.x)
 
 		if light_starts.size() >= 16: # MAX_LIGHT_SOURCES
 			break
@@ -483,6 +564,8 @@ func _apply_perception_shader_parameters(mat: ShaderMaterial, viewport_size: Vec
 	if light_starts.size() > 0:
 		mat.set_shader_parameter("light_starts", light_starts)
 		mat.set_shader_parameter("light_ends", light_ends)
+		mat.set_shader_parameter("light_centers", light_centers)
+		mat.set_shader_parameter("light_radii", light_radii)
 		mat.set_shader_parameter("light_points", all_light_points)
 
 

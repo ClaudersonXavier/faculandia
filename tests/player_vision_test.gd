@@ -43,6 +43,12 @@ func _run() -> void:
 	await _test_objeto_na_visao_direta_fica_completamente_dentro_da_malha_iluminada()
 	await _test_objeto_atras_de_outro_fica_em_sombra()
 	await _test_percepcao_periferica_atravessa_obstaculos_baixos_mas_para_em_paredes()
+	await _test_luz_nao_vaza_atraves_de_parede()
+	await _test_visao_direta_nao_vaza_atraves_de_parede()
+	await _test_quinas_internas_entre_paredes_conectadas_sao_filtradas()
+	await _test_paredes_conectadas_sao_tratadas_como_bloco_unico()
+	await _test_caixas_conectadas_sao_tratadas_como_bloco_unico()
+	await _test_parede_exposta_a_luz_ou_visao_e_perceptivel()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -318,15 +324,15 @@ func _test_malha_da_fonte_usa_quinas_do_bloqueador() -> void:
 
 	var points: PackedVector2Array = fixture.vision.get_light_visibility_points(source)
 	
-	# Verificamos se existem pontos alinhados com a projecao a partir da silhueta traseira do bloqueador
-	# As quinas traseiras estao em x=90, y=10 e y=-10.
+	# Verificamos se existem pontos alinhados com as quinas frontais do bloqueador
+	# As quinas frontais estao em x=70, y=10 e y=-10.
 	var hit_corner := false
 	for pt in points:
-		if abs(pt.x - 90.0) < 3.0 and (abs(pt.y - 10.0) < 3.0 or abs(pt.y + 10.0) < 3.0):
+		if abs(pt.x - 70.0) < 1.5 and (abs(pt.y - 10.0) < 1.5 or abs(pt.y + 10.0) < 1.5):
 			hit_corner = true
 			break
 			
-	_assert_true(hit_corner, "A malha da fonte de luz deve incluir as quinas traseiras dos bloqueadores para projetar a sombra para tras")
+	_assert_true(hit_corner, "A malha da fonte de luz deve incluir as quinas dos bloqueadores para projetar sombra precisa")
 
 	fixture.root.queue_free()
 
@@ -462,6 +468,215 @@ func _test_ameaca_parcialmente_percebida_recebe_fragmento_perceptivel() -> void:
 	var material := ameaca.material as ShaderMaterial
 	_assert_true(material.get_shader_parameter("vision_point_count") > 2, "Mascara do Fragmento Perceptivel usa Visao Direta")
 	_assert_true(material.get_shader_parameter("omni_point_count") > 2, "Mascara do Fragmento Perceptivel usa Percepcao Periferica")
+
+	fixture.root.queue_free()
+
+
+func _test_luz_nao_vaza_atraves_de_parede() -> void:
+	var fixture := _create_fixture()
+	var source = _add_fonte_de_luz(fixture.root, Vector2(0, 0), 200.0)
+	
+	# Parede em x=50 com espessura 20 (x de 40 a 60), altura 100
+	var parede := StaticBody2D.new()
+	parede.collision_layer = 1
+	parede.global_position = Vector2(50, 0)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(20, 100)
+	col.shape = shape
+	parede.add_child(col)
+	fixture.root.add_child(parede)
+	await physics_frame
+
+	var points: PackedVector2Array = fixture.vision.get_light_visibility_points(source)
+	var passed_behind_wall := false
+	for pt in points:
+		# Ponto atingindo atras da parede (x > 61 e dentro da altura da parede)
+		if pt.x > 61.0 and abs(pt.y) < 45.0:
+			passed_behind_wall = true
+			break
+
+	_assert_false(passed_behind_wall, "Nenhum ponto da fonte de luz deve vazar para tras da parede")
+
+	fixture.root.queue_free()
+
+
+func _test_visao_direta_nao_vaza_atraves_de_parede() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Parede em x=80 com espessura 32 (x de 64 a 96)
+	var parede := StaticBody2D.new()
+	parede.collision_layer = 1
+	parede.global_position = Vector2(80, 0)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(32, 100)
+	col.shape = shape
+	parede.add_child(col)
+	fixture.root.add_child(parede)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	var leaked_behind := false
+	for pt in cone_points:
+		# Ponto atingindo atras da parede (x > 97 e dentro da altura da parede)
+		if pt.x > 97.0 and abs(pt.y) < 45.0:
+			leaked_behind = true
+			break
+
+	_assert_false(leaked_behind, "A visao direta deve parar na face traseira da parede sem vazar para tras")
+
+	fixture.root.queue_free()
+
+
+func _test_quinas_internas_entre_paredes_conectadas_sao_filtradas() -> void:
+	var fixture := _create_fixture()
+	
+	# Dois blocos de parede adjacentes de 32x32: (0, 50) e (32, 50)
+	var p1 := StaticBody2D.new()
+	p1.collision_layer = 1
+	p1.global_position = Vector2(0, 50)
+	var col1 := CollisionShape2D.new()
+	var shape1 := RectangleShape2D.new()
+	shape1.size = Vector2(32, 32)
+	col1.shape = shape1
+	p1.add_child(col1)
+	fixture.root.add_child(p1)
+
+	var p2 := StaticBody2D.new()
+	p2.collision_layer = 1
+	p2.global_position = Vector2(32, 50)
+	var col2 := CollisionShape2D.new()
+	var shape2 := RectangleShape2D.new()
+	shape2.size = Vector2(32, 32)
+	col2.shape = shape2
+	p2.add_child(col2)
+	fixture.root.add_child(p2)
+	await physics_frame
+
+	var corners: PackedVector2Array = fixture.vision._get_obstacle_corners_near(Vector2(16, 0), 100.0, 1)
+	
+	# A costura interna entre p1 e p2 em x=16 (y=34 e y=66) nao deve estar presente nos corners
+	var has_seam_corner := false
+	for c in corners:
+		if abs(c.x - 16.0) < 1.0:
+			has_seam_corner = true
+			break
+
+	_assert_false(has_seam_corner, "Costuras internas entre blocos de parede adjacentes devem ser filtradas")
+
+	fixture.root.queue_free()
+
+
+func _test_paredes_conectadas_sao_tratadas_como_bloco_unico() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Duas paredes conectadas em fila horizontal (x de 64 a 96, e de 96 a 128)
+	var p1 := StaticBody2D.new()
+	p1.collision_layer = 1
+	p1.global_position = Vector2(80, 0)
+	var col1 := CollisionShape2D.new()
+	var shape1 := RectangleShape2D.new()
+	shape1.size = Vector2(32, 32)
+	col1.shape = shape1
+	p1.add_child(col1)
+	fixture.root.add_child(p1)
+
+	var p2 := StaticBody2D.new()
+	p2.collision_layer = 1
+	p2.global_position = Vector2(112, 0)
+	var col2 := CollisionShape2D.new()
+	var shape2 := RectangleShape2D.new()
+	shape2.size = Vector2(32, 32)
+	col2.shape = shape2
+	p2.add_child(col2)
+	fixture.root.add_child(p2)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	# O raio que entra em p1 em x=64 deve atravessar p1 e p2 continuamente e sair na face traseira de p2 (x=128)
+	var reached_back_of_p2 := false
+	for pt in cone_points:
+		if pt.x >= 127.0 and abs(pt.y) < 15.0:
+			reached_back_of_p2 = true
+			break
+
+	_assert_true(reached_back_of_p2, "Paredes conectadas em serie devem ser atravessadas como um unico bloco continuo ate a saida em espaco livre")
+
+	fixture.root.queue_free()
+
+
+func _test_caixas_conectadas_sao_tratadas_como_bloco_unico() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Duas caixas conectadas em fila horizontal (layer 8, x de 60 a 90, e de 90 a 120)
+	var c1 := StaticBody2D.new()
+	c1.collision_layer = 8
+	c1.global_position = Vector2(75, 0)
+	var col1 := CollisionShape2D.new()
+	var shape1 := RectangleShape2D.new()
+	shape1.size = Vector2(30, 30)
+	col1.shape = shape1
+	c1.add_child(col1)
+	fixture.root.add_child(c1)
+
+	var c2 := StaticBody2D.new()
+	c2.collision_layer = 8
+	c2.global_position = Vector2(105, 0)
+	var col2 := CollisionShape2D.new()
+	var shape2 := RectangleShape2D.new()
+	shape2.size = Vector2(30, 30)
+	col2.shape = shape2
+	c2.add_child(col2)
+	fixture.root.add_child(c2)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	var reached_back_of_c2 := false
+	for pt in cone_points:
+		if pt.x >= 119.0 and abs(pt.y) < 15.0:
+			reached_back_of_c2 = true
+			break
+
+	_assert_true(reached_back_of_c2, "Caixas conectadas lado a lado devem ser atravessadas como um unico bloco continuo")
+
+	fixture.root.queue_free()
+
+
+func _test_parede_exposta_a_luz_ou_visao_e_perceptivel() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Parede em x=80 com espessura 32 (x de 64 a 96)
+	var parede := StaticBody2D.new()
+	parede.collision_layer = 1
+	parede.global_position = Vector2(80, 0)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(32, 100)
+	col.shape = shape
+	parede.add_child(col)
+	fixture.root.add_child(parede)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	# A face frontal da parede (x=64) voltada para o jogador esta visivel
+	_assert_true(
+		fixture.vision.is_position_visible(Vector2(64, 0)),
+		"A face frontal da parede voltada para a visao direta do jogador e visivel"
+	)
+	
+	# O interior atras da parede (x=110) continua oculto
+	_assert_false(
+		fixture.vision.is_position_visible(Vector2(110, 0)),
+		"O interior atras da parede permanece invisivel"
+	)
 
 	fixture.root.queue_free()
 
