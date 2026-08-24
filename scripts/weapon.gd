@@ -8,18 +8,27 @@ extends Node2D
 @export var bullet_lifetime: float = 2.0
 @export var bullet_texture: Texture2D
 @export var collision_size: Vector2 = Vector2(6.0, 2.0)
+@export var magazine_size: int = 7
+@export var reload_time: float = 0.8
+
+var current_ammo: int
+var is_reloading: bool = false
 
 var can_fire: bool = true
 
 
 func _ready() -> void:
-	pass
+	current_ammo = magazine_size
 
 
 func shoot(aim_direction: Vector2, aim_angle: float) -> void:
 	if not can_fire:
 		return
-
+	
+	if current_ammo <= 0 or is_reloading:
+		return
+	current_ammo -= 1
+	
 	can_fire = false
 
 	var bullet = Area2D.new()
@@ -36,3 +45,11 @@ func shoot(aim_direction: Vector2, aim_angle: float) -> void:
 	await get_tree().create_timer(fire_rate).timeout
 	can_fire = true
 	
+
+func reload() -> void:
+	if is_reloading or current_ammo == magazine_size:
+		return
+	is_reloading = true
+	await get_tree().create_timer(reload_time).timeout
+	current_ammo = magazine_size
+	is_reloading = false

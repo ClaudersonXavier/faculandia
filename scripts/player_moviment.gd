@@ -46,6 +46,9 @@ func _physics_process(_delta: float) -> void:
 	
 	if Input.is_action_just_pressed("shoot"):
 		weapon.shoot(aim_direction, aim_angle)
+		
+	if Input.is_action_just_pressed("reload"):
+		weapon.reload()
 
 
 func is_in_vision(target_pos: Vector2) -> bool:
