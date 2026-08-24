@@ -40,6 +40,9 @@ func _run() -> void:
 	await _test_fonte_ilumina_do_corpo_inteiro()
 	await _test_malha_da_fonte_usa_quinas_do_bloqueador()
 	await _test_ameaca_parcialmente_percebida_recebe_fragmento_perceptivel()
+	await _test_objeto_na_visao_direta_fica_completamente_dentro_da_malha_iluminada()
+	await _test_objeto_atras_de_outro_fica_em_sombra()
+	await _test_percepcao_periferica_atravessa_obstaculos_baixos_mas_para_em_paredes()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -301,7 +304,7 @@ func _test_malha_da_fonte_usa_quinas_do_bloqueador() -> void:
 	var fixture := _create_fixture()
 	var source = _add_fonte_de_luz(fixture.root, Vector2(0, 0), 200.0)
 	
-	# Adiciona um bloqueador pequeno. Suas quinas precisarao de raycasts exatos
+	# Adiciona um bloqueador pequeno. Suas quinas traseiras projetam a sombra
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.global_position = Vector2(80, 0)
@@ -315,17 +318,130 @@ func _test_malha_da_fonte_usa_quinas_do_bloqueador() -> void:
 
 	var points: PackedVector2Array = fixture.vision.get_light_visibility_points(source)
 	
-	# Verificamos se existem pontos EXATAMENTE alinhados com as quinas do bloqueador
-	# As quinas frontais estao em x=70, y=10 e y=-10.
-	# Os raios que passam raspando vao atingir (70, 10) ou passar logo do lado.
-	# Vamos checar se ha pontos muito proximos a y=10.0 ou y=-10.0 perto do bloqueador.
+	# Verificamos se existem pontos alinhados com a projecao a partir da silhueta traseira do bloqueador
+	# As quinas traseiras estao em x=90, y=10 e y=-10.
 	var hit_corner := false
 	for pt in points:
-		if abs(pt.x - 70.0) < 1.0 and (abs(pt.y - 10.0) < 1.0 or abs(pt.y + 10.0) < 1.0):
+		if abs(pt.x - 90.0) < 3.0 and (abs(pt.y - 10.0) < 3.0 or abs(pt.y + 10.0) < 3.0):
 			hit_corner = true
 			break
 			
-	_assert_true(hit_corner, "A malha da fonte de luz deve incluir as quinas dos bloqueadores para ter sombra precisa")
+	_assert_true(hit_corner, "A malha da fonte de luz deve incluir as quinas traseiras dos bloqueadores para projetar a sombra para tras")
+
+	fixture.root.queue_free()
+
+
+func _test_objeto_na_visao_direta_fica_completamente_dentro_da_malha_iluminada() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Adiciona uma caixa (obstaculo baixo na layer 8) em (100, 0), tamanho 28x28 (x de 86 a 114)
+	var caixa := StaticBody2D.new()
+	caixa.collision_layer = 8
+	caixa.global_position = Vector2(100, 0)
+	var collision := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(28, 28)
+	collision.shape = shape
+	caixa.add_child(collision)
+	fixture.root.add_child(caixa)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	
+	# Verifica se os raios que atingem a caixa chegam ou passam da face traseira (x >= 114)
+	var reached_back := false
+	for pt in cone_points:
+		if pt.x >= 113.0 and abs(pt.y) < 15.0:
+			reached_back = true
+			break
+			
+	_assert_true(reached_back, "Os raios da visao direta devem envolver a caixa ate sua face traseira (sem desaturar o proprio objeto)")
+
+	fixture.root.queue_free()
+
+
+func _test_objeto_atras_de_outro_fica_em_sombra() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+	
+	# Caixa 1 em (80, 0), tamanho 20x20 (x de 70 a 90)
+	var caixa1 := StaticBody2D.new()
+	caixa1.collision_layer = 8
+	caixa1.global_position = Vector2(80, 0)
+	var col1 := CollisionShape2D.new()
+	var shape1 := RectangleShape2D.new()
+	shape1.size = Vector2(20, 20)
+	col1.shape = shape1
+	caixa1.add_child(col1)
+	fixture.root.add_child(caixa1)
+
+	# Caixa 2 diretamente atras da Caixa 1, em (140, 0)
+	var caixa2 := StaticBody2D.new()
+	caixa2.collision_layer = 8
+	caixa2.global_position = Vector2(140, 0)
+	var col2 := CollisionShape2D.new()
+	var shape2 := RectangleShape2D.new()
+	shape2.size = Vector2(20, 20)
+	col2.shape = shape2
+	caixa2.add_child(col2)
+	fixture.root.add_child(caixa2)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	
+	# Os raios que passam por y=0 devem parar na traseira da Caixa 1 (x ~ 90), sem alcancar a Caixa 2 (x >= 130)
+	var reached_box2 := false
+	for pt in cone_points:
+		if pt.x > 120.0 and abs(pt.y) < 5.0:
+			reached_box2 = true
+			break
+			
+	_assert_false(reached_box2, "A Caixa 2 deve ficar na sombra da Caixa 1 (fora da malha iluminada)")
+
+	fixture.root.queue_free()
+
+
+func _test_percepcao_periferica_atravessa_obstaculos_baixos_mas_para_em_paredes() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.inner_light_radius = 60.0
+	
+	# Caixa (obstaculo baixo, layer 8) a direita (30, 0)
+	var caixa := StaticBody2D.new()
+	caixa.collision_layer = 8
+	caixa.global_position = Vector2(30, 0)
+	var col_c := CollisionShape2D.new()
+	var shape_c := RectangleShape2D.new()
+	shape_c.size = Vector2(20, 20)
+	col_c.shape = shape_c
+	caixa.add_child(col_c)
+	fixture.root.add_child(caixa)
+
+	# Parede (bloqueador alto, layer 1) a esquerda (-30, 0)
+	var parede := StaticBody2D.new()
+	parede.collision_layer = 1
+	parede.global_position = Vector2(-30, 0)
+	var col_p := CollisionShape2D.new()
+	var shape_p := RectangleShape2D.new()
+	shape_p.size = Vector2(20, 20)
+	col_p.shape = shape_p
+	parede.add_child(col_p)
+	fixture.root.add_child(parede)
+	await physics_frame
+
+	# Ameaca atras da caixa (dentro dos 60px de raio periferico)
+	_assert_true(
+		fixture.vision.is_position_visible(Vector2(50, 0)),
+		"Percepcao periferica permite ver atras de obstaculos baixos como caixas e barris"
+	)
+	
+	# Ameaca atras da parede
+	_assert_false(
+		fixture.vision.is_position_visible(Vector2(-50, 0)),
+		"Percepcao periferica e bloqueada por paredes"
+	)
 
 	fixture.root.queue_free()
 

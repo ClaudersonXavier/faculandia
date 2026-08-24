@@ -16,7 +16,7 @@ func _ready() -> void:
 	if source_node and not source_node.is_in_group(NAVMESH_SOURCE_GROUP):
 		source_node.add_to_group(NAVMESH_SOURCE_GROUP)
 
-	navigation_polygon.parsed_collision_mask = Ameaca.LAYER_OBSTACULO
+	navigation_polygon.parsed_collision_mask = Ameaca.LAYER_OBSTACULO | Ameaca.LAYER_OBSTACULO_BAIXO
 	navigation_polygon.parsed_geometry_type = NavigationPolygon.PARSED_GEOMETRY_STATIC_COLLIDERS
 	navigation_polygon.source_geometry_mode = NavigationPolygon.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
 	navigation_polygon.source_geometry_group_name = NAVMESH_SOURCE_GROUP

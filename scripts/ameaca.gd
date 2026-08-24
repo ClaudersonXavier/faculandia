@@ -5,6 +5,7 @@ extends CharacterBody2D
 const LAYER_OBSTACULO := 1
 const LAYER_JOGADOR := 2
 const LAYER_AMEACA := 4
+const LAYER_OBSTACULO_BAIXO := 8
 
 const MIN_MOVEMENT_DISTANCE_SQUARED: float = 0.001
 const DEFAULT_STOP_DISTANCE: float = 60.0
@@ -38,7 +39,7 @@ func _ready() -> void:
 	health = max_health
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	collision_layer = LAYER_AMEACA
-	collision_mask = LAYER_OBSTACULO | LAYER_JOGADOR
+	collision_mask = LAYER_OBSTACULO | LAYER_OBSTACULO_BAIXO | LAYER_JOGADOR
 	add_to_group(&"ameacas")
 	add_to_group(&"visible_entities")
 	_find_player()
@@ -228,7 +229,7 @@ func has_direct_line_of_sight_to(target_pos: Vector2) -> bool:
 	var space_state := world_2d.direct_space_state
 	if space_state == null:
 		return true
-	var query := PhysicsRayQueryParameters2D.create(global_position, target_pos, LAYER_OBSTACULO)
+	var query := PhysicsRayQueryParameters2D.create(global_position, target_pos, LAYER_OBSTACULO | LAYER_OBSTACULO_BAIXO)
 	var result := space_state.intersect_ray(query)
 	return result.is_empty()
 
