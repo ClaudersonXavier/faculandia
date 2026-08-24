@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cmkh3pvligox0"
-path="res://.godot/imported/parede-madeira.png-9be7bdcaae027935b6d9a0ead81fcf9f.ctex"
+uid="uid://cbk4cauan8rwa"
+path="res://.godot/imported/pistola.png-ed68a8e5f8f0a6de26c180654c504a68.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/environment/parede-madeira.png"
-dest_files=["res://.godot/imported/parede-madeira.png-9be7bdcaae027935b6d9a0ead81fcf9f.ctex"]
+source_file="res://sprites/items/pistola.png"
+dest_files=["res://.godot/imported/pistola.png-ed68a8e5f8f0a6de26c180654c504a68.ctex"]
 
 [params]
 

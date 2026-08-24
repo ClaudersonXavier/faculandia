@@ -4,6 +4,7 @@ const int MAX_VISION_POINTS = 192;
 
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
 uniform vec2 player_screen_pos;
+uniform float vision_distance_screen = 520.0;
 uniform vec2 vision_points[MAX_VISION_POINTS];
 uniform int vision_point_count = 0;
 
@@ -16,6 +17,8 @@ const int MAX_TOTAL_LIGHT_POINTS = 1024;
 uniform int light_count = 0;
 uniform int light_starts[MAX_LIGHT_SOURCES];
 uniform int light_ends[MAX_LIGHT_SOURCES];
+uniform vec2 light_centers[MAX_LIGHT_SOURCES];
+uniform float light_radii[MAX_LIGHT_SOURCES];
 uniform vec2 light_points[MAX_TOTAL_LIGHT_POINTS];
 uniform float inner_light_radius = 80.0;
 uniform float darkness_alpha : hint_range(0.0, 1.0) = 0.7;
@@ -55,20 +58,6 @@ float distance_to_segment(vec2 point, vec2 a, vec2 b) {
 	return length(pa - ba * h);
 }
 
-float polygon_edge_fade(vec2 point) {
-	float nearest = 999999.0;
-	for (int i = 1; i < MAX_VISION_POINTS; i++) {
-		if (i >= vision_point_count) {
-			break;
-		}
-		nearest = min(nearest, distance_to_segment(point, vision_points[i - 1], vision_points[i]));
-	}
-	if (vision_point_count > 2) {
-		nearest = min(nearest, distance_to_segment(point, vision_points[vision_point_count - 1], vision_points[0]));
-	}
-	return smoothstep(0.0, fade_edge, nearest);
-}
-
 bool point_in_omni_polygon(vec2 point) {
 	bool inside = false;
 	for (int i = 0; i < MAX_OMNI_POINTS; i++) {
@@ -103,39 +92,43 @@ bool point_in_light_polygon(vec2 point, int start_idx, int end_idx) {
 	return inside;
 }
 
-float light_polygon_edge_fade(vec2 point, int start_idx, int end_idx) {
-	float nearest = 999999.0;
-	int count = end_idx - start_idx;
-	for(int k = 0; k < MAX_TOTAL_LIGHT_POINTS; k++) {
-		if (k >= count) break;
-		int i = start_idx + k;
-		int j = i - 1;
-		if (k == 0) j = end_idx - 1;
-		nearest = min(nearest, distance_to_segment(point, light_points[j], light_points[i]));
-	}
-	return smoothstep(0.0, fade_edge, nearest);
-}
-
 void fragment() {
 	vec2 pixel_pos = SCREEN_UV / SCREEN_PIXEL_SIZE;
 	vec4 base = texture(screen_texture, SCREEN_UV);
+
+	// 1. Visao Direta (Cone do jogador)
 	float cone_visible = 0.0;
 	if (vision_point_count > 2 && point_in_polygon(pixel_pos)) {
-		cone_visible = polygon_edge_fade(pixel_pos);
+		float dist_from_player = length(pixel_pos - player_screen_pos);
+		float dist_fade = 1.0 - smoothstep(vision_distance_screen * 0.88, vision_distance_screen, dist_from_player);
+
+		// Fade suave apenas nas bordas laterais do feixe de luz
+		float d_left = distance_to_segment(pixel_pos, vision_points[0], vision_points[1]);
+		float d_right = distance_to_segment(pixel_pos, vision_points[0], vision_points[vision_point_count - 1]);
+		float side_dist = min(d_left, d_right);
+		float side_fade = smoothstep(0.0, fade_edge, side_dist);
+
+		cone_visible = side_fade * dist_fade;
 	}
 
+	// 2. Percepcao Periferica (Luz interna curta ao redor do jogador)
 	float inner_dist = length(pixel_pos - player_screen_pos);
-	float inner_visible = 1.0 - smoothstep(inner_light_radius * 0.45, inner_light_radius, inner_dist);
-	
+	float inner_fade = 1.0 - smoothstep(inner_light_radius * 0.45, inner_light_radius, inner_dist);
+	bool inside_omni = (omni_point_count <= 2) || point_in_omni_polygon(pixel_pos);
+	float inner_visible = inside_omni ? inner_fade : 0.0;
+
+	// 3. Fontes de Luz no cenario
 	float total_light_visible = 0.0;
-	if (omni_point_count > 2 && point_in_omni_polygon(pixel_pos)) {
+	if (inside_omni) {
 		for(int l = 0; l < MAX_LIGHT_SOURCES; l++) {
 			if (l >= light_count) break;
 			int start = light_starts[l];
 			int end = light_ends[l];
 			if (end - start > 2 && point_in_light_polygon(pixel_pos, start, end)) {
-				float light_visible = light_polygon_edge_fade(pixel_pos, start, end);
-				total_light_visible = max(total_light_visible, light_visible);
+				float light_dist = length(pixel_pos - light_centers[l]);
+				float light_rad = light_radii[l];
+				float light_fade = 1.0 - smoothstep(light_rad * 0.45, light_rad, light_dist);
+				total_light_visible = max(total_light_visible, light_fade);
 			}
 		}
 	}

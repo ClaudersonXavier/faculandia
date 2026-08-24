@@ -9,7 +9,7 @@ Elemento do cenario que bloqueia movimento do jogador e projeteis.
 _Avoid_: Bloqueio, colisao
 
 **Bloqueador de Visao**:
-Elemento do cenario que impede o jogador de perceber o que esta atras dele.
+Elemento do cenario que impede o jogador de perceber o que esta atras dele. Quando exposto a Visao Direta ou a uma Fonte de Luz, o proprio Bloqueador de Visao e plenamente perceptivel, projetando sombra apenas para a area atras de si.
 _Avoid_: Obstaculo, bloqueio
 
 **Parede**:
@@ -17,7 +17,7 @@ Elemento construtivo do cenario que funciona como Obstaculo e Bloqueador de Visa
 _Avoid_: Chao, tile de chao, decoracao
 
 **Cenario**:
-Ambiente fisico do jogo que permanece parcialmente perceptivel mesmo fora da Visao Direta.
+Ambiente fisico do jogo que permanece parcialmente perceptivel mesmo fora da Visao Direta. Bloqueadores de Visao expostos a Visao Direta ou Fonte de Luz sao exibidos com iluminacao plena, enquanto areas ocluidas por sombras projetadas permanecem parcialmente perceptiveis.
 _Avoid_: Mapa, fundo, mundo
 
 **Ameaca**:
@@ -50,13 +50,16 @@ Elemento do cenario que torna uma area mais perceptivel sem depender da Mira do 
 _Avoid_: Lampada, vela, luz teste
 
 **Percepcao Periferica**:
-Area curta ao redor do jogador onde ameacas e interativos muito proximos podem ser percebidos claramente.
-Bloqueadores de Visao impedem essa percepcao.
+Area curta ao redor do jogador onde ameacas e interativos muito proximos podem ser percebidos claramente. Paredes impedem essa percepcao, enquanto obstaculos menores (como caixas e barris) nao a bloqueiam.
 _Avoid_: Luz interna, circulo de luz, visao circular
 
 **Andavel**:
-Area do cenario onde o jogador pode se mover livremente.
+Area do cenario onde o jogador e as ameacas podem se mover livremente.
 _Avoid_: Chao livre, passavel
+
+**Rota de Perseguicao**:
+Trajetoria calculada pela Ameaca atraves de areas Andaveis, contornando Obstaculos para alcancar o jogador ou a origem de um estimulo percebido.
+_Avoid_: Pathfinding, caminho do zumbi, rota de IA
 
 **Fragmento Perceptivel**:
 Parte visual de uma Ameaca, Interativo ou Vestigio que esta dentro de qualquer forma de percepcao do jogador.

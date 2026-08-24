@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cjtbbytkoam7h"
-path="res://.godot/imported/parede-madeira-recortada.png-ef8acf419a42de2b0c612b03bb336546.ctex"
+uid="uid://daxkw5aex5chb"
+path="res://.godot/imported/tileset_chao.png-d50366cf4f370ca7bd56c13b24cbd49d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/environment/parede-madeira-recortada.png"
-dest_files=["res://.godot/imported/parede-madeira-recortada.png-ef8acf419a42de2b0c612b03bb336546.ctex"]
+source_file="res://sprites/environment/tileset_chao.png"
+dest_files=["res://.godot/imported/tileset_chao.png-d50366cf4f370ca7bd56c13b24cbd49d.ctex"]
 
 [params]
 
