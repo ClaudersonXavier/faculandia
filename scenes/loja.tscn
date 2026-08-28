@@ -33,7 +33,7 @@ text = "Loja (em construção)
 
 [node name="RecarregarMunicaoPistola" type="Button" parent="VBoxContainer" unique_id=771715366]
 layout_mode = 2
-text = "Recarregar munição da Pistola ($0)"
+text = "Recarregar wsunição da Pistola ($0)"
 
 [node name="VoltarAoJogo" type="Button" parent="VBoxContainer" unique_id=24348053]
 layout_mode = 2
