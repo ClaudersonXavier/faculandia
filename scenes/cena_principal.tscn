@@ -17,7 +17,8 @@
 [ext_resource type="PackedScene" path="res://scenes/barril.tscn" id="16_rc00d"]
 [ext_resource type="PackedScene" path="res://scenes/caixa.tscn" id="17_d82hk"]
 [ext_resource type="Texture2D" uid="uid://cbk4cauan8rwa" path="res://sprites/items/pistola.png" id="18_pistola"]
-[ext_resource type="Script" path="res://scripts/hud.gd" id="19_hud"]
+[ext_resource type="Script" uid="uid://baamqyjj7y8iv" path="res://scripts/hud.gd" id="19_hud"]
+[ext_resource type="Script" uid="uid://da0ply76csvkg" path="res://scripts/exit_zone.gd" id="20_exit_zone"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
 vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)
@@ -71,6 +72,8 @@ animations = [{
 "name": &"walk",
 "speed": 10.0
 }]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_laicf"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("5_shader")
@@ -213,7 +216,7 @@ tile_map_data = PackedByteArray("AAAAAAAAAAABAAIAAAABAAAAAAABAAAAAAAAAAEAAAABAAA
 tile_set = ExtResource("1_qivkf")
 
 [node name="Player" type="CharacterBody2D" parent="Mundo" unique_id=904006901]
-position = Vector2(272, 272)
+position = Vector2(60, 50)
 collision_layer = 2
 collision_mask = 13
 script = ExtResource("1_52c58")
@@ -271,6 +274,14 @@ position = Vector2(304, 144)
 [node name="Caixa2" parent="Mundo" unique_id=261803195 instance=ExtResource("17_d82hk")]
 position = Vector2(304, 176)
 
+[node name="ZonaSaida" type="Area2D" parent="Mundo" unique_id=2078040892]
+position = Vector2(60, 20)
+collision_mask = 3
+script = ExtResource("20_exit_zone")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Mundo/ZonaSaida" unique_id=538374323]
+shape = SubResource("RectangleShape2D_laicf")
+
 [node name="camada_ui" type="CanvasLayer" parent="." unique_id=1246862772]
 
 [node name="visibilidade" type="ColorRect" parent="camada_ui" unique_id=1446528238]
@@ -313,3 +324,13 @@ offset_top = -41.0
 offset_right = 1.0
 offset_bottom = -10.0
 theme_override_font_sizes/font_size = 16
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="camada_ui" unique_id=1171936512]
+unique_name_in_owner = true
+process_mode = 3
+ok_button_text = "Confirmar"
+dialog_text = "Certeza que vai querer recuar agora?"
+cancel_button_text = "Cancelar"
+
+[connection signal="body_entered" from="Mundo/ZonaSaida" to="Mundo/ZonaSaida" method="_on_body_entered"]
+[connection signal="confirmed" from="camada_ui/ConfirmationDialog" to="Mundo/ZonaSaida" method="_on_confirmation_dialog_confirmed"]
