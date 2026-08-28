@@ -8,9 +8,7 @@ extends Control
 func _process(_delta: float) -> void:
 	if not weapon:
 		return
-		
-	ammo_label.text = str(weapon.current_ammo) + " / " + str(weapon.magazine_size)
+
+	ammo_label.text = str(weapon.current_ammo) + " / " + str(GameState.municao_reserva)
 	reload_label.text = "Recarregando..."
 	reload_label.visible = weapon.is_reloading
-	
-	

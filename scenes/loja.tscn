@@ -33,10 +33,17 @@ text = "Loja (em construção)
 
 [node name="RecarregarMunicaoPistola" type="Button" parent="VBoxContainer" unique_id=771715366]
 layout_mode = 2
-text = "Recarregar wsunição da Pistola ($0)"
+text = "Recarregar munição da Pistola ($0)"
 
 [node name="VoltarAoJogo" type="Button" parent="VBoxContainer" unique_id=24348053]
 layout_mode = 2
 text = "Voltar para o jogo"
 
+[node name="ConfirmarPartidaSemReabastecer" type="ConfirmationDialog" parent="." unique_id=1797743046]
+unique_name_in_owner = true
+ok_button_text = "Partir"
+dialog_text = "Certeza que vai partir sem reabastecer a munição?"
+
+[connection signal="pressed" from="VBoxContainer/RecarregarMunicaoPistola" to="." method="_on_recarregar_pressed"]
 [connection signal="pressed" from="VBoxContainer/VoltarAoJogo" to="." method="_on_button_pressed"]
+[connection signal="confirmed" from="ConfirmarPartidaSemReabastecer" to="." method="_on_confirmation_dialog_confirmed"]

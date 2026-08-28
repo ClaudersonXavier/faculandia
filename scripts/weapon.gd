@@ -21,7 +21,7 @@ var can_fire: bool = true
 
 
 func _ready() -> void:
-	current_ammo = magazine_size
+	current_ammo = GameState.municao_pente
 
 
 func shoot(aim_direction: Vector2, aim_angle: float) -> void:
@@ -31,6 +31,7 @@ func shoot(aim_direction: Vector2, aim_angle: float) -> void:
 	if current_ammo <= 0 or is_reloading:
 		return
 	current_ammo -= 1
+	GameState.municao_pente = current_ammo;
 	
 	can_fire = false
 
@@ -57,7 +58,13 @@ func shoot(aim_direction: Vector2, aim_angle: float) -> void:
 func reload() -> void:
 	if is_reloading or current_ammo == magazine_size:
 		return
+	var faltando := magazine_size - current_ammo
+	var pegar := mini(faltando, GameState.municao_reserva)
+	if pegar <= 0:
+		return
 	is_reloading = true
 	await get_tree().create_timer(reload_time).timeout
-	current_ammo = magazine_size
+	current_ammo += pegar
+	GameState.municao_pente = current_ammo
+	GameState.municao_reserva -= pegar
 	is_reloading = false
