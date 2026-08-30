@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://d2b0y83npa7mc"]
+
+[ext_resource type="Texture2D" uid="uid://bgxhbqr35ekbc" path="res://resources/sprites/environment/barril.png" id="1_ae573"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfdsx"]
+atlas = ExtResource("1_ae573")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_05vvl"]
+atlas = ExtResource("1_ae573")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_el1ky"]
+atlas = ExtResource("1_ae573")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mvsa0"]
+atlas = ExtResource("1_ae573")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_13nob"]
+atlas = ExtResource("1_ae573")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4f8ii"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vfdsx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_05vvl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_el1ky")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mvsa0")
+}],
+"loop": 1,
+"name": &"burning",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_13nob")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_barril"]
+size = Vector2(32, 32)
+
+[node name="Barril" type="StaticBody2D" unique_id=1916485371]
+collision_layer = 8
+collision_mask = 0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=83292765]
+sprite_frames = SubResource("SpriteFrames_4f8ii")
+autoplay = "default"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=789720108]
+shape = SubResource("RectangleShape2D_barril")

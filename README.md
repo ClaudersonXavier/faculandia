@@ -11,6 +11,7 @@ Jogo 2D top-down shooter desenvolvido em Godot 4 (GDScript).
 | **Movimentação** | `W`, `A`, `S`, `D` ou `Setas` / Gamepad | Move o jogador pelo cenário (redução de 15% de velocidade ao andar de costas / backpedal). |
 | **Mirar** | `Movimento do Mouse` | Direciona o corpo do jogador e a arma para o cursor. |
 | **Atirar** | `Botão Esquerdo do Mouse` | Dispara um projétil na direção da mira, gerando ruído sonoro e impacto com colisões. |
+| **Recarregar** | `R` | Recarrega o pente da arma equipada usando munição da reserva. |
 
 ---
 

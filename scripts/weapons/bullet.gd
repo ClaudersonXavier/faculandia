@@ -1,0 +1,63 @@
+extends Area2D
+
+var direction: Vector2 = Vector2.ZERO
+var speed: float = 600.0
+var damage: float = 0.0
+var lifetime: float = 2.0
+var bullet_texture: Texture2D
+var collision_size: Vector2
+var impact_noise_radius: float = 250.0
+
+
+func _ready() -> void:
+	rotation = direction.angle() + SpriteConventions.UP_FACING_OFFSET
+	if bullet_texture:
+		var sprite = Sprite2D.new()
+		sprite.texture = bullet_texture
+		sprite.centered = true
+		add_child(sprite)
+	else:
+		queue_redraw()
+
+	var col_shape = RectangleShape2D.new()
+	col_shape.size = collision_size
+
+	var col = CollisionShape2D.new()
+	col.shape = col_shape
+	add_child(col)
+
+	body_entered.connect(_on_body_entered)
+	area_entered.connect(_on_area_entered)
+
+	collision_layer = 0
+	collision_mask = PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO | PhysicsLayers.AMEACA
+
+
+func _physics_process(delta: float) -> void:
+	global_position += direction * speed * delta
+	lifetime -= delta
+	if lifetime <= 0:
+		queue_free()
+
+
+func _draw() -> void:
+	if not bullet_texture:
+		draw_circle(Vector2.ZERO, 3.0, Color.YELLOW)
+		draw_circle(Vector2.ZERO, 4.5, Color(1.0, 0.7, 0.0, 0.25))
+
+
+func _handle_impact(target: Node = null) -> void:
+	if is_queued_for_deletion():
+		return
+	if target != null and target.has_method("take_damage"):
+		target.take_damage(damage)
+	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
+	queue_free()
+
+
+func _on_body_entered(body: Node2D) -> void:
+	_handle_impact(body)
+
+
+func _on_area_entered(area: Area2D) -> void:
+	_handle_impact(area)
