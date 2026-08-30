@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://bmmrdbvsqhaj1"]
+
+[ext_resource type="Texture2D" uid="uid://v80b5vv8e8uu" path="res://resources/sprites/environment/caixa.png" id="1_a26xw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_i2vea"]
+size = Vector2(32, 32)
+
+[node name="Caixa" type="StaticBody2D" unique_id=357911904]
+collision_layer = 8
+collision_mask = 0
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1333699854]
+texture = ExtResource("1_a26xw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1467763343]
+shape = SubResource("RectangleShape2D_i2vea")

@@ -1,0 +1,97 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player/player_moviment.gd" id="1_moviment"]
+[ext_resource type="Texture2D" uid="uid://c4sqt5p8s02l7" path="res://resources/sprites/mira_placeholder.png" id="2_mira"]
+[ext_resource type="Script" uid="uid://boff4cv6ld4l0" path="res://scripts/player/crosshair.gd" id="3_crosshair"]
+[ext_resource type="Script" uid="uid://bb406q67khtjw" path="res://scripts/weapons/pistol.gd" id="4_pistol"]
+[ext_resource type="Texture2D" uid="uid://cbk4cauan8rwa" path="res://resources/sprites/items/pistola.png" id="5_pistola"]
+[ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player/player_vision.gd" id="6_vision"]
+[ext_resource type="Texture2D" uid="uid://dgyxv3k008vx5" path="res://resources/sprites/characters/player.png" id="7_player_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pgf2v"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nnfiy"]
+atlas = ExtResource("7_player_tex")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0yibr"]
+atlas = ExtResource("7_player_tex")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3icen"]
+atlas = ExtResource("7_player_tex")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1o814"]
+animations = [{
+"frames": [],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nnfiy")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0yibr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nnfiy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3icen")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nnfiy")
+}],
+"loop": 1,
+"name": &"walk",
+"speed": 10.0
+}]
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 13
+script = ExtResource("1_moviment")
+
+[node name="crosshair" type="Sprite2D" parent="."]
+position = Vector2(-548, -273)
+texture = ExtResource("2_mira")
+script = ExtResource("3_crosshair")
+
+[node name="player_collision" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_pgf2v")
+
+[node name="camera_player" type="Camera2D" parent="."]
+zoom = Vector2(1.8, 1.8)
+
+[node name="AudioListener2D" type="AudioListener2D" parent="."]
+current = true
+
+[node name="Weapon" type="Node2D" parent="."]
+z_index = 1
+script = ExtResource("4_pistol")
+metadata/_custom_type_script = "uid://bv64gsgtlb5ju"
+
+[node name="Sprite2D" type="Sprite2D" parent="Weapon"]
+position = Vector2(8, 3)
+texture = ExtResource("5_pistola")
+
+[node name="muzzle_marker" type="Marker2D" parent="Weapon"]
+position = Vector2(16, 3)
+
+[node name="PlayerVision" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+script = ExtResource("6_vision")
+player = NodePath("..")
+
+[node name="player_sprite" type="AnimatedSprite2D" parent="."]
+rotation = -1.5707964
+sprite_frames = SubResource("SpriteFrames_1o814")
+animation = &"idle"
+autoplay = "idle"
