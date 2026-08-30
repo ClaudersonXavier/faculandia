@@ -164,6 +164,8 @@ func _play_hit_flash() -> void:
 func die() -> void:
 	_is_dead = true
 	set_physics_process(false)
+	if sprite and sprite is AnimatedSprite2D:
+		AnimationUtils.play_if_needed(sprite, &"idle")
 	var col_shape = get_node_or_null("CollisionShape2D")
 	if col_shape:
 		col_shape.set_deferred("disabled", true)
@@ -172,5 +174,26 @@ func die() -> void:
 		await _hit_flash_tween.finished
 
 	modulate = Color(0.35, 0.35, 0.35)
-	if _jogador_na_area_loot:
-		$LootLabel.visible = true
+
+
+func _on_area_loot_body_entered(body: Node2D) -> void:
+	if body.is_in_group(&"player"):
+		_jogador_na_area_loot = true
+
+
+func _on_area_loot_body_exited(body: Node2D) -> void:
+	if body.is_in_group(&"player"):
+		_jogador_na_area_loot = false
+
+
+func _process(_delta: float) -> void:
+	var label := $AreaLoot/LootLabel
+	label.visible = _is_dead and _jogador_na_area_loot
+	label.global_position = global_position + Vector2(-70.0, -28.0)
+	if _is_dead and _jogador_na_area_loot and Input.is_action_just_pressed("interact"):
+		_lootar()
+
+
+func _lootar() -> void:
+	GameState.dinheiro += 5
+	queue_free()

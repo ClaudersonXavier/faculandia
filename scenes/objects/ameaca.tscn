@@ -74,16 +74,26 @@ path_desired_distance = 32.0
 target_desired_distance = 60.0
 
 [node name="AreaLoot" type="Area2D" parent="." unique_id=1759686688]
+collision_layer = 0
+collision_mask = 2
 
 [node name="LootLabel" type="Label" parent="AreaLoot" unique_id=1811882886]
+top_level = true
 visible = false
-offset_left = -23.0
+offset_left = -70.0
 offset_top = -17.0
-offset_right = 58.0
+offset_right = 70.0
 offset_bottom = 6.0
-theme_override_font_sizes/font_size = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
 text = "Aperte 'E' para interagir"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AreaLoot" unique_id=77695094]
 scale = Vector2(1.6, 1.6)
 shape = SubResource("CircleShape2D_laicf")
+
+[connection signal="body_entered" from="AreaLoot" to="." method="_on_area_loot_body_entered"]
+[connection signal="body_exited" from="AreaLoot" to="." method="_on_area_loot_body_exited"]
