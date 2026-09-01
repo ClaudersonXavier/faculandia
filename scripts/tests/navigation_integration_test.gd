@@ -37,13 +37,13 @@ func _test_navigation_mesh_path_generation() -> void:
 		Vector2(0, 600)
 	])
 	nav_poly.add_outline(outline)
-	nav_poly.parsed_collision_mask = Ameaca.LAYER_OBSTACULO
+	nav_poly.parsed_collision_mask = PhysicsLayers.OBSTACULO
 	nav_region.navigation_polygon = nav_poly
 	root.add_child(nav_region)
 
 	# Adiciona obstaculo no centro (x: 200 a 400, y: 100 a 300)
 	var obstacle := StaticBody2D.new()
-	obstacle.collision_layer = Ameaca.LAYER_OBSTACULO
+	obstacle.collision_layer = PhysicsLayers.OBSTACULO
 	obstacle.collision_mask = 0
 	var col_shape := CollisionShape2D.new()
 	var rect_shape := RectangleShape2D.new()

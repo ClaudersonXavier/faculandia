@@ -202,7 +202,7 @@ func _test_ameaca_detecta_linha_de_visao_direta_livre_e_obstruida() -> void:
 
 	# Cria uma parede intermediaria na camada 1 (LAYER_OBSTACULO)
 	var obstacle := StaticBody2D.new()
-	obstacle.collision_layer = Ameaca.LAYER_OBSTACULO
+	obstacle.collision_layer = PhysicsLayers.OBSTACULO
 	obstacle.collision_mask = 0
 	var col_shape := CollisionShape2D.new()
 	var rect_shape := RectangleShape2D.new()
@@ -284,7 +284,7 @@ func _test_ameaca_busca_caminho_quando_visao_obstruida() -> void:
 
 	# Cria obstaculo bloqueando a visao direta
 	var obstacle := StaticBody2D.new()
-	obstacle.collision_layer = Ameaca.LAYER_OBSTACULO
+	obstacle.collision_layer = PhysicsLayers.OBSTACULO
 	obstacle.collision_mask = 0
 	var col_shape := CollisionShape2D.new()
 	var rect_shape := RectangleShape2D.new()
@@ -366,15 +366,15 @@ func _test_ameaca_mascara_de_colisao_ignora_outras_ameacas() -> void:
 	await process_frame
 
 	_assert_true(
-		(ameaca.collision_mask & Ameaca.LAYER_OBSTACULO) != 0,
+		(ameaca.collision_mask & PhysicsLayers.OBSTACULO) != 0,
 		"Ameaca deve colidir com LAYER_OBSTACULO"
 	)
 	_assert_true(
-		(ameaca.collision_mask & Ameaca.LAYER_JOGADOR) != 0,
+		(ameaca.collision_mask & PhysicsLayers.JOGADOR) != 0,
 		"Ameaca deve colidir com LAYER_JOGADOR"
 	)
 	_assert_true(
-		(ameaca.collision_mask & Ameaca.LAYER_AMEACA) == 0,
+		(ameaca.collision_mask & PhysicsLayers.AMEACA) == 0,
 		"Ameaca nao deve ter LAYER_AMEACA na collision_mask de fisica rigida (para evitar picos de velocidade por despenatracao)"
 	)
 
