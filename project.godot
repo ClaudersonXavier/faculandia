@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-GameState="*uid://vqqh1w7mvm6k"
+GameState="*res://scripts/world/game_state.gd"
 
 [input]
 

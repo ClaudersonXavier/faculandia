@@ -195,5 +195,7 @@ func _process(_delta: float) -> void:
 
 
 func _lootar() -> void:
-	GameState.dinheiro += 5
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state:
+		game_state.dinheiro += 5
 	queue_free()
