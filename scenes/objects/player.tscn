@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene format=3 uid="uid://djlmx6kejub5r"]
 
 [ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player/player_moviment.gd" id="1_moviment"]
 [ext_resource type="Texture2D" uid="uid://c4sqt5p8s02l7" path="res://resources/sprites/mira_placeholder.png" id="2_mira"]
@@ -55,42 +55,42 @@ animations = [{
 "speed": 10.0
 }]
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=715886529]
 collision_layer = 2
 collision_mask = 13
 script = ExtResource("1_moviment")
 
-[node name="crosshair" type="Sprite2D" parent="."]
+[node name="crosshair" type="Sprite2D" parent="." unique_id=16264884]
 position = Vector2(-548, -273)
 texture = ExtResource("2_mira")
 script = ExtResource("3_crosshair")
 
-[node name="player_collision" type="CollisionShape2D" parent="."]
+[node name="player_collision" type="CollisionShape2D" parent="." unique_id=1265250815]
 shape = SubResource("RectangleShape2D_pgf2v")
 
-[node name="camera_player" type="Camera2D" parent="."]
+[node name="camera_player" type="Camera2D" parent="." unique_id=73011282]
 zoom = Vector2(1.8, 1.8)
 
-[node name="AudioListener2D" type="AudioListener2D" parent="."]
+[node name="AudioListener2D" type="AudioListener2D" parent="." unique_id=960141364]
 current = true
 
-[node name="Weapon" type="Node2D" parent="."]
+[node name="Weapon" type="Node2D" parent="." unique_id=1480855051]
 z_index = 1
 script = ExtResource("4_pistol")
 metadata/_custom_type_script = "uid://bv64gsgtlb5ju"
 
-[node name="Sprite2D" type="Sprite2D" parent="Weapon"]
+[node name="Sprite2D" type="Sprite2D" parent="Weapon" unique_id=1460420125]
 position = Vector2(8, 3)
 texture = ExtResource("5_pistola")
 
-[node name="muzzle_marker" type="Marker2D" parent="Weapon"]
+[node name="muzzle_marker" type="Marker2D" parent="Weapon" unique_id=1572946475]
 position = Vector2(16, 3)
 
-[node name="PlayerVision" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+[node name="PlayerVision" type="Node2D" parent="." unique_id=799377294 node_paths=PackedStringArray("player")]
 script = ExtResource("6_vision")
 player = NodePath("..")
 
-[node name="player_sprite" type="AnimatedSprite2D" parent="."]
+[node name="player_sprite" type="AnimatedSprite2D" parent="." unique_id=88689288]
 rotation = -1.5707964
 sprite_frames = SubResource("SpriteFrames_1o814")
 animation = &"idle"

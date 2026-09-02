@@ -6,7 +6,7 @@ extends CharacterBody2D
 @export var backpedal_multiplier: float = 0.85
 
 @export var cone_angle: float = 75.0
-@export var vision_range: float = 600.0
+@export var vision_range: float = 450.0
 @export var footstep_noise_radius: float = 120.0
 @export var footstep_distance_threshold: float = 27.0
 

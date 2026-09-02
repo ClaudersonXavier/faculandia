@@ -8,9 +8,9 @@ const LAYER_PERIPHERAL_VISION_OBSTACLE: int = PhysicsLayers.OBSTACULO
 
 @export var player: CharacterBody2D
 @export var overlay: ColorRect
-@export_range(1.0, 180.0, 1.0) var vision_angle: float = 70.0
-@export var vision_distance: float = 520.0
-@export var inner_light_radius: float = 40.0
+@export_range(1.0, 180.0, 1.0) var vision_angle: float = 75.0
+@export var vision_distance: float = 450.0
+@export var inner_light_radius: float = 50.0
 @export_range(8, 256, 1) var ray_count: int = 70
 @export_range(8, 256, 1) var light_ray_count: int = 20
 @export_range(32, 1152, 1) var omnidirectional_ray_count: int = 110
