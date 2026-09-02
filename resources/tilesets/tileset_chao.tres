@@ -2,12 +2,14 @@
 
 [ext_resource type="Texture2D" uid="uid://daxkw5aex5chb" path="res://resources/sprites/environment/tileset_chao.png" id="1_oj0ic"]
 [ext_resource type="Texture2D" uid="uid://crk1xc2tuylp7" path="res://sprites/environment/estrada-facul-2.png" id="2_kywmo"]
+[ext_resource type="Texture2D" uid="uid://bq5hdwfgprkmf" path="res://sprites/environment/estrada-facul.png" id="3_e01w0"]
 [ext_resource type="Texture2D" uid="uid://bp2brve5nlnt4" path="res://sprites/environment/encosta.png" id="3_spwvv"]
 [ext_resource type="Texture2D" uid="uid://baoc4awwiojs6" path="res://sprites/environment/grama-1.png" id="4_clgjs"]
 [ext_resource type="Texture2D" uid="uid://b4dvw1reka21k" path="res://sprites/environment/grama-2.png" id="5_ukjeb"]
 [ext_resource type="Texture2D" uid="uid://dlu4ukg7ad302" path="res://sprites/environment/grama.png" id="6_e01w0"]
 [ext_resource type="Texture2D" uid="uid://cg86cafqr5v" path="res://sprites/environment/terra-grama.png" id="7_5g3vs"]
 [ext_resource type="Texture2D" uid="uid://c6rfk2kp8kksf" path="res://sprites/environment/terra.png" id="8_8rvm5"]
+[ext_resource type="Texture2D" uid="uid://cl2nbdi8833e1" path="res://sprites/environment/terra-2.png" id="10_5g3vs"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sq78c"]
 texture = ExtResource("1_oj0ic")
@@ -26,6 +28,11 @@ texture_region_size = Vector2i(32, 32)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_b57c7"]
 texture = ExtResource("2_kywmo")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8rvm5"]
+texture = ExtResource("3_e01w0")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 
@@ -59,6 +66,15 @@ texture = ExtResource("8_8rvm5")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_co5md"]
+texture = ExtResource("8_8rvm5")
+texture_region_size = Vector2i(32, 32)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jrwq1"]
+texture = ExtResource("10_5g3vs")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+
 [resource]
 tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_sq78c")
@@ -69,3 +85,6 @@ sources/4 = SubResource("TileSetAtlasSource_r3d8g")
 sources/5 = SubResource("TileSetAtlasSource_34lwt")
 sources/6 = SubResource("TileSetAtlasSource_1n618")
 sources/7 = SubResource("TileSetAtlasSource_xx2a0")
+sources/8 = SubResource("TileSetAtlasSource_co5md")
+sources/9 = SubResource("TileSetAtlasSource_jrwq1")
+sources/10 = SubResource("TileSetAtlasSource_8rvm5")
