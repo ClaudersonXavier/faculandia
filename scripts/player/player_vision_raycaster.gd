@@ -9,6 +9,11 @@ extends RefCounted
 
 var _owner: Node2D
 
+# Cache de cantos expostos por TileMapLayer (chave "<instance_id>:<layer_mask>").
+# Paredes de TileMapLayer sao estaticas em tempo de execucao, entao os cantos
+# so precisam ser calculados uma vez por combinacao de mapa+mascara.
+var _tile_corner_cache: Dictionary = {}
+
 
 func _init(owner_node: Node2D) -> void:
 	_owner = owner_node
@@ -65,23 +70,35 @@ func get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: i
 							corners.append(trans * (Vector2.RIGHT.rotated(a) * r))
 		elif collider is TileMapLayer:
 			var tile_map: TileMapLayer = collider
-			var tile_size := Vector2(tile_map.tile_set.tile_size)
-			var reach := radius + tile_size.length()
-			for cell in tile_map.get_used_cells():
-				var center: Vector2 = tile_map.to_global(tile_map.map_to_local(cell))
-				if center.distance_to(source_pos) > reach:
-					continue
-				var ext := tile_size / 2.0
-				var raw_corners := [
-					center + Vector2(-ext.x, -ext.y),
-					center + Vector2(ext.x, -ext.y),
-					center + Vector2(ext.x, ext.y),
-					center + Vector2(-ext.x, ext.y)
-				]
-				for c: Vector2 in raw_corners:
-					if _is_exposed_corner(space_state, c, layer_mask):
-						corners.append(c)
+			var reach := radius + Vector2(tile_map.tile_set.tile_size).length()
+			var cache_key := "%d:%d" % [tile_map.get_instance_id(), layer_mask]
+			if not _tile_corner_cache.has(cache_key):
+				_tile_corner_cache[cache_key] = _compute_tile_corners(tile_map, layer_mask, space_state)
+			for c: Vector2 in _tile_corner_cache[cache_key]:
+				if c.distance_to(source_pos) <= reach:
+					corners.append(c)
 	return corners
+
+
+## Calcula (uma unica vez por mapa+mascara) os cantos expostos de todas as
+## celulas usadas de um TileMapLayer. So valido enquanto as paredes forem
+## estaticas em tempo de execucao — se algum dia elas puderem ser destruidas
+## ou pintadas dinamicamente, essa cache precisa ser invalidada.
+func _compute_tile_corners(tile_map: TileMapLayer, layer_mask: int, space_state: PhysicsDirectSpaceState2D) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var ext := Vector2(tile_map.tile_set.tile_size) / 2.0
+	for cell in tile_map.get_used_cells():
+		var center: Vector2 = tile_map.to_global(tile_map.map_to_local(cell))
+		var raw_corners := [
+			center + Vector2(-ext.x, -ext.y),
+			center + Vector2(ext.x, -ext.y),
+			center + Vector2(ext.x, ext.y),
+			center + Vector2(-ext.x, ext.y)
+		]
+		for c: Vector2 in raw_corners:
+			if _is_exposed_corner(space_state, c, layer_mask):
+				out.append(c)
+	return out
 
 
 func _is_exposed_corner(space_state: PhysicsDirectSpaceState2D, corner: Vector2, layer_mask: int) -> bool:
