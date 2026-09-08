@@ -709,7 +709,7 @@ func _test_ameaca_contorna_quina_sem_travar() -> void:
 
 	# Som localizado no lado direito inferior, do outro lado da quina
 	var sound_pos := Vector2(450, 450)
-	ameaca.investigate_position(sound_pos)
+	ameaca.investigate_sound(sound_pos)
 
 	await physics_frame
 	await physics_frame

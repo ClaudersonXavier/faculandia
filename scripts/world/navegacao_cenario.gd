@@ -44,29 +44,15 @@ func _ensure_world_bounds_outline(source_node: Node) -> void:
 				if used_rect.size != Vector2i.ZERO and tml.tile_set:
 					var cell_size := Vector2(tml.tile_set.tile_size)
 					var pixel_rect := Rect2(Vector2(used_rect.position) * cell_size, Vector2(used_rect.size) * cell_size)
-					if total_rect == Rect2():
-						total_rect = pixel_rect
-					else:
-						total_rect = total_rect.merge(pixel_rect)
+					total_rect = _merge_rect(total_rect, pixel_rect)
 			elif child is Camera2D:
-				var cam: Camera2D = child
-				if cam.limit_right > cam.limit_left and cam.limit_bottom > cam.limit_top:
-					var cam_rect := Rect2(cam.limit_left, cam.limit_top, cam.limit_right - cam.limit_left, cam.limit_bottom - cam.limit_top)
-					if total_rect == Rect2():
-						total_rect = cam_rect
-					else:
-						total_rect = total_rect.merge(cam_rect)
+				total_rect = _merge_rect(total_rect, _get_camera_rect(child))
 
 	# Verifica limites da camera nos players caso nao estejam no source_node
 	var players := get_tree().get_nodes_in_group(&"player")
 	for p in players:
 		var cam := p.get_node_or_null("camera_player") as Camera2D
-		if cam and cam.limit_right > cam.limit_left and cam.limit_bottom > cam.limit_top:
-			var cam_rect := Rect2(cam.limit_left, cam.limit_top, cam.limit_right - cam.limit_left, cam.limit_bottom - cam.limit_top)
-			if total_rect == Rect2():
-				total_rect = cam_rect
-			else:
-				total_rect = total_rect.merge(cam_rect)
+		total_rect = _merge_rect(total_rect, _get_camera_rect(cam))
 
 	if total_rect.size != Vector2.ZERO:
 		var padded := total_rect.grow(32.0)
@@ -77,4 +63,16 @@ func _ensure_world_bounds_outline(source_node: Node) -> void:
 			padded.end,
 			Vector2(padded.position.x, padded.end.y)
 		]))
+
+
+func _get_camera_rect(cam: Camera2D) -> Rect2:
+	if cam and cam.limit_right > cam.limit_left and cam.limit_bottom > cam.limit_top:
+		return Rect2(cam.limit_left, cam.limit_top, cam.limit_right - cam.limit_left, cam.limit_bottom - cam.limit_top)
+	return Rect2()
+
+
+func _merge_rect(base: Rect2, other: Rect2) -> Rect2:
+	if other.size == Vector2.ZERO:
+		return base
+	return other if base.size == Vector2.ZERO else base.merge(other)
 

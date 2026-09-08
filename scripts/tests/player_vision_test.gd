@@ -556,7 +556,8 @@ func _test_quinas_internas_entre_paredes_conectadas_sao_filtradas() -> void:
 	fixture.root.add_child(p2)
 	await physics_frame
 
-	var corners: PackedVector2Array = fixture.vision._get_obstacle_corners_near(Vector2(16, 0), 100.0, 1)
+	var raycaster := PlayerVisionRaycaster.new(fixture.vision)
+	var corners: PackedVector2Array = raycaster.get_obstacle_corners_near(Vector2(16, 0), 100.0, 1)
 	
 	# A costura interna entre p1 e p2 em x=16 (y=34 e y=66) nao deve estar presente nos corners
 	var has_seam_corner := false

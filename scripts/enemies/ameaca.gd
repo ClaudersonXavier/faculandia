@@ -8,6 +8,8 @@ const STUCK_CHECK_FRAMES: int = 15
 const STUCK_MIN_DISTANCE_SQ: float = 16.0  # 4px
 const AmeacaDebugVisualizerScript := preload("res://scripts/enemies/ameaca_debug_visualizer.gd")
 
+enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LAST_SEEN }
+
 @export var max_health: float = 24.0
 @export var speed: float = 70.0
 @export var hit_flash_color: Color = Color(1.0, 0.3, 0.3, 1.0)
@@ -113,8 +115,44 @@ func investigate_sound(sound_pos: Vector2) -> void:
 		navigation_agent.target_position = sound_pos
 
 
-func investigate_position(target_pos: Vector2) -> void:
-	investigate_sound(target_pos)
+func is_dead() -> bool:
+	return _is_dead
+
+
+func get_behavior_state() -> BehaviorState:
+	if has_direct_vision_to_player():
+		return BehaviorState.CHASING_PLAYER
+	if _has_sound_target:
+		return BehaviorState.INVESTIGATING_SOUND
+	if _is_investigating_last_seen:
+		return BehaviorState.INVESTIGATING_LAST_SEEN
+	return BehaviorState.IDLE
+
+
+func get_debug_target_info() -> Dictionary:
+	if has_direct_vision_to_player() and is_instance_valid(target_player):
+		return {
+			"position": target_player.global_position,
+			"label": "JOGADOR (VISAO DIRETA)",
+			"color": Color(0.2, 1.0, 0.3)
+		}
+	if _has_sound_target:
+		return {
+			"position": _sound_target_pos,
+			"label": "SOM (RUIDO)",
+			"color": Color(1.0, 0.85, 0.1)
+		}
+	if _is_investigating_last_seen:
+		return {
+			"position": _last_seen_player_pos,
+			"label": "ULTIMO LOCAL VISTO",
+			"color": Color(0.5, 0.8, 1.0)
+		}
+	return {
+		"position": Vector2.INF,
+		"label": "",
+		"color": Color.WHITE
+	}
 
 
 func has_investigate_target() -> bool:
@@ -192,15 +230,16 @@ func _physics_process(delta: float) -> void:
 
 		# Verifica se ha caminho direto e livre de colisoes para o corpo fisico da ameaca
 		has_direct_path = has_clear_path_to(target_pos)
+		var arrived_direct := distance_squared <= stop_dist * stop_dist
 
-		if has_direct_path:
-			if distance_squared <= stop_dist * stop_dist:
+		if has_direct_path or navigation_agent == null:
+			if arrived_direct:
 				is_at_target = true
 				if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
 					rotation = to_target.angle()
 			else:
 				move_direction = to_target.normalized()
-		elif navigation_agent:
+		else:
 			var target_changed := _last_nav_target == Vector2.INF or target_pos.distance_squared_to(_last_nav_target) > 16.0
 			_path_timer -= delta
 			if target_changed or _path_timer <= 0.0:
@@ -208,23 +247,17 @@ func _physics_process(delta: float) -> void:
 				_last_nav_target = target_pos
 				navigation_agent.target_position = target_pos
 
-			var arrived_dist := distance_squared <= stop_dist * stop_dist
 			var nav_finished := navigation_agent.is_navigation_finished()
 			var final_pos := navigation_agent.get_final_position()
 			var near_final := final_pos != Vector2.ZERO and global_position.distance_squared_to(final_pos) <= stop_dist * stop_dist
 
-			if arrived_dist or (nav_finished and near_final):
+			if arrived_direct or (nav_finished and near_final):
 				is_at_target = true
 			else:
 				nav_next_pos = navigation_agent.get_next_path_position()
 				var to_next := nav_next_pos - global_position
 				if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 					move_direction = to_next.normalized()
-		else:
-			if distance_squared <= stop_dist * stop_dist:
-				is_at_target = true
-			else:
-				move_direction = to_target.normalized()
 
 		if is_at_target and not is_player_target:
 			# Chegou ao local onde identificou o barulho ou ultimo ponto: encerra a investigacao
@@ -348,7 +381,7 @@ func take_damage(amount: float) -> void:
 	health -= amount
 	_play_hit_flash()
 	if not has_direct_vision_to_player() and is_instance_valid(target_player):
-		investigate_position(target_player.global_position)
+		investigate_sound(target_player.global_position)
 
 	if health <= 0.0:
 		die()
