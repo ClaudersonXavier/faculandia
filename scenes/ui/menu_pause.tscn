@@ -1,0 +1,97 @@
+[gd_scene format=3 uid="uid://bd8noi53bxvtr"]
+
+[ext_resource type="Script" uid="uid://ccnlnqvshrh75" path="res://scripts/world/menu_pause.gd" id="1_pause"]
+
+[node name="menu_pause" type="CanvasLayer" unique_id=272986720]
+process_mode = 3
+layer = 10
+script = ExtResource("1_pause")
+
+[node name="PainelPause" type="Control" parent="." unique_id=672015967]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Fundo" type="ColorRect" parent="PainelPause" unique_id=1916434909]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Titulo" type="Label" parent="PainelPause" unique_id=1097741227]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 90.0
+offset_right = 150.0
+offset_bottom = 140.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 34
+text = "Pausado"
+horizontal_alignment = 1
+
+[node name="Botoes" type="VBoxContainer" parent="PainelPause" unique_id=2071096330]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -60.0
+offset_right = 110.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Retomar" type="Button" parent="PainelPause/Botoes" unique_id=1101967052]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Voltar ao jogo"
+
+[node name="Salvar" type="Button" parent="PainelPause/Botoes" unique_id=41690266]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Salvar"
+
+[node name="SairParaMenu" type="Button" parent="PainelPause/Botoes" unique_id=2137747906]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Sair para o menu"
+
+[node name="SairDoJogo" type="Button" parent="PainelPause/Botoes" unique_id=218805717]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Sair do jogo"
+
+[node name="Status" type="Label" parent="PainelPause" unique_id=159848059]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = 130.0
+offset_right = 110.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1

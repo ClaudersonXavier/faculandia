@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://cneygnpjiex2o"]
 
 [ext_resource type="Script" uid="uid://c0610tb73xbqy" path="res://scripts/world/loja.gd" id="1_po4y7"]
+[ext_resource type="Texture2D" uid="uid://dxhfa62p4b0cr" path="res://resources/sprites/ui/loja-background.png" id="2_5jthc"]
+[ext_resource type="PackedScene" uid="uid://bd8noi53bxvtr" path="res://scenes/ui/menu_pause.tscn" id="2_menu_pause"]
 
 [node name="Loja" type="Control" unique_id=1352554327]
 layout_mode = 3
@@ -11,6 +13,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_po4y7")
 metadata/_edit_use_anchors_ = true
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1602228859]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_5jthc")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=494369872]
 anchor_mode = 0
@@ -64,6 +75,8 @@ text = "Loja (em construção)
 unique_name_in_owner = true
 ok_button_text = "Partir"
 dialog_text = "Certeza que vai partir sem reabastecer a munição?"
+
+[node name="menu_pause" parent="." unique_id=1170415874 instance=ExtResource("2_menu_pause")]
 
 [connection signal="pressed" from="RecarregarMunicaoPistola" to="." method="_on_recarregar_pressed"]
 [connection signal="pressed" from="VoltarAoJogo" to="." method="_on_button_pressed"]

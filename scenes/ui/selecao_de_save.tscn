@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://ug6m5ts6smb5"]
+
+[ext_resource type="Script" uid="uid://s3p7oyi8ki2t" path="res://scripts/world/selecao_de_save.gd" id="1_selecao"]
+
+[node name="SelecaoDeSave" type="Control" unique_id=1839527348]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_selecao")
+
+[node name="Fundo" type="ColorRect" parent="." unique_id=1364795846]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Titulo" type="Label" parent="." unique_id=2057476751]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 60.0
+offset_right = 250.0
+offset_bottom = 100.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 28
+text = "Escolha um slot"
+horizontal_alignment = 1
+
+[node name="Lista" type="VBoxContainer" parent="." unique_id=1938717741]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -90.0
+offset_right = 260.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="Voltar" type="Button" parent="." unique_id=1466035634]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -73.0
+offset_top = -98.0
+offset_right = 73.0
+offset_bottom = -67.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 15
+text = "Voltar"
+
+[node name="ConfirmarSobrescrita" type="ConfirmationDialog" parent="." unique_id=229749712]
+unique_name_in_owner = true
+oversampling_override = 1.0
+size = Vector2i(262, 100)
+ok_button_text = "Sobrescrever"
+dialog_text = "Esse slot já tem um jogo salvo."
+cancel_button_text = "Cancelar"

@@ -11,13 +11,19 @@ config_version=5
 [application]
 
 config/name="Faculandia"
-run/main_scene="res://scenes/world/cena_principal.tscn"
+run/main_scene="res://scenes/world/menu_principal.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameState="*res://scripts/world/game_state.gd"
+
+[display]
+
+window/size/mode=3
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
 
 [input]
 

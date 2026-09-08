@@ -1,8 +1,59 @@
+class_name EstadoDoJogo
 extends Node
+## Estado corrente da partida (autoload "GameState").
+## PADROES e a fonte unica dos valores iniciais e tambem define o conjunto de
+## campos que vai para o save: adicionar um campo persistente = 1 entrada aqui
+## mais 1 var. A persistencia em disco fica em scripts/core/save_slots.gd e
+## scripts/world/save_jogo.gd.
+## O class_name difere do nome do autoload de proposito: `class_name GameState`
+## colidiria com o autoload, e sem class_name o acesso ficaria sem tipo.
 
+## O default de "cena" repete o literal de SaveJogo.CENA_CENARIO em vez de
+## referencia-lo: um const aqui apontando para outra classe global criaria uma
+## dependencia circular entre class_names (SaveJogo tambem referencia
+## EstadoDoJogo). Mantenha os dois literais em sincronia.
+const PADROES := {
+	"municao_reserva": 14,
+	"municao_reserva_maxima": 14,
+	"municao_pente": 7,
+	"dinheiro": 0,
+	"cena": "res://scenes/world/cena_principal.tscn",
+}
+
+var municao_reserva: int
+var municao_reserva_maxima: int
+var municao_pente: int
+var dinheiro: int
+var cena: String
+
+## Flag de transicao entre cenas; e runtime, nao entra no save.
 var voltando_da_loja: bool = false
-var municao_reserva: int = 14
-var municao_reserva_maxima: int = 14
-var municao_pente: int = 7
-var recarregar_arma_ao_voltar: bool = false
-var dinheiro: int = 0
+
+
+func _init() -> void:
+	reset()
+
+
+## Serializa apenas os campos persistentes.
+func to_dict() -> Dictionary:
+	var dados := {}
+	for chave: String in PADROES:
+		dados[chave] = get(chave)
+	return dados
+
+
+## Aplica um dicionario de save. Campos ausentes voltam ao padrao e chaves
+## desconhecidas sao ignoradas: e isso que faz um save v1 carregar sem
+## migracao quando campos novos aparecerem.
+func from_dict(dados: Dictionary) -> void:
+	for chave: String in PADROES:
+		set(chave, dados.get(chave, PADROES[chave]))
+	if not ResourceLoader.exists(cena):
+		push_warning("Cena do save nao existe mais: %s" % cena)
+		cena = String(PADROES.cena)
+	voltando_da_loja = false
+
+
+## Volta a partida para os valores de PADROES.
+func reset() -> void:
+	from_dict({})

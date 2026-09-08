@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://da0ply76csvkg" path="res://scripts/world/exit_zone.gd" id="20_exit_zone"]
 [ext_resource type="PackedScene" uid="uid://djlmx6kejub5r" path="res://scenes/objects/player.tscn" id="21_player"]
 [ext_resource type="PackedScene" uid="uid://cur7gqfk1kfdx" path="res://scenes/ui/camada_ui.tscn" id="22_camada_ui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_pause.tscn" id="23_menu_pause"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
 vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 1632, 0, 1632)
@@ -125,6 +126,8 @@ process_mode = 3
 ok_button_text = "Confirmar"
 dialog_text = "Certeza que vai querer recuar agora?"
 cancel_button_text = "Cancelar"
+
+[node name="menu_pause" parent="." instance=ExtResource("23_menu_pause")]
 
 [connection signal="body_entered" from="Mundo/ZonaSaida" to="Mundo/ZonaSaida" method="_on_body_entered"]
 [connection signal="confirmed" from="camada_ui/ConfirmationDialog" to="Mundo/ZonaSaida" method="_on_confirmation_dialog_confirmed"]

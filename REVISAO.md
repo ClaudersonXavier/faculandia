@@ -59,6 +59,15 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição, com confirmação ao tentar sair sem reabastecer
 - `scripts/world/exit_zone.gd`: área que leva o jogador da cena principal para a loja
 
+### Menu Principal, Save e Pause
+- `scripts/world/game_state.gd` (autoload `GameState`, `class_name EstadoDoJogo`): estado da partida em memória (munição, dinheiro, cena atual), com `to_dict()`/`from_dict()`/`reset()` guiados por `PADROES` — fonte única dos valores de partida nova e do schema persistido
+- `scripts/core/save_slots.gd` (`class_name SaveSlots`): mecanismo de 4 slots de save independentes em disco (`user://save_auto.cfg` + `save_slot_1/2/3.cfg`, formato `ConfigFile` com envelope `[meta]` versionado); não conhece o conteúdo da partida
+- `scripts/world/save_jogo.gd` (`class_name SaveJogo`): fachada que monta/aplica o payload da partida, guarda o slot em uso (`slot_atual`, `static var`) e centraliza as trocas de fase (`trocar_fase`, `sair_para_o_menu`) — autossalva no slot de autosave a cada troca
+- `scripts/world/menu_principal.gd` + `scenes/world/menu_principal.tscn`: primeira tela do jogo (`run/main_scene`), com título "FACULANDIA" e os botões Novo Jogo / Continuar / Sair
+- `scripts/world/selecao_de_save.gd` + `scenes/ui/selecao_de_save.tscn`: painel reusável de escolha de slot, usado tanto por "Novo Jogo" (3 slots, com aviso de sobrescrita) quanto por "Continuar" (autosave + 3 slots, só os ocupados ficam clicáveis)
+- `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em `cena_principal.tscn` e `loja.tscn`; salva no slot da partida atual, sai para o menu ou fecha o jogo
+- **Limitação conhecida**: voltar da loja recarrega `cena_principal.tscn` do zero — as `Ameaca` (instâncias fixas do editor) renascem com vida cheia e o Vestígio de uma Ameaça morta some, mesmo com o autosave preservando dinheiro/munição. Corrigir isso depende do snapshot completo do mundo (ver Próximos Passos)
+
 ---
 
 ## Estrutura de Arquivos
@@ -69,12 +78,14 @@ faculandia/
 ├── AGENTS.md / CLAUDE.md / GEMINI.md   # instruções para agentes (CLAUDE.md e GEMINI.md são symlinks)
 ├── scripts/
 │   ├── core/            # utilitários compartilhados (physics_layers, physics_utils, animation_utils,
-│   │                     # texture_utils, noise_type_config, sprite_conventions, flocking_utils)
+│   │                     # texture_utils, noise_type_config, sprite_conventions, flocking_utils,
+│   │                     # save_slots — mecanismo de slots de save, sem conhecer o conteúdo da partida)
 │   ├── player/           # player_moviment, player_vision, player_vision_raycaster, crosshair
 │   ├── weapons/          # weapon, pistol, bullet
 │   ├── enemies/          # ameaca, ameaca_debug_logger
 │   ├── noise/            # noise_bus, noise_event, noise_synthesizer, noise_sfx_player, noise_visualizer
-│   ├── world/            # hud, loja, game_state, exit_zone, navegacao_cenario
+│   ├── world/            # hud, loja, game_state, exit_zone, navegacao_cenario,
+│   │                     # save_jogo, menu_principal, menu_pause, selecao_de_save
 │   ├── testing/          # test_spawner, test_entity (ferramentas de debug em runtime)
 │   └── tests/            # scripts de teste automatizado (rodados via `make test`)
 ├── shaders/
@@ -82,9 +93,10 @@ faculandia/
 │   ├── fragmento_perceptivel.gdshader      # discard de entidades fora da percepção
 │   └── visibility_polygon.gdshaderinc      # funções de teste ponto-em-polígono, compartilhadas pelos dois shaders acima
 ├── scenes/
-│   ├── world/            # cena_principal.tscn (nível principal), loja.tscn
+│   ├── world/            # menu_principal.tscn (primeira tela), cena_principal.tscn (nível principal), loja.tscn
 │   ├── objects/          # ameaca.tscn, barril.tscn, caixa.tscn, player.tscn (instanciáveis)
-│   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD, reusável entre cenas)
+│   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD, reusável entre cenas),
+│                          # menu_pause.tscn (overlay de pause), selecao_de_save.tscn (painel de slots)
 ├── resources/
 │   ├── sprites/          # characters/, environment/, items/, test/
 │   ├── tilesets/         # tileset_chao.tres, tileset_parede.tres
@@ -109,10 +121,11 @@ MainLoop (Node2D)
 │   ├── Player (instância de player.tscn — ver árvore própria abaixo)
 │   ├── Barril1/2, Caixa1/2 (instâncias, bloqueiam visão direta mas não periférica)
 │   └── ZonaSaida (Area2D) [exit_zone.gd] → leva para a loja
-└── camada_ui (instância de camada_ui.tscn)
-    ├── visibilidade (ColorRect, shader de escuridão)
-    ├── HUD (Control) [hud.gd]
-    └── ConfirmationDialog (específico desta cena, confirma saída sem reabastecer)
+├── camada_ui (instância de camada_ui.tscn)
+│   ├── visibilidade (ColorRect, shader de escuridão)
+│   ├── HUD (Control) [hud.gd]
+│   └── ConfirmationDialog (específico desta cena, confirma saída sem reabastecer)
+└── menu_pause (instância de scenes/ui/menu_pause.tscn) → abre no ESC (`ui_cancel`)
 ```
 
 ### Árvore do Player (`scenes/objects/player.tscn`)
@@ -141,6 +154,7 @@ Player (CharacterBody2D) [player_moviment.gd]
 | `reload` | R |
 | `debug_vision` | F1 (alterna visão de debug, revela tudo) |
 | `debug_zombie` | F2 (alterna visão de debug da IA: visão, linha de visada, destino e caminho) |
+| `ui_cancel` (built-in) | ESC — abre/fecha o menu de pause (`scenes/ui/menu_pause.tscn`) na cena principal e na loja |
 
 Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spawna ameaça, `L` spawna fonte de luz de teste, `Delete`/`Backspace` remove o objeto de teste mais próximo do mouse. `F3` alterna o visualizador de ruído.
 
@@ -154,3 +168,4 @@ Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spa
 4. **Animação de tiro** — flash no cano da arma
 5. **Áudio ambiente/música** — `resources/sounds/` já está reservado para isso
 6. **Mais tipos de ameaça** — a estrutura de `scripts/enemies/` já separa IA de debug logging, facilitando compor novos comportamentos a partir de `ameaca.gd`
+7. **Progresso por mapa e snapshot do mundo** — cada mapa com uma quantidade de Ameaças por região, mortas permanentemente mortas e vivas regenerando vida até limpar o mapa; o save já tem o gancho para isso (`versao` no envelope, `cena` como futura chave de mapa, `SaveJogo` como ponto único de montagem/aplicação do payload), falta a seção de conteúdo do mundo em si. Resolve de quebra a limitação de "voltar da loja ressuscita as Ameaças" — alternativa menor no meio-tempo: transformar a loja num overlay pausado em vez de trocar de cena
