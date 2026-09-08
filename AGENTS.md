@@ -2,7 +2,7 @@
 
 ## Project
 - Godot 4 project (`project.godot`), GDScript, 2D top-down shooter.
-- Main scene is `res://scenes/world/menu_principal.tscn` (title screen: Novo Jogo/Continuar/Sair); the gameplay level is `res://scenes/world/cena_principal.tscn`. Keep `run/main_scene` as a `res://` path, not a UID, so fresh clones run before Godot imports UIDs — the editor can rewrite it to `uid://` when saving Project Settings, so check `git diff project.godot` before committing.
+- Main scene is `res://scenes/world/menu_principal.tscn` (title screen: Novo Jogo/Continuar/Sair). Novo Jogo/Continuar land on `res://scenes/world/selecao_de_cenario.tscn` (the hub), which routes to the gameplay zones — `res://scenes/world/zona_norte.tscn` (the original/complete level) and `res://scenes/world/zona_sul.tscn` (a playable skeleton with no tiles/enemies drawn yet). `res://scenes/world/cena_principal.tscn` is **not** part of that player flow: it's the dev/test scene (the origin `zona_norte.tscn` was duplicated from, used by `scripts/tests/player_vision_test.gd` and by a secret F3 shortcut on the hub) — see Gotchas below. Keep `run/main_scene` as a `res://` path, not a UID, so fresh clones run before Godot imports UIDs — the editor can rewrite it to `uid://` when saving Project Settings, so check `git diff project.godot` before committing.
 - Godot cache/import output lives in `.godot/` and is ignored; do not commit it.
 
 ## Commands
@@ -24,10 +24,28 @@
 - `scripts/core/save_slots.gd` (`class_name SaveSlots`, static-only): the save file mechanism — 4 independent slots (`user://save_auto.cfg` + `save_slot_1/2/3.cfg`, `ConfigFile` with a versioned `[meta]` envelope). Knows nothing about what a "game" is; only reads/writes opaque section dictionaries.
 - `scripts/world/save_jogo.gd` (`class_name SaveJogo`, static-only): the save domain facade — builds/applies the save payload from `EstadoDoJogo`, tracks which slot (1-3) the current run is saving to (`static var`, survives `change_scene_to_file`), and is the single choke point for phase transitions (`trocar_fase`, `sair_para_o_menu`) so autosave-on-transition can't be forgotten at a new call site.
 - `scripts/world/menu_principal.gd` + `scripts/world/selecao_de_save.gd`: the title screen and its reusable slot-selection panel (`enum Modo { NOVO_JOGO, CONTINUAR }`); the panel's buttons are generated in code from `SaveSlots.listar()`, not authored in the `.tscn`.
-- `scripts/world/menu_pause.gd`: the ESC pause overlay, instanced in both `cena_principal.tscn` and `loja.tscn`. Its `_unhandled_input` guard (`elif not get_tree().paused: ...`) is what keeps it from stealing ESC from `ZonaSaida`'s own `ConfirmationDialog`, which pauses the tree itself before popping up.
+- `scripts/world/menu_pause.gd`: the ESC pause overlay, instanced in every playable scene (`zona_norte.tscn`, `zona_sul.tscn`, `cena_principal.tscn`, `loja.tscn`). Its `_unhandled_input` guard (`elif not get_tree().paused: ...`) is what keeps it from stealing ESC from `ZonaSaida`'s own `ConfirmationDialog`, which pauses the tree itself before popping up.
 - `resources/tilesets/tileset_chao.tres` currently has no collision shapes.
 - `resources/sprites/` holds sprite textures (by domain: `characters/`, `environment/`, `items/`, `test/`); `resources/sounds/` is reserved for future audio assets; `resources/tilesets/` holds `TileSet` resources.
-- `scenes/world/` holds level/screen scenes (`menu_principal.tscn`, `cena_principal.tscn`, `loja.tscn`); `scenes/objects/` holds instantiable actor/prop scenes (`ameaca.tscn`, `barril.tscn`, `caixa.tscn`); `scenes/ui/` holds reusable overlays (`camada_ui.tscn`, `menu_pause.tscn`, `selecao_de_save.tscn`).
+- `scripts/world/selecao_de_cenario.gd`: the hub between the menu and the playable zones — two "cards" (Zona Norte / Zona Sul) generated in code from a `ZONAS` const, the same generated-buttons pattern as `selecao_de_save.gd`. Also owns the secret F3 dev shortcut (see Gotchas).
+- `scenes/world/` holds level/screen scenes (`menu_principal.tscn`, `selecao_de_cenario.tscn` the hub, `zona_norte.tscn`/`zona_sul.tscn` the playable zones, `cena_principal.tscn` the dev/test scene, `loja.tscn`); `scenes/objects/` holds instantiable actor/prop scenes (`ameaca.tscn`, `barril.tscn`, `caixa.tscn`); `scenes/ui/` holds reusable overlays (`camada_ui.tscn`, `menu_pause.tscn`, `selecao_de_save.tscn`).
+
+## Save Schema
+- Sempre que uma nova funcionalidade precisar que algum dado sobreviva a
+  save/load (não apenas durante a sessão em memória), siga este checklist,
+  nesta ordem:
+  1. Adicione o campo em `EstadoDoJogo.PADROES` (`scripts/world/game_state.gd`)
+     com seu valor padrão, mais a `var` correspondente com o mesmo nome —
+     `PADROES` é a fonte única tanto do default de partida nova quanto do
+     schema persistido (`to_dict`/`from_dict` iteram sobre ele).
+  2. Cubra o campo em `scripts/tests/save_jogo_test.gd`: pelo menos um teste
+     de round-trip (`to_dict`→`from_dict` preserva o valor) e, se o campo tiver
+     validação/fallback (como `cena` tem para `ResourceLoader.exists`), um
+     teste do caminho de fallback.
+  3. Atualize o Code Map deste arquivo e a seção relevante de `REVISAO.md`
+     descrevendo o novo campo.
+  Isto é uma prática permanente, não um lembrete pontual — vale para toda
+  mudança futura que precise persistir estado, não só a que a introduziu.
 
 ## Godot Gotchas
 - Movement uses built-in `ui_up/down/left/right` actions plus WASD/setas/gamepad from `project.godot`.
@@ -36,7 +54,9 @@
 - `ui_cancel` (ESC) is not redefined in `project.godot`, so it's the Godot built-in — used to open/close the pause menu (`scripts/world/menu_pause.gd`). Don't rebind it without checking that guard logic.
 - `crosshair.gd` sets `Input.mouse_mode = MOUSE_MODE_HIDDEN` in `_ready()` because the game draws its own crosshair; any screen that needs the system cursor (menus, the pause overlay, the loja) must set `MOUSE_MODE_VISIBLE` itself and restore the previous mode on the way out — `loja.gd` and `menu_pause.gd` do this; don't assume the cursor is visible by default.
 - `get_tree().paused` survives `change_scene_to_file`; anything that navigates to a new scene (menu transitions, `SaveJogo.trocar_fase`/`sair_para_o_menu`) must despause first, or the new scene loads frozen.
-- Known limitation: leaving `cena_principal.tscn` for the loja and coming back reloads the level from the `.tscn`, so the two `Ameaca` instances (fixed in the editor, not spawned) respawn at full health and any un-looted Vestígio disappears — even though the save preserves money/ammo across that trip. See `REVISAO.md` → "Menu Principal, Save e Pause" for the two ways this gets fixed later.
+- Known limitation: leaving a zone for the loja and coming back (now via the hub, not directly) reloads the level from its `.tscn`, so the two `Ameaca` instances (fixed in the editor, not spawned) respawn at full health and any un-looted Vestígio disappears — even though the save preserves money/ammo across that trip. See `REVISAO.md` → "Menu Principal, Save e Pause" for the two ways this gets fixed later.
+- F3 means two different things depending on the scene: inside a playable zone it's `scripts/noise/noise_visualizer.gd` (toggle the noise debug rings); on the hub (`selecao_de_cenario.tscn`) it's a secret dev shortcut straight to `cena_principal.tscn`, unrelated and undocumented for players. No runtime conflict (the hub has no `NoiseVisualizer`), but don't be surprised reading two different F3 handlers.
+- Maintenance note: `zona_norte.tscn` and `cena_principal.tscn` are independent files that started identical (one was duplicated from the other) and can diverge — a gameplay fix made in one does not propagate to the other automatically. This is intentional (keeps the test scene stable), not an oversight.
 - `REVISAO.md` is useful project context, but executable truth is `project.godot`, scenes, and scripts.
 
 ## Workflow

@@ -4,15 +4,27 @@ class_name SaveJogo
 ## Hoje o conteudo e so o EstadoDoJogo; o snapshot completo do mundo entra em
 ## _montar_secoes()/_aplicar(), sem mexer no SaveSlots nem nos call sites.
 
-const CENA_CENARIO := "res://scenes/world/cena_principal.tscn"
+const CENA_ZONA_NORTE := "res://scenes/world/zona_norte.tscn"
+const CENA_ZONA_SUL := "res://scenes/world/zona_sul.tscn"
 const CENA_LOJA := "res://scenes/world/loja.tscn"
 const CENA_MENU := "res://scenes/world/menu_principal.tscn"
+const CENA_SELECAO := "res://scenes/world/selecao_de_cenario.tscn"
 
-## "Cenario" segue o glossario do CONTEXT.md, que marca "mundo" como termo a
-## evitar. Nomes de exibicao ficam aqui, nunca gravados no save.
+## Cena de teste/desenvolvimento — copia-origem de zona_norte.tscn, usada pelos
+## testes automatizados (scripts/tests/player_vision_test.gd) e por um atalho
+## secreto (F3) no hub para pular direto pra ela sem passar pelos cartoes.
+## Nao faz parte do fluxo normal do jogador; nao entra em NOMES_DE_CENA.
+const CENA_TESTE := "res://scenes/world/cena_principal.tscn"
+
+## "Cenario" segue o glossario do CONTEXT.md, que marca "mundo"/"mapa" como
+## termos a evitar. "Selecao de Cenario" e a tela de escolha de zona entre o
+## menu e as fases (ver CONTEXT.md). Nomes de exibicao ficam aqui, nunca
+## gravados no save.
 const NOMES_DE_CENA := {
-	CENA_CENARIO: "Cenário",
+	CENA_ZONA_NORTE: "Zona Norte",
+	CENA_ZONA_SUL: "Zona Sul",
 	CENA_LOJA: "Loja",
+	CENA_SELECAO: "Seleção de Zona",
 }
 
 ## Slot em que o botao Salvar grava. Static para sobreviver a troca de cena
@@ -45,8 +57,8 @@ static func iniciar_nova_partida(slot: int, prefixo: String = SaveSlots.PREFIXO_
 	var estado := _estado()
 	if estado != null:
 		estado.reset()
-	SaveSlots.gravar(slot, _montar_secoes(CENA_CENARIO), prefixo)
-	return CENA_CENARIO
+	SaveSlots.gravar(slot, _montar_secoes(CENA_SELECAO), prefixo)
+	return CENA_SELECAO
 
 
 static func salvar_no_slot_atual(prefixo: String = SaveSlots.PREFIXO_PADRAO) -> bool:
@@ -130,7 +142,7 @@ static func _aplicar(dados: Dictionary) -> String:
 		estado.from_dict(dados.get("estado", {}))
 	var meta: Dictionary = dados.get(SaveSlots.SECAO_META, {})
 	definir_slot_atual(int(meta.get("slot_origem", _slot_atual)))
-	return estado.cena if estado != null else CENA_CENARIO
+	return estado.cena if estado != null else CENA_ZONA_NORTE
 
 
 ## Time.get_unix_time_from_system() e get_datetime_dict_from_unix_time() sao

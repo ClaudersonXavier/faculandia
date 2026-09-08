@@ -8,7 +8,7 @@ extends Node
 ## O class_name difere do nome do autoload de proposito: `class_name GameState`
 ## colidiria com o autoload, e sem class_name o acesso ficaria sem tipo.
 
-## O default de "cena" repete o literal de SaveJogo.CENA_CENARIO em vez de
+## O default de "cena" repete o literal de SaveJogo.CENA_ZONA_NORTE em vez de
 ## referencia-lo: um const aqui apontando para outra classe global criaria uma
 ## dependencia circular entre class_names (SaveJogo tambem referencia
 ## EstadoDoJogo). Mantenha os dois literais em sincronia.
@@ -17,7 +17,7 @@ const PADROES := {
 	"municao_reserva_maxima": 14,
 	"municao_pente": 7,
 	"dinheiro": 0,
-	"cena": "res://scenes/world/cena_principal.tscn",
+	"cena": "res://scenes/world/zona_norte.tscn",
 }
 
 var municao_reserva: int

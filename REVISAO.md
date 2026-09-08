@@ -65,8 +65,11 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/world/save_jogo.gd` (`class_name SaveJogo`): fachada que monta/aplica o payload da partida, guarda o slot em uso (`slot_atual`, `static var`) e centraliza as trocas de fase (`trocar_fase`, `sair_para_o_menu`) — autossalva no slot de autosave a cada troca
 - `scripts/world/menu_principal.gd` + `scenes/world/menu_principal.tscn`: primeira tela do jogo (`run/main_scene`), com título "FACULANDIA" e os botões Novo Jogo / Continuar / Sair
 - `scripts/world/selecao_de_save.gd` + `scenes/ui/selecao_de_save.tscn`: painel reusável de escolha de slot, usado tanto por "Novo Jogo" (3 slots, com aviso de sobrescrita) quanto por "Continuar" (autosave + 3 slots, só os ocupados ficam clicáveis)
-- `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em `cena_principal.tscn` e `loja.tscn`; salva no slot da partida atual, sai para o menu ou fecha o jogo
-- **Limitação conhecida**: voltar da loja recarrega `cena_principal.tscn` do zero — as `Ameaca` (instâncias fixas do editor) renascem com vida cheia e o Vestígio de uma Ameaça morta some, mesmo com o autosave preservando dinheiro/munição. Corrigir isso depende do snapshot completo do mundo (ver Próximos Passos)
+- `scripts/world/selecao_de_cenario.gd` + `scenes/world/selecao_de_cenario.tscn`: hub entre o menu e as zonas jogáveis (estilo Mega Man) — dois "cartões" (Zona Norte / Zona Sul) gerados em código a partir de `ZONAS`; escolher um chama `SaveJogo.trocar_fase`. A loja sempre devolve o jogador ao hub (`SaveJogo.CENA_SELECAO`), nunca direto para a zona jogada antes — o jogador escolhe de novo. Tem um atalho secreto de dev (tecla **F3**) que pula direto pra `cena_principal.tscn`, a cena de teste
+- `scenes/world/zona_norte.tscn`: a zona completa, jogável desde o início — cópia exata de `cena_principal.tscn` (mesmo tileset, mesmas 2 Ameaças, mesma `ZonaSaida`). `cena_principal.tscn` **não** faz parte do fluxo do jogador: é a cena de teste/dev, usada por `scripts/tests/player_vision_test.gd` e pelo atalho F3 acima. As duas cenas começam idênticas e podem divergir com o tempo — corrigir uma não propaga pra outra automaticamente
+- `scenes/world/zona_sul.tscn`: esqueleto da 2ª zona — toda a infraestrutura funcionando (Player, câmera, visão, HUD, menu de pause, `ZonaSaida` pra loja), mas sem tiles pintados nem Ameaças; label "Zona Sul (em construção)" fixo na tela. Pronta pra alguém desenhar o nível depois no editor
+- `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em toda cena jogável (`zona_norte.tscn`, `zona_sul.tscn`, `cena_principal.tscn`, `loja.tscn`); salva no slot da partida atual, sai para o menu ou fecha o jogo
+- **Limitação conhecida**: voltar da loja recarrega a zona escolhida do zero, mesmo passando pelo hub — as `Ameaca` (instâncias fixas do editor) renascem com vida cheia e o Vestígio de uma Ameaça morta some, mesmo com o autosave preservando dinheiro/munição. Corrigir isso depende do snapshot completo do mundo (ver Próximos Passos)
 
 ---
 
@@ -85,7 +88,8 @@ faculandia/
 │   ├── enemies/          # ameaca, ameaca_debug_logger
 │   ├── noise/            # noise_bus, noise_event, noise_synthesizer, noise_sfx_player, noise_visualizer
 │   ├── world/            # hud, loja, game_state, exit_zone, navegacao_cenario,
-│   │                     # save_jogo, menu_principal, menu_pause, selecao_de_save
+│   │                     # save_jogo, menu_principal, menu_pause, selecao_de_save,
+│   │                     # selecao_de_cenario (hub de zonas)
 │   ├── testing/          # test_spawner, test_entity (ferramentas de debug em runtime)
 │   └── tests/            # scripts de teste automatizado (rodados via `make test`)
 ├── shaders/
@@ -93,7 +97,9 @@ faculandia/
 │   ├── fragmento_perceptivel.gdshader      # discard de entidades fora da percepção
 │   └── visibility_polygon.gdshaderinc      # funções de teste ponto-em-polígono, compartilhadas pelos dois shaders acima
 ├── scenes/
-│   ├── world/            # menu_principal.tscn (primeira tela), cena_principal.tscn (nível principal), loja.tscn
+│   ├── world/            # menu_principal.tscn (primeira tela), selecao_de_cenario.tscn (hub),
+│   │                     # zona_norte.tscn, zona_sul.tscn (zonas jogáveis), loja.tscn,
+│   │                     # cena_principal.tscn (cena de teste/dev, fora do fluxo do jogador)
 │   ├── objects/          # ameaca.tscn, barril.tscn, caixa.tscn, player.tscn (instanciáveis)
 │   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD, reusável entre cenas),
 │                          # menu_pause.tscn (overlay de pause), selecao_de_save.tscn (painel de slots)
@@ -106,7 +112,10 @@ faculandia/
 
 ---
 
-## Árvore da Cena Principal (resumida)
+## Árvore da Zona Norte / cena de teste (resumida)
+
+`zona_norte.tscn` e `cena_principal.tscn` são cópias exatas uma da outra (ver
+"Menu Principal, Save e Pause" acima) e por isso têm a mesma árvore:
 
 ```
 MainLoop (Node2D)
@@ -127,6 +136,16 @@ MainLoop (Node2D)
 │   └── ConfirmationDialog (específico desta cena, confirma saída sem reabastecer)
 └── menu_pause (instância de scenes/ui/menu_pause.tscn) → abre no ESC (`ui_cancel`)
 ```
+
+`zona_sul.tscn` tem a mesma árvore, **menos** `Ameaca`/`Ameaca2`/`Barril1-2`/`Caixa1-2`
+e com `chao`/`paredes` sem tiles pintados (`NavigationRegion2D` faz bake a partir só
+dos limites da câmera do `Player`, sem paredes) — **mais** um `EmConstrucao` (Label,
+filho de `camada_ui`, "Zona Sul (em construção)").
+
+`selecao_de_cenario.tscn` (o hub) é bem mais simples — um `Control` de tela cheia
+com `Fundo` (TextureRect), `Veu` (ColorRect escuro), `Titulo`, `Cartoes`
+(HBoxContainer preenchido em código a partir de `ZONAS`, mesmo padrão de
+`selecao_de_save.tscn`) e `Voltar`.
 
 ### Árvore do Player (`scenes/objects/player.tscn`)
 
@@ -154,9 +173,9 @@ Player (CharacterBody2D) [player_moviment.gd]
 | `reload` | R |
 | `debug_vision` | F1 (alterna visão de debug, revela tudo) |
 | `debug_zombie` | F2 (alterna visão de debug da IA: visão, linha de visada, destino e caminho) |
-| `ui_cancel` (built-in) | ESC — abre/fecha o menu de pause (`scenes/ui/menu_pause.tscn`) na cena principal e na loja |
+| `ui_cancel` (built-in) | ESC — abre/fecha o menu de pause (`scenes/ui/menu_pause.tscn`) em qualquer zona e na loja |
 
-Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spawna ameaça, `L` spawna fonte de luz de teste, `Delete`/`Backspace` remove o objeto de teste mais próximo do mouse. `F3` alterna o visualizador de ruído.
+Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spawna ameaça, `L` spawna fonte de luz de teste, `Delete`/`Backspace` remove o objeto de teste mais próximo do mouse. `F3` alterna o visualizador de ruído dentro de uma zona jogável — mas no hub (`selecao_de_cenario.tscn`) `F3` é um atalho secreto de dev que pula direto pra `cena_principal.tscn` (a cena de teste), sem relação com o visualizador de ruído.
 
 ---
 
@@ -168,4 +187,5 @@ Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spa
 4. **Animação de tiro** — flash no cano da arma
 5. **Áudio ambiente/música** — `resources/sounds/` já está reservado para isso
 6. **Mais tipos de ameaça** — a estrutura de `scripts/enemies/` já separa IA de debug logging, facilitando compor novos comportamentos a partir de `ameaca.gd`
-7. **Progresso por mapa e snapshot do mundo** — cada mapa com uma quantidade de Ameaças por região, mortas permanentemente mortas e vivas regenerando vida até limpar o mapa; o save já tem o gancho para isso (`versao` no envelope, `cena` como futura chave de mapa, `SaveJogo` como ponto único de montagem/aplicação do payload), falta a seção de conteúdo do mundo em si. Resolve de quebra a limitação de "voltar da loja ressuscita as Ameaças" — alternativa menor no meio-tempo: transformar a loja num overlay pausado em vez de trocar de cena
+7. **Progresso por zona e snapshot do mundo** — a navegação hub → zona → loja → hub já existe (`selecao_de_cenario.tscn`); falta o rastreio de Ameaças mortas/regeneração/conclusão de zona ao voltar. Cada zona com uma quantidade de Ameaças, mortas permanentemente mortas e vivas regenerando vida até limpar a zona; o save já tem o gancho para isso (`versao` no envelope, `cena` já aponta para qual zona/tela o jogador está, `SaveJogo` como ponto único de montagem/aplicação do payload), falta a seção de conteúdo do mundo em si. Resolve de quebra a limitação de "voltar da loja ressuscita as Ameaças" — alternativa menor no meio-tempo: transformar a loja num overlay pausado em vez de trocar de cena
+8. **Desenhar a Zona Sul** — `zona_sul.tscn` já tem toda a infraestrutura (Player, câmera, visão, HUD, `ZonaSaida`, menu de pause); falta pintar `chao`/`paredes` com o tileset e posicionar Ameaças/objetos

@@ -47,6 +47,8 @@ func _run() -> void:
 	_test_iniciar_nova_partida_reseta_e_reivindica_o_slot()
 	_test_carregar_slot_vazio_devolve_string_vazia()
 	_test_rotulo_de_slot_vazio_e_cheio()
+	_test_nomes_de_cena_cobre_selecao()
+	_test_iniciar_nova_partida_manda_para_selecao()
 
 	_limpar()
 	_liberar_estado()
@@ -301,7 +303,7 @@ func _test_iniciar_nova_partida_reseta_e_reivindica_o_slot() -> void:
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.dinheiro = 500
 	var cena := SaveJogoScript.iniciar_nova_partida(3, PREFIXO_TESTE)
-	_assert_true(cena == SaveJogoScript.CENA_CENARIO, "nova partida deve devolver a cena inicial")
+	_assert_true(cena == SaveJogoScript.CENA_SELECAO, "nova partida deve devolver o hub de selecao, nao uma zona direto")
 	_assert_true(estado.dinheiro == 0, "nova partida deve resetar o estado")
 	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "nova partida deve reivindicar o slot 3 imediatamente")
 	_assert_true(SaveJogoScript.slot_atual() == 3, "slot atual deve ser o slot escolhido")
@@ -334,11 +336,24 @@ func _test_rotulo_de_slot_vazio_e_cheio() -> void:
 	var entradas := SaveSlotsScript.listar(PREFIXO_TESTE)
 	var rotulo_cheio := SaveJogoScript.rotulo(entradas[2])
 	_assert_true(rotulo_cheio.find("$120") != -1, "rotulo de slot cheio deve conter o dinheiro (obtido: '%s')" % rotulo_cheio)
-	_assert_true(rotulo_cheio.find("Cenário") != -1, "rotulo de slot cheio deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
+	_assert_true(rotulo_cheio.find("Zona Norte") != -1, "rotulo de slot cheio deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
 	_assert_true(rotulo_cheio.find("Slot 2") != -1, "rotulo de slot cheio deve identificar o slot (obtido: '%s')" % rotulo_cheio)
 
 	var rotulo_auto := SaveJogoScript.rotulo(entradas[0])
 	_assert_true(rotulo_auto.find("(slot") != -1, "rotulo do autosave deve indicar o slot de origem (obtido: '%s')" % rotulo_auto)
+	_limpar()
+
+
+func _test_nomes_de_cena_cobre_selecao() -> void:
+	_assert_true(SaveJogoScript.NOMES_DE_CENA.has(SaveJogoScript.CENA_SELECAO), "NOMES_DE_CENA deve ter entrada para CENA_SELECAO")
+	_assert_true(SaveJogoScript.NOMES_DE_CENA.has(SaveJogoScript.CENA_ZONA_SUL), "NOMES_DE_CENA deve ter entrada para CENA_ZONA_SUL")
+	_assert_true(SaveJogoScript.nome_da_cena(SaveJogoScript.CENA_SELECAO) != "Fase", "nome_da_cena nao deve cair no fallback generico para CENA_SELECAO")
+
+
+func _test_iniciar_nova_partida_manda_para_selecao() -> void:
+	_limpar()
+	var cena := SaveJogoScript.iniciar_nova_partida(1, PREFIXO_TESTE)
+	_assert_true(cena == SaveJogoScript.CENA_SELECAO, "iniciar_nova_partida deve devolver CENA_SELECAO, nao uma zona direto")
 	_limpar()
 
 

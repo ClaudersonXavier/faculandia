@@ -20,6 +20,10 @@ _Avoid_: Chao, tile de chao, decoracao
 Ambiente fisico do jogo que permanece parcialmente perceptivel mesmo fora da Visao Direta. Bloqueadores de Visao expostos a Visao Direta ou Fonte de Luz sao exibidos com iluminacao plena, enquanto areas ocluidas por sombras projetadas permanecem parcialmente perceptiveis.
 _Avoid_: Mapa, fundo, mundo
 
+**Selecao de Cenario**:
+Tela intermediaria entre o Menu Principal e um Cenario jogavel, onde o jogador escolhe qual zona (ex. Zona Norte, Zona Sul) visitar em seguida. Nao e' um Cenario em si (nao ha percepcao, Ameaca ou combate ali) nem um mapa navegavel — e' uma tela de escolha.
+_Avoid_: Hub, mapa, selecao de fase, selecao de nivel
+
 **Ameaca**:
 Entidade que pode ferir ou pressionar o jogador. Sua capacidade de agir nao depende de estar perceptivel para o jogador.
 _Avoid_: Inimigo, monstro, zumbi

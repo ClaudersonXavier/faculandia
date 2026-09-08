@@ -20,8 +20,12 @@ func _on_recarregar_pressed() -> void:
 
 
 func _voltar_pro_jogo() -> void:
+	# Volta para o hub, nao para a zona jogada antes — o jogador escolhe de novo.
+	# voltando_da_loja fica true e e' consumido pelo Player._ready() da PROXIMA
+	# zona escolhida no hub (o hub em si nao tem Player, entao a flag so e'
+	# resolvida quando uma zona de fato carrega).
 	GameState.voltando_da_loja = true
-	SaveJogo.trocar_fase(SaveJogo.CENA_CENARIO)
+	SaveJogo.trocar_fase(SaveJogo.CENA_SELECAO)
 
 func _on_confirmation_dialog_confirmed() -> void:
 	_voltar_pro_jogo()
