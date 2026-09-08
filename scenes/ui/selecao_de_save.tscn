@@ -33,7 +33,7 @@ offset_right = 250.0
 offset_bottom = 100.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 28
-text = "Escolha uma caixa"
+text = "Escolha um slot"
 horizontal_alignment = 1
 
 [node name="Lista" type="VBoxContainer" parent="." unique_id=1938717741]
@@ -74,5 +74,5 @@ unique_name_in_owner = true
 oversampling_override = 1.0
 size = Vector2i(262, 100)
 ok_button_text = "Sobrescrever"
-dialog_text = "Essa caixa já tem um jogo salvo."
+dialog_text = "Esse slot já tem um jogo salvo."
 cancel_button_text = "Cancelar"

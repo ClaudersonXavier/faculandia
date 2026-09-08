@@ -61,11 +61,11 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 ### Menu Principal, Save e Pause
 - `scripts/world/game_state.gd` (autoload `GameState`, `class_name EstadoDoJogo`): estado da partida em memória (munição, dinheiro, cena atual), com `to_dict()`/`from_dict()`/`reset()` guiados por `PADROES` — fonte única dos valores de partida nova e do schema persistido
-- `scripts/core/save_slots.gd` (`class_name SaveSlots`): mecanismo de 4 slots de save independentes em disco (`user://save_auto.cfg` + `save_caixa_1/2/3.cfg`, formato `ConfigFile` com envelope `[meta]` versionado); não conhece o conteúdo da partida
-- `scripts/world/save_jogo.gd` (`class_name SaveJogo`): fachada que monta/aplica o payload da partida, guarda a caixa em uso (`caixa_atual`, `static var`) e centraliza as trocas de fase (`trocar_fase`, `sair_para_o_menu`) — autossalva no slot de autosave a cada troca
+- `scripts/core/save_slots.gd` (`class_name SaveSlots`): mecanismo de 4 slots de save independentes em disco (`user://save_auto.cfg` + `save_slot_1/2/3.cfg`, formato `ConfigFile` com envelope `[meta]` versionado); não conhece o conteúdo da partida
+- `scripts/world/save_jogo.gd` (`class_name SaveJogo`): fachada que monta/aplica o payload da partida, guarda o slot em uso (`slot_atual`, `static var`) e centraliza as trocas de fase (`trocar_fase`, `sair_para_o_menu`) — autossalva no slot de autosave a cada troca
 - `scripts/world/menu_principal.gd` + `scenes/world/menu_principal.tscn`: primeira tela do jogo (`run/main_scene`), com título "FACULANDIA" e os botões Novo Jogo / Continuar / Sair
-- `scripts/world/selecao_de_save.gd` + `scenes/ui/selecao_de_save.tscn`: painel reusável de escolha de caixa, usado tanto por "Novo Jogo" (3 caixas, com aviso de sobrescrita) quanto por "Continuar" (autosave + 3 caixas, só as ocupadas ficam clicáveis)
-- `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em `cena_principal.tscn` e `loja.tscn`; salva na caixa da partida atual, sai para o menu ou fecha o jogo
+- `scripts/world/selecao_de_save.gd` + `scenes/ui/selecao_de_save.tscn`: painel reusável de escolha de slot, usado tanto por "Novo Jogo" (3 slots, com aviso de sobrescrita) quanto por "Continuar" (autosave + 3 slots, só os ocupados ficam clicáveis)
+- `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em `cena_principal.tscn` e `loja.tscn`; salva no slot da partida atual, sai para o menu ou fecha o jogo
 - **Limitação conhecida**: voltar da loja recarrega `cena_principal.tscn` do zero — as `Ameaca` (instâncias fixas do editor) renascem com vida cheia e o Vestígio de uma Ameaça morta some, mesmo com o autosave preservando dinheiro/munição. Corrigir isso depende do snapshot completo do mundo (ver Próximos Passos)
 
 ---
@@ -96,7 +96,7 @@ faculandia/
 │   ├── world/            # menu_principal.tscn (primeira tela), cena_principal.tscn (nível principal), loja.tscn
 │   ├── objects/          # ameaca.tscn, barril.tscn, caixa.tscn, player.tscn (instanciáveis)
 │   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD, reusável entre cenas),
-│                          # menu_pause.tscn (overlay de pause), selecao_de_save.tscn (painel de caixas)
+│                          # menu_pause.tscn (overlay de pause), selecao_de_save.tscn (painel de slots)
 ├── resources/
 │   ├── sprites/          # characters/, environment/, items/, test/
 │   ├── tilesets/         # tileset_chao.tres, tileset_parede.tres

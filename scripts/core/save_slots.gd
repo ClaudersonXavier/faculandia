@@ -8,19 +8,19 @@ const PREFIXO_PADRAO := "user://save_"
 const SUFIXO := ".cfg"
 const VERSAO: int = 1
 const SLOT_AUTOSAVE: int = 0
-const TOTAL_CAIXAS: int = 3
+const TOTAL_SLOTS: int = 3
 const SECAO_META := "meta"
 
 
 static func slots() -> Array[int]:
 	var lista: Array[int] = [SLOT_AUTOSAVE]
-	for caixa: int in range(1, TOTAL_CAIXAS + 1):
-		lista.append(caixa)
+	for slot: int in range(1, TOTAL_SLOTS + 1):
+		lista.append(slot)
 	return lista
 
 
 static func e_slot_valido(slot: int) -> bool:
-	return slot >= SLOT_AUTOSAVE and slot <= TOTAL_CAIXAS
+	return slot >= SLOT_AUTOSAVE and slot <= TOTAL_SLOTS
 
 
 static func caminho(slot: int, prefixo: String = PREFIXO_PADRAO) -> String:
@@ -28,7 +28,7 @@ static func caminho(slot: int, prefixo: String = PREFIXO_PADRAO) -> String:
 		return ""
 	if slot == SLOT_AUTOSAVE:
 		return "%sauto%s" % [prefixo, SUFIXO]
-	return "%scaixa_%d%s" % [prefixo, slot, SUFIXO]
+	return "%sslot_%d%s" % [prefixo, slot, SUFIXO]
 
 
 static func existe(slot: int, prefixo: String = PREFIXO_PADRAO) -> bool:

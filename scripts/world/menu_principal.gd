@@ -1,6 +1,6 @@
 extends Control
-## Primeira tela do jogo. O mesmo painel de selecao de caixas serve "Novo
-## Jogo" (3 caixas) e "Continuar" (autosave + 3 caixas); so o modo muda.
+## Primeira tela do jogo. O mesmo painel de selecao de slots serve "Novo
+## Jogo" (3 slots) e "Continuar" (autosave + 3 slots); so o modo muda.
 
 const SelecaoDeSave := preload("res://scripts/world/selecao_de_save.gd")
 
@@ -19,7 +19,7 @@ func _ready() -> void:
 	botao_novo_jogo.pressed.connect(_ao_pressionar_novo_jogo)
 	botao_continuar.pressed.connect(_ao_pressionar_continuar)
 	botao_sair.pressed.connect(_ao_pressionar_sair)
-	selecao.caixa_escolhida.connect(_ao_escolher_slot)
+	selecao.slot_escolhido.connect(_ao_escolher_slot)
 	selecao.voltar_pedido.connect(_atualizar_continuar)
 
 	_atualizar_continuar()

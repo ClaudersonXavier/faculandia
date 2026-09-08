@@ -3,7 +3,7 @@ extends Control
 ## Vive em scenes/ui/ (overlay reusavel) mas o script mora em scripts/world/,
 ## no mesmo padrao de scenes/ui/camada_ui.tscn -> scripts/world/hud.gd.
 
-signal caixa_escolhida(slot: int, modo: int)
+signal slot_escolhido(slot: int, modo: int)
 signal voltar_pedido
 
 enum Modo { NOVO_JOGO, CONTINUAR }
@@ -38,7 +38,7 @@ func _reconstruir_lista() -> void:
 	for entrada: Dictionary in SaveSlots.listar():
 		var slot := int(entrada["slot"])
 		var vazio := bool(entrada["vazio"])
-		# O autosave nao e uma caixa do jogador: so aparece em Continuar.
+		# O autosave nao e um slot do jogador: so aparece em Continuar.
 		if _modo == Modo.NOVO_JOGO and slot == SaveSlots.SLOT_AUTOSAVE:
 			continue
 
@@ -46,8 +46,8 @@ func _reconstruir_lista() -> void:
 		botao.text = SaveJogo.rotulo(entrada)
 		botao.clip_text = true
 		botao.add_theme_font_size_override(&"font_size", 18)
-		# Em Continuar so entradas com partida sao clicaveis; em Novo Jogo a
-		# caixa cheia e clicavel e cai no aviso de sobrescrita.
+		# Em Continuar so entradas com partida sao clicaveis; em Novo Jogo o
+		# slot cheio e clicavel e cai no aviso de sobrescrita.
 		botao.disabled = vazio and _modo == Modo.CONTINUAR
 		botao.pressed.connect(_ao_escolher.bind(slot, vazio))
 		lista.add_child(botao)
@@ -77,7 +77,7 @@ func _ao_confirmar_sobrescrita() -> void:
 func _confirmar(slot: int) -> void:
 	_slot_pendente = -1
 	visible = false
-	caixa_escolhida.emit(slot, _modo)
+	slot_escolhido.emit(slot, _modo)
 
 
 func _ao_voltar() -> void:

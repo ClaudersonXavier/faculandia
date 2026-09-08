@@ -40,11 +40,11 @@ func _run() -> void:
 	_test_cena_inexistente_cai_para_cena_inicial()
 
 	# --- SaveJogo (fachada, com GameState garantido) ---
-	_test_autosave_grava_no_slot_zero_com_caixa_origem()
-	_test_salvar_na_caixa_atual_grava_no_slot_certo()
-	_test_carregar_autosave_define_caixa_atual_como_origem()
-	_test_definir_caixa_atual_invalida_e_ignorada()
-	_test_iniciar_nova_partida_reseta_e_reivindica_a_caixa()
+	_test_autosave_grava_no_slot_zero_com_slot_origem()
+	_test_salvar_no_slot_atual_grava_no_slot_certo()
+	_test_carregar_autosave_define_slot_atual_como_origem()
+	_test_definir_slot_atual_invalido_e_ignorado()
+	_test_iniciar_nova_partida_reseta_e_reivindica_o_slot()
 	_test_carregar_slot_vazio_devolve_string_vazia()
 	_test_rotulo_de_slot_vazio_e_cheio()
 
@@ -188,7 +188,7 @@ func _test_metadados_sem_carregar_partida() -> void:
 	SaveSlotsScript.gravar(1, {"estado": {"dinheiro": 15, "cena": CENA_LOJA}}, PREFIXO_TESTE)
 	var entradas := SaveSlotsScript.listar(PREFIXO_TESTE)
 	var entrada_1: Dictionary = entradas[1]
-	_assert_false(bool(entrada_1["vazio"]), "caixa 1 gravada nao deve aparecer vazia")
+	_assert_false(bool(entrada_1["vazio"]), "slot 1 gravado nao deve aparecer vazio")
 	_assert_true(int(entrada_1["salvo_em"]) > 0, "metadados devem trazer salvo_em")
 	_limpar()
 
@@ -242,69 +242,69 @@ func _test_cena_inexistente_cai_para_cena_inicial() -> void:
 
 # --- SaveJogo ---
 
-func _test_autosave_grava_no_slot_zero_com_caixa_origem() -> void:
+func _test_autosave_grava_no_slot_zero_com_slot_origem() -> void:
 	_limpar()
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.reset()
-	SaveJogoScript.definir_caixa_atual(2)
+	SaveJogoScript.definir_slot_atual(2)
 	estado.dinheiro = 77
 	_assert_true(SaveJogoScript.autosalvar("", PREFIXO_TESTE), "autosalvar deve escrever o slot 0")
 	var dados := SaveSlotsScript.ler(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
 	_assert_false(dados.is_empty(), "slot de autosave deve estar preenchido")
-	_assert_true(int(dados.get("meta", {}).get("caixa_origem", -1)) == 2, "autosave deve registrar a caixa_origem")
-	_assert_true(SaveSlotsScript.ler(1, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar na caixa 1")
-	_assert_true(SaveSlotsScript.ler(2, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar na caixa 2")
-	_assert_true(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar na caixa 3")
+	_assert_true(int(dados.get("meta", {}).get("slot_origem", -1)) == 2, "autosave deve registrar o slot_origem")
+	_assert_true(SaveSlotsScript.ler(1, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar no slot 1")
+	_assert_true(SaveSlotsScript.ler(2, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar no slot 2")
+	_assert_true(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "autosave nao deve gravar no slot 3")
 	_limpar()
 
 
-func _test_salvar_na_caixa_atual_grava_no_slot_certo() -> void:
+func _test_salvar_no_slot_atual_grava_no_slot_certo() -> void:
 	_limpar()
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.reset()
-	SaveJogoScript.definir_caixa_atual(3)
+	SaveJogoScript.definir_slot_atual(3)
 	estado.dinheiro = 33
-	_assert_true(SaveJogoScript.salvar_na_caixa_atual(PREFIXO_TESTE), "salvar_na_caixa_atual deve escrever")
-	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "caixa 3 deve estar preenchida")
-	_assert_true(SaveSlotsScript.ler(1, PREFIXO_TESTE).is_empty(), "caixa 1 nao deve ser afetada")
+	_assert_true(SaveJogoScript.salvar_no_slot_atual(PREFIXO_TESTE), "salvar_no_slot_atual deve escrever")
+	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "slot 3 deve estar preenchido")
+	_assert_true(SaveSlotsScript.ler(1, PREFIXO_TESTE).is_empty(), "slot 1 nao deve ser afetado")
 	_assert_true(SaveSlotsScript.ler(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE).is_empty(), "autosave nao deve ser afetado")
 	_limpar()
 
 
-func _test_carregar_autosave_define_caixa_atual_como_origem() -> void:
+func _test_carregar_autosave_define_slot_atual_como_origem() -> void:
 	_limpar()
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.reset()
-	SaveJogoScript.definir_caixa_atual(2)
+	SaveJogoScript.definir_slot_atual(2)
 	estado.dinheiro = 88
 	SaveJogoScript.autosalvar("", PREFIXO_TESTE)
 
-	SaveJogoScript.definir_caixa_atual(1)
+	SaveJogoScript.definir_slot_atual(1)
 	estado.reset()
 	var cena := SaveJogoScript.carregar_slot(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
 	_assert_false(cena.is_empty(), "carregar_slot do autosave deve retornar uma cena")
 	_assert_true(estado.dinheiro == 88, "estado deve ser restaurado pelo autosave")
-	_assert_true(SaveJogoScript.caixa_atual() == 2, "continuar pelo autosave deve restaurar a caixa de origem (obtido: %d)" % SaveJogoScript.caixa_atual())
+	_assert_true(SaveJogoScript.slot_atual() == 2, "continuar pelo autosave deve restaurar o slot de origem (obtido: %d)" % SaveJogoScript.slot_atual())
 	_limpar()
 
 
-func _test_definir_caixa_atual_invalida_e_ignorada() -> void:
-	SaveJogoScript.definir_caixa_atual(2)
-	SaveJogoScript.definir_caixa_atual(9)
-	_assert_true(SaveJogoScript.caixa_atual() == 2, "caixa invalida nao deve ser aceita")
-	SaveJogoScript.definir_caixa_atual(-1)
-	_assert_true(SaveJogoScript.caixa_atual() == 2, "caixa invalida nao deve ser aceita")
+func _test_definir_slot_atual_invalido_e_ignorado() -> void:
+	SaveJogoScript.definir_slot_atual(2)
+	SaveJogoScript.definir_slot_atual(9)
+	_assert_true(SaveJogoScript.slot_atual() == 2, "slot invalido nao deve ser aceito")
+	SaveJogoScript.definir_slot_atual(-1)
+	_assert_true(SaveJogoScript.slot_atual() == 2, "slot invalido nao deve ser aceito")
 
 
-func _test_iniciar_nova_partida_reseta_e_reivindica_a_caixa() -> void:
+func _test_iniciar_nova_partida_reseta_e_reivindica_o_slot() -> void:
 	_limpar()
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.dinheiro = 500
 	var cena := SaveJogoScript.iniciar_nova_partida(3, PREFIXO_TESTE)
 	_assert_true(cena == SaveJogoScript.CENA_CENARIO, "nova partida deve devolver a cena inicial")
 	_assert_true(estado.dinheiro == 0, "nova partida deve resetar o estado")
-	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "nova partida deve reivindicar a caixa 3 imediatamente")
-	_assert_true(SaveJogoScript.caixa_atual() == 3, "caixa atual deve ser a caixa escolhida")
+	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "nova partida deve reivindicar o slot 3 imediatamente")
+	_assert_true(SaveJogoScript.slot_atual() == 3, "slot atual deve ser o slot escolhido")
 	_limpar()
 
 
@@ -318,7 +318,7 @@ func _test_rotulo_de_slot_vazio_e_cheio() -> void:
 	_limpar()
 	var entradas_vazias := SaveSlotsScript.listar(PREFIXO_TESTE)
 	var rotulo_vazio := SaveJogoScript.rotulo(entradas_vazias[1])
-	_assert_true(rotulo_vazio.find("vazia") != -1, "rotulo de caixa vazia deve conter 'vazia' (obtido: '%s')" % rotulo_vazio)
+	_assert_true(rotulo_vazio.find("vazia") != -1, "rotulo de slot vazio deve conter 'vazia' (obtido: '%s')" % rotulo_vazio)
 	var rotulo_autosave_vazio := SaveJogoScript.rotulo(entradas_vazias[0])
 	_assert_true(rotulo_autosave_vazio.find("vazio") != -1, "rotulo de autosave vazio deve conter 'vazio' (obtido: '%s')" % rotulo_autosave_vazio)
 
@@ -327,18 +327,18 @@ func _test_rotulo_de_slot_vazio_e_cheio() -> void:
 	estado.dinheiro = 120
 	estado.municao_pente = 7
 	estado.municao_reserva = 14
-	SaveJogoScript.definir_caixa_atual(2)
-	SaveSlotsScript.gravar(2, {"meta": {"caixa_origem": 2}, "estado": estado.to_dict()}, PREFIXO_TESTE)
-	SaveSlotsScript.gravar(SaveSlotsScript.SLOT_AUTOSAVE, {"meta": {"caixa_origem": 2}, "estado": estado.to_dict()}, PREFIXO_TESTE)
+	SaveJogoScript.definir_slot_atual(2)
+	SaveSlotsScript.gravar(2, {"meta": {"slot_origem": 2}, "estado": estado.to_dict()}, PREFIXO_TESTE)
+	SaveSlotsScript.gravar(SaveSlotsScript.SLOT_AUTOSAVE, {"meta": {"slot_origem": 2}, "estado": estado.to_dict()}, PREFIXO_TESTE)
 
 	var entradas := SaveSlotsScript.listar(PREFIXO_TESTE)
 	var rotulo_cheio := SaveJogoScript.rotulo(entradas[2])
-	_assert_true(rotulo_cheio.find("$120") != -1, "rotulo de caixa cheia deve conter o dinheiro (obtido: '%s')" % rotulo_cheio)
-	_assert_true(rotulo_cheio.find("Cenário") != -1, "rotulo de caixa cheia deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
-	_assert_true(rotulo_cheio.find("Caixa 2") != -1, "rotulo de caixa cheia deve identificar a caixa (obtido: '%s')" % rotulo_cheio)
+	_assert_true(rotulo_cheio.find("$120") != -1, "rotulo de slot cheio deve conter o dinheiro (obtido: '%s')" % rotulo_cheio)
+	_assert_true(rotulo_cheio.find("Cenário") != -1, "rotulo de slot cheio deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
+	_assert_true(rotulo_cheio.find("Slot 2") != -1, "rotulo de slot cheio deve identificar o slot (obtido: '%s')" % rotulo_cheio)
 
 	var rotulo_auto := SaveJogoScript.rotulo(entradas[0])
-	_assert_true(rotulo_auto.find("(caixa") != -1, "rotulo do autosave deve indicar a caixa de origem (obtido: '%s')" % rotulo_auto)
+	_assert_true(rotulo_auto.find("(slot") != -1, "rotulo do autosave deve indicar o slot de origem (obtido: '%s')" % rotulo_auto)
 	_limpar()
 
 

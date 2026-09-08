@@ -38,7 +38,7 @@ func _pausar() -> void:
 	status.text = ""
 	_modo_mouse_anterior = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	botao_salvar.text = "Salvar no slot %d" % SaveJogo.caixa_atual()
+	botao_salvar.text = "Salvar no slot %d" % SaveJogo.slot_atual()
 	painel.visible = true
 	get_tree().paused = true
 	botao_retomar.grab_focus()
@@ -51,9 +51,9 @@ func _retomar() -> void:
 
 
 func _on_salvar_pressed() -> void:
-	var caixa := SaveJogo.caixa_atual()
-	if SaveJogo.salvar_na_caixa_atual():
-		status.text = "Salvo no slot %d!" % caixa
+	var slot := SaveJogo.slot_atual()
+	if SaveJogo.salvar_no_slot_atual():
+		status.text = "Salvo no slot %d!" % slot
 	else:
 		status.text = "Não foi possível salvar"
 
