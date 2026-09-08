@@ -24,4 +24,3 @@ static func has_clear_motion(space_state: PhysicsDirectSpaceState2D, from_pos: V
 	if cast_res.is_empty():
 		return true
 	return cast_res[1] >= 0.99
-

@@ -21,3 +21,4 @@ test:
 	$(GODOT) --path . --headless --script res://scripts/tests/noise_system_test.gd
 	$(GODOT) --path . --headless --script res://scripts/tests/ameaca_test.gd
 	$(GODOT) --path . --headless --script res://scripts/tests/navigation_integration_test.gd
+	$(GODOT) --path . --headless --script res://scripts/tests/save_jogo_test.gd

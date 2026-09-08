@@ -13,8 +13,8 @@ func _on_body_entered(body: Node2D) -> void:
 		dialog.popup_centered()
 
 func _on_confirmation_dialog_confirmed() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/world/loja.tscn")
+	# trocar_fase autossalva no slot de autosave e despausa.
+	SaveJogo.trocar_fase(SaveJogo.CENA_LOJA)
 
 func _on_confirmation_dialog_canceled() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cneygnpjiex2o"]
 
 [ext_resource type="Script" uid="uid://c0610tb73xbqy" path="res://scripts/world/loja.gd" id="1_po4y7"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_pause.tscn" id="2_menu_pause"]
 
 [node name="Loja" type="Control" unique_id=1352554327]
 layout_mode = 3
@@ -64,6 +65,8 @@ text = "Loja (em construção)
 unique_name_in_owner = true
 ok_button_text = "Partir"
 dialog_text = "Certeza que vai partir sem reabastecer a munição?"
+
+[node name="menu_pause" parent="." instance=ExtResource("2_menu_pause")]
 
 [connection signal="pressed" from="RecarregarMunicaoPistola" to="." method="_on_recarregar_pressed"]
 [connection signal="pressed" from="VoltarAoJogo" to="." method="_on_button_pressed"]

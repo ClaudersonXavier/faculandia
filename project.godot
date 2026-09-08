@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Faculandia"
-run/main_scene="res://scenes/world/cena_principal.tscn"
+run/main_scene="res://scenes/world/menu_principal.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

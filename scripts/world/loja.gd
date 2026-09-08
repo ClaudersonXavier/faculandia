@@ -2,6 +2,12 @@ extends Control
 
 @onready var dialog: ConfirmationDialog = %ConfirmarPartidaSemReabastecer
 
+
+func _ready() -> void:
+	# A cena principal esconde o cursor; a loja precisa dele de volta.
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
 func _on_button_pressed() -> void:
 	if GameState.municao_pente < 7 or GameState.municao_reserva < GameState.municao_reserva_maxima:
 		dialog.popup_centered()
@@ -15,7 +21,7 @@ func _on_recarregar_pressed() -> void:
 
 func _voltar_pro_jogo() -> void:
 	GameState.voltando_da_loja = true
-	get_tree().change_scene_to_file("res://scenes/world/cena_principal.tscn")
+	SaveJogo.trocar_fase(SaveJogo.CENA_CENARIO)
 
 func _on_confirmation_dialog_confirmed() -> void:
 	_voltar_pro_jogo()
