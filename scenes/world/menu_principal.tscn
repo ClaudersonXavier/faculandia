@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c710uhdanpr2o"]
 
 [ext_resource type="Script" uid="uid://dl4bqnptwop1u" path="res://scripts/world/menu_principal.gd" id="1_menu"]
+[ext_resource type="Texture2D" uid="uid://cwb7g45ojjurd" path="res://resources/sprites/ui/menu_background.png" id="2_pkqo1"]
 [ext_resource type="PackedScene" uid="uid://ug6m5ts6smb5" path="res://scenes/ui/selecao_de_save.tscn" id="2_selecao"]
 
 [node name="MenuPrincipal" type="Control" unique_id=739842424]
@@ -12,50 +13,58 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
+[node name="Fundo" type="TextureRect" parent="." unique_id=974426531]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_pkqo1")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Titulo" type="Label" parent="." unique_id=2146474114]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -250.0
-offset_top = 70.0
-offset_right = 250.0
-offset_bottom = 160.0
+offset_left = -305.0
+offset_top = 107.0
+offset_right = 265.0
+offset_bottom = 226.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 56
 text = "FACULANDIA"
 horizontal_alignment = 1
 
-[node name="Botoes" type="VBoxContainer" parent="." unique_id=1012070946]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -110.0
-offset_top = -30.0
-offset_right = 110.0
-offset_bottom = 110.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-
-[node name="NovoJogo" type="Button" parent="Botoes" unique_id=1031914043]
+[node name="NovoJogo" type="Button" parent="." unique_id=1031914043]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+offset_left = 87.0
+offset_top = 400.0
+offset_right = 307.0
+offset_bottom = 439.0
 theme_override_font_sizes/font_size = 22
 text = "Novo Jogo"
 
-[node name="Continuar" type="Button" parent="Botoes" unique_id=1356033409]
+[node name="Continuar" type="Button" parent="." unique_id=1356033409]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+offset_left = 87.0
+offset_top = 450.0
+offset_right = 307.0
+offset_bottom = 489.0
 theme_override_font_sizes/font_size = 22
 text = "Continuar"
 
-[node name="Sair" type="Button" parent="Botoes" unique_id=1019775234]
+[node name="Sair" type="Button" parent="." unique_id=1019775234]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+offset_left = 87.0
+offset_top = 500.0
+offset_right = 307.0
+offset_bottom = 539.0
 theme_override_font_sizes/font_size = 22
 text = "Sair"
 
@@ -64,4 +73,10 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 1
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=974426531]
+[node name="Versao" type="Label" parent="." unique_id=1832949280]
+layout_mode = 0
+offset_left = 1042.0
+offset_top = 612.0
+offset_right = 1136.0
+offset_bottom = 635.0
+text = "Versão: 0.1.0"
