@@ -22,11 +22,18 @@ func _run() -> void:
 	await _test_ameaca_possui_navigation_agent_configurado()
 	await _test_ameaca_para_ao_atingir_distancia_desejada()
 	await _test_ameaca_busca_caminho_quando_visao_obstruida()
+	await _test_ameaca_ouve_som_dentro_do_raio()
+	await _test_ameaca_ignora_som_fora_do_raio()
+	await _test_ameaca_prioriza_visao_direta_sobre_som()
+	await _test_ameaca_investiga_ultimo_ponto_ao_perder_visao()
+	await _test_ameaca_vai_para_som_como_ia_para_jogador()
+	await _test_ameaca_debug_visualizer_alterna_e_renderiza()
 	await _test_ameaca_aplica_velocidade_segura_avoidance()
 	await _test_ameaca_usa_modo_movimento_floating()
 	await _test_ameaca_mascara_de_colisao_ignora_outras_ameacas()
 	await _test_ameaca_navigation_agent_distancias_adequadas()
 	await _test_multiplas_ameacas_possuem_separacao_suave_sem_picos()
+	await _test_ameaca_contorna_quina_sem_travar()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -121,8 +128,12 @@ func _test_morte_da_ameaca_apos_dano_letal() -> void:
 	)
 	await create_timer(ameaca.hit_flash_duration + 0.05).timeout
 	_assert_true(
-		not is_instance_valid(ameaca) or ameaca.is_queued_for_deletion(),
-		"Ameaca deve ser liberada apos finalizar o flash de dano letal"
+		ameaca._is_dead,
+		"Ameaca deve estar marcada como morta apos dano letal"
+	)
+	_assert_false(
+		ameaca.is_physics_processing(),
+		"Ameaca deve ter processamento fisico desativado apos morte"
 	)
 
 	if is_instance_valid(fixture.root):
@@ -301,18 +312,219 @@ func _test_ameaca_busca_caminho_quando_visao_obstruida() -> void:
 		"Visao direta deve estar bloqueada pelo obstaculo"
 	)
 
-	# Executa passo de fisica
+	# Executa passo de fisica sem som: ameaca NAO se move cegamente ate o jogador
 	ameaca._physics_process(0.016)
 
 	var nav_agent: NavigationAgent2D = ameaca.get_node_or_null("NavigationAgent2D")
 	_assert_true(nav_agent != null, "Ameaca deve ter NavigationAgent2D")
+	_assert_false(
+		ameaca.has_investigate_target(),
+		"Ameaca nao deve possuir alvo de investigacao sem som e sem visao direta"
+	)
+	_assert_true(
+		ameaca.velocity == Vector2.ZERO,
+		"Ameaca sem visao direta e sem estimulo sonoro deve permanecer parada"
+	)
+
+	# Quando um som e emitido dentro do alcance de audicao, a ameaca se guia por ele
+	NoiseBus.emit(fake_player.global_position, 500.0, &"gunshot", fake_player)
+	ameaca._physics_process(0.016)
+
+	_assert_true(
+		ameaca.has_investigate_target(),
+		"Ao ouvir som, ameaca deve adquirir alvo de investigacao"
+	)
 	if nav_agent:
 		_assert_true(
 			nav_agent.target_position == fake_player.global_position,
-			"Ao ter visao bloqueada, ameaca deve definir a posicao do jogador como target_position do NavigationAgent2D"
+			"Ao ouvir som, ameaca deve definir a posicao do som como target_position do NavigationAgent2D"
 		)
 
 	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_ouve_som_dentro_do_raio() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	# Emite som a 80px de distancia (raio do som 100px)
+	var sound_pos := Vector2(180, 100)
+	NoiseBus.emit(sound_pos, 100.0, &"footstep")
+
+	_assert_true(
+		ameaca.has_investigate_target(),
+		"Ameaca deve registrar alvo de investigacao para som ouvido dentro do raio"
+	)
+	_assert_true(
+		ameaca.get_investigate_target() == sound_pos,
+		"Posicao de investigacao deve ser igual a posicao do som"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_ignora_som_fora_do_raio() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	# Emite som a 300px de distancia (raio do som 100px)
+	var sound_pos := Vector2(400, 100)
+	NoiseBus.emit(sound_pos, 100.0, &"footstep")
+
+	_assert_false(
+		ameaca.has_investigate_target(),
+		"Ameaca nao deve registrar alvo para som fora do raio audivel"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_prioriza_visao_direta_sobre_som() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fake_player.global_position = Vector2(200, 100) # Direita (sem obstaculo)
+	fixture.root.add_child(fake_player)
+	await process_frame
+
+	_assert_true(
+		ameaca.has_direct_vision_to_player(),
+		"Ameaca deve ter visao direta para jogador desobstruido"
+	)
+
+	# Emite som em direcao oposta (cima)
+	var sound_pos := Vector2(100, 0)
+	NoiseBus.emit(sound_pos, 200.0, &"footstep")
+
+	ameaca._physics_process(0.016)
+
+	_assert_false(
+		ameaca.has_investigate_target(),
+		"Ameaca com visao direta para o jogador nao deve se desviar para som secundario"
+	)
+	_assert_true(
+		is_equal_approx(ameaca.rotation, 0.0),
+		"Ameaca deve continuar mirando para o jogador a sua direita"
+	)
+
+	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_investiga_ultimo_ponto_ao_perder_visao() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+
+	var fake_player := Node2D.new()
+	fake_player.add_to_group(&"player")
+	fake_player.global_position = Vector2(200, 100)
+	fixture.root.add_child(fake_player)
+	await process_frame
+
+	# Frame 1: Persegue com visao direta
+	ameaca._physics_process(0.016)
+	_assert_true(ameaca.has_direct_vision_to_player(), "Deve ter visao direta no frame 1")
+
+	# Move jogador para tras de um obstaculo
+	var obstacle := StaticBody2D.new()
+	obstacle.collision_layer = PhysicsLayers.OBSTACULO
+	obstacle.collision_mask = 0
+	var col_shape := CollisionShape2D.new()
+	var rect_shape := RectangleShape2D.new()
+	rect_shape.size = Vector2(50, 50)
+	col_shape.shape = rect_shape
+	obstacle.add_child(col_shape)
+	obstacle.global_position = Vector2(150, 100)
+	fixture.root.add_child(obstacle)
+	await process_frame
+
+	_assert_false(ameaca.has_direct_vision_to_player(), "Visao deve estar bloqueada")
+
+	# Frame 2: Ameaca investiga o local onde o jogador estava no frame 1
+	ameaca._physics_process(0.016)
+	_assert_true(
+		ameaca.has_investigate_target(),
+		"Ameaca deve investigar a ultima posicao vista do jogador ao perder a visao direta"
+	)
+	_assert_true(
+		ameaca.get_investigate_target() == Vector2(200, 100),
+		"Posicao de investigacao deve ser a ultima posicao vista do jogador"
+	)
+
+	fake_player.remove_from_group(&"player")
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_vai_para_som_como_ia_para_jogador() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	# Emite som a direita (300, 100) sem obstaculo
+	var sound_pos := Vector2(300, 100)
+	NoiseBus.emit(sound_pos, 400.0, &"gunshot")
+
+	_assert_true(ameaca.has_investigate_target(), "Ameaca registrou o som")
+	
+	# Executa passo de fisica: com linha direta ate o som, deve andar diretamente para a direita
+	ameaca._physics_process(0.016)
+
+	_assert_true(
+		ameaca.velocity.x > 0.0 and is_equal_approx(ameaca.velocity.y, 0.0),
+		"Ameaca deve mover-se diretamente para a posicao do som (vel: %s)" % str(ameaca.velocity)
+	)
+	_assert_true(
+		is_equal_approx(ameaca.rotation, 0.0),
+		"Rotacao da ameaca deve alinhar com a direcao do som"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_debug_visualizer_alterna_e_renderiza() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	var visualizer: Node2D = ameaca._debug_visualizer
+	_assert_true(visualizer != null, "Ameaca deve possuir nó visualizer de debug instanciado")
+
+	# Garante estado inicial desligado
+	Ameaca.AmeacaDebugVisualizerScript.debug_draw_enabled = false
+	ameaca._physics_process(0.016)
+	_assert_false(visualizer.visible, "Visualizer deve iniciar oculto quando debug esta desligado")
+
+	# Ativa o modo de depuração (F2)
+	Ameaca.AmeacaDebugVisualizerScript.toggle_debug()
+	_assert_true(Ameaca.AmeacaDebugVisualizerScript.debug_draw_enabled, "debug_draw_enabled deve ser true apos toggle")
+
+	ameaca._physics_process(0.016)
+	_assert_true(visualizer.visible, "Visualizer deve ficar visivel apos toggle_debug ativo")
+
+	# Desativa o modo de depuração (F2)
+	Ameaca.AmeacaDebugVisualizerScript.toggle_debug()
+	_assert_false(Ameaca.AmeacaDebugVisualizerScript.debug_draw_enabled, "debug_draw_enabled deve ser false apos segundo toggle")
+
+	ameaca._physics_process(0.016)
+	_assert_false(visualizer.visible, "Visualizer deve voltar a ficar oculto apos desativacao")
+
 	fixture.root.queue_free()
 	await process_frame
 
@@ -391,8 +603,8 @@ func _test_ameaca_navigation_agent_distancias_adequadas() -> void:
 	_assert_true(nav_agent != null, "NavigationAgent2D deve existir")
 	if nav_agent:
 		_assert_true(
-			nav_agent.path_desired_distance >= 30.0,
-			"path_desired_distance (%.1f) deve ser >= ao raio do colisor (30.0) para contornar quinas sem travar" % nav_agent.path_desired_distance
+			nav_agent.path_desired_distance <= 12.0,
+			"path_desired_distance (%.1f) deve ser <= 12.0 para contornar quinas sem cortar caminho nas paredes" % nav_agent.path_desired_distance
 		)
 
 	fixture.root.queue_free()
@@ -453,6 +665,69 @@ func _test_multiplas_ameacas_possuem_separacao_suave_sem_picos() -> void:
 	)
 
 	fake_player.remove_from_group(&"player")
+	scene_root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_contorna_quina_sem_travar() -> void:
+	var scene_root := Node2D.new()
+	scene_root.name = "CornerTestFixture"
+	get_root().add_child(scene_root)
+
+	var nav_region := NavigationRegion2D.new()
+	var nav_poly := NavigationPolygon.new()
+	nav_poly.agent_radius = 24.0
+	nav_poly.parsed_collision_mask = PhysicsLayers.OBSTACULO
+	nav_poly.add_outline(PackedVector2Array([
+		Vector2(0, 0),
+		Vector2(600, 0),
+		Vector2(600, 600),
+		Vector2(0, 600)
+	]))
+	nav_region.navigation_polygon = nav_poly
+	scene_root.add_child(nav_region)
+
+	# Obstaculo formando quina em x=[200, 400], y=[200, 400]
+	var obstacle := StaticBody2D.new()
+	obstacle.collision_layer = PhysicsLayers.OBSTACULO
+	obstacle.collision_mask = 0
+	var col_shape := CollisionShape2D.new()
+	var rect_shape := RectangleShape2D.new()
+	rect_shape.size = Vector2(200, 200)
+	col_shape.shape = rect_shape
+	obstacle.add_child(col_shape)
+	obstacle.position = Vector2(300, 300)
+	nav_region.add_child(obstacle)
+
+	nav_region.bake_navigation_polygon()
+	await physics_frame
+	await physics_frame
+
+	var ameaca: Ameaca = AmeacaScene.instantiate()
+	ameaca.position = Vector2(150, 160)
+	scene_root.add_child(ameaca)
+
+	# Som localizado no lado direito inferior, do outro lado da quina
+	var sound_pos := Vector2(450, 450)
+	ameaca.investigate_position(sound_pos)
+
+	await physics_frame
+	await physics_frame
+
+	# Executa fisica por 30 frames
+	for i in range(30):
+		ameaca._physics_process(0.016)
+		await physics_frame
+
+	_assert_true(
+		ameaca.global_position.distance_to(Vector2(150, 160)) > 25.0,
+		"Ameaca deve progredir e contornar a quina (distancia percorrida: %.1f)" % ameaca.global_position.distance_to(Vector2(150, 160))
+	)
+	_assert_true(
+		ameaca.velocity.length_squared() > 1.0,
+		"Ameaca nao deve ficar com velocidade zerada e travada na quina"
+	)
+
 	scene_root.queue_free()
 	await process_frame
 

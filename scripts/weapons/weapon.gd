@@ -18,8 +18,14 @@ var is_reloading: bool = false
 var can_fire: bool = true
 
 
+func _get_game_state() -> Node:
+	return get_node_or_null("/root/GameState")
+
+
 func _ready() -> void:
-	current_ammo = GameState.municao_pente
+	var game_state := _get_game_state()
+	if game_state:
+		current_ammo = game_state.municao_pente
 
 
 func shoot(aim_direction: Vector2, _aim_angle: float) -> void:
@@ -29,7 +35,9 @@ func shoot(aim_direction: Vector2, _aim_angle: float) -> void:
 	if current_ammo <= 0 or is_reloading:
 		return
 	current_ammo -= 1
-	GameState.municao_pente = current_ammo;
+	var game_state := _get_game_state()
+	if game_state:
+		game_state.municao_pente = current_ammo
 	
 	can_fire = false
 
@@ -57,12 +65,15 @@ func reload() -> void:
 	if is_reloading or current_ammo == magazine_size:
 		return
 	var faltando := magazine_size - current_ammo
-	var pegar := mini(faltando, GameState.municao_reserva)
+	var game_state := _get_game_state()
+	var reserva: int = game_state.municao_reserva if game_state else magazine_size
+	var pegar := mini(faltando, reserva)
 	if pegar <= 0:
 		return
 	is_reloading = true
 	await get_tree().create_timer(reload_time).timeout
 	current_ammo += pegar
-	GameState.municao_pente = current_ammo
-	GameState.municao_reserva -= pegar
+	if game_state:
+		game_state.municao_pente = current_ammo
+		game_state.municao_reserva -= pegar
 	is_reloading = false

@@ -47,6 +47,12 @@ func _ready() -> void:
 	_rebuild(true)
 
 
+func _get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: int) -> PackedVector2Array:
+	if _raycaster == null:
+		_raycaster = PlayerVisionRaycaster.new(self)
+	return _raycaster.get_obstacle_corners_near(source_pos, radius, layer_mask)
+
+
 func _physics_process(_delta: float) -> void:
 	if Input.is_action_just_pressed(&"debug_vision"):
 		debug_vision_active = not debug_vision_active

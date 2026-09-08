@@ -22,9 +22,10 @@ var _is_backpedaling_state: bool = false
 
 func _ready() -> void:
 	add_to_group(&"player")
-	if GameState.voltando_da_loja:
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state and game_state.voltando_da_loja:
 		position = Vector2(60, 50)
-		GameState.voltando_da_loja = false
+		game_state.voltando_da_loja = false
 
 
 func is_backpedaling_vector(direction: Vector2) -> bool:

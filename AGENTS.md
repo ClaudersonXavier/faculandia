@@ -17,7 +17,7 @@
 - `scripts/player/player_vision.gd` + `scripts/player/player_vision_raycaster.gd`: raycast-based fog-of-war/vision cone; the raycaster holds the pure obstacle/ray geometry, `player_vision.gd` holds the public API, cone/light orchestration, and shader plumbing.
 - `scripts/weapons/weapon.gd`: base weapon; creates bullets in code and attaches `scripts/weapons/bullet.gd`.
 - `scripts/weapons/pistol.gd`: pistol stats via `Weapon` inheritance.
-- `scripts/enemies/ameaca.gd`: enemy AI (direct-vision vs. navmesh chase); `scripts/enemies/ameaca_debug_logger.gd` holds its opt-in (`debug_logging`) diagnostics.
+- `scripts/enemies/ameaca.gd`: enemy AI (direct-vision vs. navmesh chase); `scripts/enemies/ameaca_debug_logger.gd` holds its opt-in (`debug_logging`) diagnostics; `scripts/enemies/ameaca_debug_visualizer.gd` holds its F2 debug visualizer overlay.
 - `scripts/noise/`: noise event bus (`noise_bus.gd`), event/synthesizer scripts, and SFX playback (`noise_sfx_player.gd`).
 - `resources/tilesets/tileset_chao.tres` currently has no collision shapes.
 - `resources/sprites/` holds sprite textures (by domain: `characters/`, `environment/`, `items/`, `test/`); `resources/sounds/` is reserved for future audio assets; `resources/tilesets/` holds `TileSet` resources.

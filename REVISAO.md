@@ -140,6 +140,7 @@ Player (CharacterBody2D) [player_moviment.gd]
 | `shoot` | Mouse Esquerdo |
 | `reload` | R |
 | `debug_vision` | F1 (alterna visão de debug, revela tudo) |
+| `debug_zombie` | F2 (alterna visão de debug da IA: visão, linha de visada, destino e caminho) |
 
 Teclas adicionais de debug (via `test_spawner.gd`, sem action própria): `Z` spawna ameaça, `L` spawna fonte de luz de teste, `Delete`/`Backspace` remove o objeto de teste mais próximo do mouse. `F3` alterna o visualizador de ruído.
 

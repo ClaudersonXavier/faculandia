@@ -1,9 +1,10 @@
 class_name NavegacaoCenario
 extends NavigationRegion2D
 ## Bake automatico da malha de navegacao em tempo de execucao,
-## recortando obstaculos na camada LAYER_OBSTACULO.
+## recortando obstaculos nas camadas OBSTACULO e OBSTACULO_BAIXO.
 
 const NAVMESH_SOURCE_GROUP := &"navmesh_source"
+const AGENT_RADIUS: float = 24.0
 
 
 func _ready() -> void:
@@ -16,10 +17,14 @@ func _ready() -> void:
 	if source_node and not source_node.is_in_group(NAVMESH_SOURCE_GROUP):
 		source_node.add_to_group(NAVMESH_SOURCE_GROUP)
 
+	navigation_polygon.agent_radius = AGENT_RADIUS
 	navigation_polygon.parsed_collision_mask = PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO
 	navigation_polygon.parsed_geometry_type = NavigationPolygon.PARSED_GEOMETRY_STATIC_COLLIDERS
 	navigation_polygon.source_geometry_mode = NavigationPolygon.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
 	navigation_polygon.source_geometry_group_name = NAVMESH_SOURCE_GROUP
+
+	# Assegura que o contorno cubra toda a area util do mapa
+	_ensure_world_bounds_outline(source_node)
 
 	# Aguarda dois frames de fisica para garantir que todos os colisores
 	# estejam registrados no PhysicsServer antes do bake.
@@ -27,3 +32,49 @@ func _ready() -> void:
 	await get_tree().physics_frame
 	if not is_baking():
 		bake_navigation_polygon()
+
+
+func _ensure_world_bounds_outline(source_node: Node) -> void:
+	var total_rect := Rect2()
+	if source_node:
+		for child in source_node.get_children():
+			if child is TileMapLayer:
+				var tml: TileMapLayer = child
+				var used_rect: Rect2i = tml.get_used_rect()
+				if used_rect.size != Vector2i.ZERO and tml.tile_set:
+					var cell_size := Vector2(tml.tile_set.tile_size)
+					var pixel_rect := Rect2(Vector2(used_rect.position) * cell_size, Vector2(used_rect.size) * cell_size)
+					if total_rect == Rect2():
+						total_rect = pixel_rect
+					else:
+						total_rect = total_rect.merge(pixel_rect)
+			elif child is Camera2D:
+				var cam: Camera2D = child
+				if cam.limit_right > cam.limit_left and cam.limit_bottom > cam.limit_top:
+					var cam_rect := Rect2(cam.limit_left, cam.limit_top, cam.limit_right - cam.limit_left, cam.limit_bottom - cam.limit_top)
+					if total_rect == Rect2():
+						total_rect = cam_rect
+					else:
+						total_rect = total_rect.merge(cam_rect)
+
+	# Verifica limites da camera nos players caso nao estejam no source_node
+	var players := get_tree().get_nodes_in_group(&"player")
+	for p in players:
+		var cam := p.get_node_or_null("camera_player") as Camera2D
+		if cam and cam.limit_right > cam.limit_left and cam.limit_bottom > cam.limit_top:
+			var cam_rect := Rect2(cam.limit_left, cam.limit_top, cam.limit_right - cam.limit_left, cam.limit_bottom - cam.limit_top)
+			if total_rect == Rect2():
+				total_rect = cam_rect
+			else:
+				total_rect = total_rect.merge(cam_rect)
+
+	if total_rect.size != Vector2.ZERO:
+		var padded := total_rect.grow(32.0)
+		navigation_polygon.clear_outlines()
+		navigation_polygon.add_outline(PackedVector2Array([
+			padded.position,
+			Vector2(padded.end.x, padded.position.y),
+			padded.end,
+			Vector2(padded.position.x, padded.end.y)
+		]))
+

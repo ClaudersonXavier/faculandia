@@ -3,6 +3,10 @@ extends CharacterBody2D
 
 const MIN_MOVEMENT_DISTANCE_SQUARED: float = 0.001
 const DEFAULT_STOP_DISTANCE: float = 60.0
+const DEFAULT_PATH_DESIRED_DISTANCE: float = 8.0
+const STUCK_CHECK_FRAMES: int = 15
+const STUCK_MIN_DISTANCE_SQ: float = 16.0  # 4px
+const AmeacaDebugVisualizerScript := preload("res://scripts/enemies/ameaca_debug_visualizer.gd")
 
 @export var max_health: float = 24.0
 @export var speed: float = 70.0
@@ -11,6 +15,9 @@ const DEFAULT_STOP_DISTANCE: float = 60.0
 @export var path_update_interval: float = 0.2
 @export var separation_radius: float = 60.0
 @export var separation_weight: float = 0.6
+@export var hearing_sensitivity: float = 1.0
+@export var vision_range: float = 600.0
+@export var sound_investigate_stop_distance: float = 30.0
 @export var debug_logging: bool = false
 
 var health: float = 24.0
@@ -20,10 +27,29 @@ var _is_dead: bool = false
 var _jogador_na_area_loot: bool = false
 var _path_timer: float = 0.0
 
+var _sound_target_pos: Vector2 = Vector2.INF
+var _has_sound_target: bool = false
+var _last_seen_player_pos: Vector2 = Vector2.INF
+var _is_investigating_last_seen: bool = false
+var _had_direct_vision_prev: bool = false
+var _is_noise_bus_connected: bool = false
+var _last_nav_target: Vector2 = Vector2.INF
+var _stuck_check_pos: Vector2 = Vector2.INF
+var _stuck_frame_count: int = 0
+
 var _debug_logger: AmeacaDebugLogger
+var _debug_visualizer: Node2D
 
 @onready var navigation_agent: NavigationAgent2D = get_node_or_null("NavigationAgent2D")
 @onready var sprite = get_node_or_null("AnimatedSprite2D")
+
+
+func _enter_tree() -> void:
+	_connect_noise_bus()
+
+
+func _exit_tree() -> void:
+	_disconnect_noise_bus()
 
 
 func _ready() -> void:
@@ -33,59 +59,183 @@ func _ready() -> void:
 	collision_mask = PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO | PhysicsLayers.JOGADOR
 	add_to_group(&"ameacas")
 	add_to_group(&"visible_entities")
+	_connect_noise_bus()
 	_find_player()
 	_debug_logger = AmeacaDebugLogger.new()
 	_debug_logger._prev_rotation = rotation
 	if is_instance_valid(target_player):
-		_debug_logger._prev_has_direct_vision = has_direct_line_of_sight_to(target_player.global_position)
+		_debug_logger._prev_has_direct_vision = has_direct_vision_to_player()
+	_debug_visualizer = AmeacaDebugVisualizerScript.new(self)
+	add_child(_debug_visualizer)
+	if navigation_agent:
+		navigation_agent.path_desired_distance = DEFAULT_PATH_DESIRED_DISTANCE
+
+
+func _connect_noise_bus() -> void:
+	var bus := NoiseBus.get_instance()
+	if is_instance_valid(bus):
+		if not bus.noise_emitted.is_connected(_on_noise_emitted):
+			bus.noise_emitted.connect(_on_noise_emitted)
+		_is_noise_bus_connected = true
+
+
+func _disconnect_noise_bus() -> void:
+	var bus := NoiseBus.instance
+	if is_instance_valid(bus) and bus.noise_emitted.is_connected(_on_noise_emitted):
+		bus.noise_emitted.disconnect(_on_noise_emitted)
+	_is_noise_bus_connected = false
+
+
+func _on_noise_emitted(event: NoiseEvent) -> void:
+	if _is_dead or not is_inside_tree():
+		return
+	if event == null or event.emitter == self:
+		return
+	if NoiseBus.is_noise_heard(global_position, event, hearing_sensitivity):
+		_on_noise_heard(event)
+
+
+func _on_noise_heard(event: NoiseEvent) -> void:
+	# Se ja possui visao direta para o jogador, prioriza a visao direta
+	if has_direct_vision_to_player():
+		return
+	investigate_sound(event.position)
+
+
+func investigate_sound(sound_pos: Vector2) -> void:
+	_sound_target_pos = sound_pos
+	_has_sound_target = true
+	_is_investigating_last_seen = false
+	_path_timer = 0.0
+	_last_nav_target = sound_pos
+	if navigation_agent:
+		navigation_agent.target_desired_distance = sound_investigate_stop_distance
+		navigation_agent.target_position = sound_pos
+
+
+func investigate_position(target_pos: Vector2) -> void:
+	investigate_sound(target_pos)
+
+
+func has_investigate_target() -> bool:
+	return _has_sound_target or _is_investigating_last_seen
+
+
+func get_investigate_target() -> Vector2:
+	if _has_sound_target:
+		return _sound_target_pos
+	if _is_investigating_last_seen:
+		return _last_seen_player_pos
+	return Vector2.INF
+
+
+func has_direct_vision_to_player() -> bool:
+	if not is_instance_valid(target_player):
+		_find_player()
+	if not is_instance_valid(target_player):
+		return false
+	var to_player := target_player.global_position - global_position
+	if vision_range > 0.0 and to_player.length_squared() > (vision_range * vision_range):
+		return false
+	return has_direct_line_of_sight_to(target_player.global_position)
 
 
 func _physics_process(delta: float) -> void:
 	if _is_dead:
 		return
 
+	if not _is_noise_bus_connected:
+		_connect_noise_bus()
+
 	if not is_instance_valid(target_player):
 		_find_player()
 
-	if not is_instance_valid(target_player):
-		_stop_moving()
-		return
+	var has_direct_vision := has_direct_vision_to_player()
+	var has_target := false
+	var target_pos := Vector2.ZERO
+	var is_player_target := false
 
-	var target_pos := target_player.global_position
-	var to_player := target_pos - global_position
-	var distance_squared := to_player.length_squared()
-	var stop_dist := navigation_agent.target_desired_distance if navigation_agent else DEFAULT_STOP_DISTANCE
+	if has_direct_vision:
+		target_pos = target_player.global_position
+		has_target = true
+		is_player_target = true
+		_last_seen_player_pos = target_pos
+		_is_investigating_last_seen = false
+		_has_sound_target = false
+		_sound_target_pos = Vector2.INF
+	elif _has_sound_target:
+		target_pos = _sound_target_pos
+		has_target = true
+	elif _had_direct_vision_prev and _last_seen_player_pos != Vector2.INF:
+		target_pos = _last_seen_player_pos
+		has_target = true
+		_is_investigating_last_seen = true
+		_last_nav_target = Vector2.INF
+		_path_timer = 0.0
+	elif _is_investigating_last_seen and _last_seen_player_pos != Vector2.INF:
+		target_pos = _last_seen_player_pos
+		has_target = true
 
-	var has_direct_vision := has_direct_line_of_sight_to(target_pos)
+	_had_direct_vision_prev = is_player_target
+
 	var move_direction := Vector2.ZERO
 	var nav_next_pos := Vector2.ZERO
 	var is_at_target := false
+	var has_direct_path := false
 
-	if has_direct_vision:
-		if distance_squared <= stop_dist * stop_dist:
-			is_at_target = true
-			if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
-				rotation = to_player.angle()
-		else:
-			move_direction = to_player.normalized()
-	elif navigation_agent:
-		_path_timer -= delta
-		if _path_timer <= 0.0:
-			_path_timer = path_update_interval
-			navigation_agent.target_position = target_pos
+	if has_target:
+		var to_target := target_pos - global_position
+		var distance_squared := to_target.length_squared()
+		var stop_dist := DEFAULT_STOP_DISTANCE if is_player_target else sound_investigate_stop_distance
+		if navigation_agent and navigation_agent.target_desired_distance != stop_dist:
+			navigation_agent.target_desired_distance = stop_dist
 
-		if navigation_agent.is_navigation_finished():
-			is_at_target = true
+		# Verifica se ha caminho direto e livre de colisoes para o corpo fisico da ameaca
+		has_direct_path = has_clear_path_to(target_pos)
+
+		if has_direct_path:
+			if distance_squared <= stop_dist * stop_dist:
+				is_at_target = true
+				if distance_squared > MIN_MOVEMENT_DISTANCE_SQUARED:
+					rotation = to_target.angle()
+			else:
+				move_direction = to_target.normalized()
+		elif navigation_agent:
+			var target_changed := _last_nav_target == Vector2.INF or target_pos.distance_squared_to(_last_nav_target) > 16.0
+			_path_timer -= delta
+			if target_changed or _path_timer <= 0.0:
+				_path_timer = path_update_interval
+				_last_nav_target = target_pos
+				navigation_agent.target_position = target_pos
+
+			var arrived_dist := distance_squared <= stop_dist * stop_dist
+			var nav_finished := navigation_agent.is_navigation_finished()
+			var final_pos := navigation_agent.get_final_position()
+			var near_final := final_pos != Vector2.ZERO and global_position.distance_squared_to(final_pos) <= stop_dist * stop_dist
+
+			if arrived_dist or (nav_finished and near_final):
+				is_at_target = true
+			else:
+				nav_next_pos = navigation_agent.get_next_path_position()
+				var to_next := nav_next_pos - global_position
+				if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
+					move_direction = to_next.normalized()
 		else:
-			nav_next_pos = navigation_agent.get_next_path_position()
-			var to_next := nav_next_pos - global_position
-			if to_next.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
-				move_direction = to_next.normalized()
+			if distance_squared <= stop_dist * stop_dist:
+				is_at_target = true
+			else:
+				move_direction = to_target.normalized()
+
+		if is_at_target and not is_player_target:
+			# Chegou ao local onde identificou o barulho ou ultimo ponto: encerra a investigacao
+			_has_sound_target = false
+			_sound_target_pos = Vector2.INF
+			_is_investigating_last_seen = false
+			_last_seen_player_pos = Vector2.INF
+			_last_nav_target = Vector2.INF
 	else:
-		if distance_squared <= stop_dist * stop_dist:
-			is_at_target = true
-		else:
-			move_direction = to_player.normalized()
+		is_at_target = true
+		move_direction = Vector2.ZERO
 
 	# Aplica forca de separacao suave entre ameacas para evitar sobreposicao
 	var separation_vector := _calculate_separation_vector(move_direction)
@@ -112,8 +262,46 @@ func _physics_process(delta: float) -> void:
 	else:
 		_stop_moving()
 
+	# Deteccao de travamento: se tentando se mover via navmesh mas quase parado,
+	# forca recalculo do caminho e descola o zumbi da parede usando a normal/tangente da colisao.
+	if has_target and not is_at_target and not has_direct_path:
+		_stuck_frame_count += 1
+		if _stuck_frame_count >= STUCK_CHECK_FRAMES:
+			var moved_sq := global_position.distance_squared_to(_stuck_check_pos) if _stuck_check_pos != Vector2.INF else 9999.0
+			if moved_sq < STUCK_MIN_DISTANCE_SQ:
+				# Travado: forca recalculo do caminho
+				_path_timer = 0.0
+				_last_nav_target = Vector2.INF
+				if navigation_agent:
+					navigation_agent.target_position = target_pos
+				# Aplica impulso para descolar da parede/quina
+				if get_slide_collision_count() > 0:
+					var col := get_slide_collision(0)
+					var normal := col.get_normal()
+					var tangent := Vector2(-normal.y, normal.x)
+					var to_tgt := target_pos - global_position
+					if tangent.dot(to_tgt) < 0.0:
+						tangent = -tangent
+					velocity = (normal * 0.5 + tangent * 0.8).normalized() * speed
+					move_and_slide()
+				elif move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
+					var perp := Vector2(-move_direction.y, move_direction.x)
+					velocity = perp * speed * 0.7
+					move_and_slide()
+			_stuck_check_pos = global_position
+			_stuck_frame_count = 0
+		elif _stuck_check_pos == Vector2.INF:
+			_stuck_check_pos = global_position
+	else:
+		_stuck_check_pos = Vector2.INF
+		_stuck_frame_count = 0
+
 	if debug_logging:
-		_debug_logger.log_frame(self, delta, has_direct_vision, move_direction, nav_next_pos, prev_pos, prev_rot)
+		_debug_logger.log_frame(self, delta, has_direct_path, move_direction, nav_next_pos, prev_pos, prev_rot)
+
+	AmeacaDebugVisualizerScript.check_toggle_input()
+	if _debug_visualizer != null:
+		_debug_visualizer.update_frame()
 
 
 func _calculate_separation_vector(forward_dir: Vector2) -> Vector2:
@@ -142,12 +330,26 @@ func has_direct_line_of_sight_to(target_pos: Vector2) -> bool:
 	return PhysicsUtils.has_clear_line(space_state, global_position, target_pos, PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO)
 
 
+func has_clear_path_to(target_pos: Vector2, body_radius: float = 13.0) -> bool:
+	var world_2d := get_world_2d()
+	if world_2d == null:
+		return true
+	var space_state := world_2d.direct_space_state
+	if space_state == null:
+		return true
+	return PhysicsUtils.has_clear_motion(space_state, global_position, target_pos, body_radius, PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO)
+
+
+
 func take_damage(amount: float) -> void:
 	if _is_dead:
 		return
 
 	health -= amount
 	_play_hit_flash()
+	if not has_direct_vision_to_player() and is_instance_valid(target_player):
+		investigate_position(target_player.global_position)
+
 	if health <= 0.0:
 		die()
 
@@ -163,7 +365,10 @@ func _play_hit_flash() -> void:
 
 func die() -> void:
 	_is_dead = true
+	_disconnect_noise_bus()
 	set_physics_process(false)
+	if _debug_visualizer != null:
+		_debug_visualizer.visible = false
 	if sprite and sprite is AnimatedSprite2D:
 		AnimationUtils.play_if_needed(sprite, &"idle")
 	var col_shape = get_node_or_null("CollisionShape2D")

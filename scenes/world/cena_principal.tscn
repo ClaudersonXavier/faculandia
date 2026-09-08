@@ -15,10 +15,11 @@
 [ext_resource type="PackedScene" uid="uid://cur7gqfk1kfdx" path="res://scenes/ui/camada_ui.tscn" id="22_camada_ui"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
-vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)
+vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 1632, 0, 1632)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(0, 0, 1152, 0, 1152, 648, 0, 648)])
-parsed_collision_mask = 1
+outlines = Array[PackedVector2Array]([PackedVector2Array(0, 0, 1152, 0, 1152, 1632, 0, 1632)])
+agent_radius = 24.0
+parsed_collision_mask = 9
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ef1hl"]
 texture = ExtResource("8_mdbdi")

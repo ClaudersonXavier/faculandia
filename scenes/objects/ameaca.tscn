@@ -70,7 +70,8 @@ autoplay = "idle"
 shape = SubResource("CircleShape2D_jdjso")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1757699016]
-path_desired_distance = 32.0
+radius = 14.0
+path_desired_distance = 8.0
 target_desired_distance = 60.0
 
 [node name="AreaLoot" type="Area2D" parent="." unique_id=1759686688]

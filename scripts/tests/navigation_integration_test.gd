@@ -74,11 +74,16 @@ func _test_navigation_mesh_path_generation() -> void:
 	# Ameaca nao deve ter visao direta devido ao obstaculo no meio
 	_assert_false(ameaca.has_direct_line_of_sight_to(player.global_position), "Visao deve estar bloqueada pelo obstaculo central")
 
-	# Dispara processamento fisico
+	# Dispara processamento fisico sem som
+	ameaca._physics_process(0.016)
+	_assert_true(ameaca.velocity == Vector2.ZERO, "Ameaca sem visao direta e sem som nao deve se mover cegamente ate o jogador")
+
+	# Jogador emite som audivel pela ameaca (ex: tiro)
+	NoiseBus.emit(player.global_position, 600.0, &"gunshot", player)
 	ameaca._physics_process(0.016)
 
 	var nav_agent: NavigationAgent2D = ameaca.get_node("NavigationAgent2D")
-	_assert_true(nav_agent.target_position == player.global_position, "Target position do agent deve ser a posicao do player")
+	_assert_true(nav_agent.target_position == player.global_position, "Target position do agent deve ser a posicao do som emitido pelo player")
 
 	# Aguarda a geracao do caminho pelo NavigationServer
 	await physics_frame
