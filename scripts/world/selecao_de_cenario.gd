@@ -4,7 +4,7 @@ extends Control
 
 const ZONAS := [
 	{"cena": SaveJogo.CENA_ZONA_NORTE, "nome": "Zona Norte"},
-	{"cena": SaveJogo.CENA_ZONA_SUL, "nome": "Zona Sul", "em_construcao": true},
+	{"cena": SaveJogo.CENA_ZONA_SUL, "nome": "Zona Sul"},
 ]
 
 @onready var cartoes: HBoxContainer = %Cartoes
@@ -25,8 +25,7 @@ func _construir_cartoes() -> void:
 	var primeiro: Button = null
 	for zona: Dictionary in ZONAS:
 		var botao := Button.new()
-		var status := "Em construção" if zona.get("em_construcao", false) else "Pronta"
-		botao.text = "%s\n\n%s" % [zona["nome"], status]
+		botao.text = "%s\n\n" % [zona["nome"]]
 		botao.custom_minimum_size = Vector2(280, 200)
 		botao.add_theme_font_size_override(&"font_size", 22)
 		botao.pressed.connect(_ao_escolher.bind(zona["cena"]))
