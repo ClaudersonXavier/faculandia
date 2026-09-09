@@ -12,20 +12,91 @@ extends CharacterBody2D
 
 @onready var weapon: Node2D = get_node_or_null("Weapon")
 
+const HIT_FLASH_COLOR := Color(1.0, 0.3, 0.3, 1.0)
+const HIT_FLASH_DURATION := 0.15
+
+## Som de passo toca em loop continuo desde o _ready() (nunca reinicia, sem
+## "pop" de restart) — so' o volume alterna entre audivel/mudo conforme anda
+## ou fica parado. Nao usa o NoiseSfxPlayer automatico (que dispara um
+## AudioStreamPlayer2D novo por evento de ruido, pensado pra sons curtos tipo
+## tiro/impacto): o arquivo de passo real dura ~13s, entao um evento por
+## ~27px andados sobreporia dezenas de instancias — ver noise_sfx_player.gd,
+## que deliberadamente NAO tem entrada de audio pra "footstep" por causa
+## disso (o evento de ruido em si continua sendo emitido, so' pra IA ouvir).
+const CAMINHO_PASSO := "res://resources/sounds/sfx/passo.mp3"
+const VOLUME_PASSO_MUDO_DB := -80.0
+const VOLUME_PASSO_AUDIVEL_DB := -22.0
+
 var aim_angle: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
 
 var _distance_walked: float = 0.0
 var _last_step_position: Vector2 = Vector2.INF
 var _is_backpedaling_state: bool = false
+var _hit_flash_tween: Tween = null
+var _morrendo: bool = false
+var _passo_player: AudioStreamPlayer
 
 
 func _ready() -> void:
 	add_to_group(&"player")
+	# get_node_or_null (nao a referencia global "MusicaTema" direto) pelo
+	# mesmo motivo do GameState logo abaixo: scripts que fazem preload() deste
+	# arquivo em modo headless (ex. scripts/tests/noise_system_test.gd) compilam
+	# antes dos autoloads existirem como identificador global — get_node_or_null
+	# so resolve em runtime, entao nao quebra a compilacao antecipada.
+	var musica = get_node_or_null("/root/MusicaTema")
+	if musica:
+		musica.parar()
 	var game_state = get_node_or_null("/root/GameState")
 	if game_state and game_state.voltando_da_loja:
 		position = Vector2(60, 50)
 		game_state.voltando_da_loja = false
+	_iniciar_som_de_passo()
+
+
+func _iniciar_som_de_passo() -> void:
+	_passo_player = AudioStreamPlayer.new()
+	add_child(_passo_player)
+	if not ResourceLoader.exists(CAMINHO_PASSO):
+		return
+	_passo_player.stream = load(CAMINHO_PASSO)
+	if _passo_player.stream is AudioStreamMP3:
+		(_passo_player.stream as AudioStreamMP3).loop = true
+	_passo_player.volume_db = VOLUME_PASSO_MUDO_DB
+	_passo_player.play()
+
+
+## Contrato duck-typed identico ao de Ameaca.take_damage — bullet.gd ja chama
+## qualquer target.take_damage(amount) generico, e Ameaca._atacar_jogador()
+## chama isso direto (ataque corpo-a-corpo, sem passar por bullet/Area2D).
+func take_damage(amount: int) -> void:
+	if _morrendo:
+		return
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	game_state.vida -= amount
+	_play_hit_flash()
+	if game_state.vida <= 0:
+		# _morrendo evita que 2+ Ameaca acertando o jogador no mesmo frame
+		# (cercado, vida ja baixa) agendem _morrer() mais de uma vez.
+		# Deferido: quem chama take_damage aqui e' o _physics_process de uma
+		# Ameaca atacante — trocar de cena nesse meio do callback dela e' arriscado.
+		_morrendo = true
+		call_deferred("_morrer")
+
+
+func _play_hit_flash() -> void:
+	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+	modulate = HIT_FLASH_COLOR
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, HIT_FLASH_DURATION)
+
+
+func _morrer() -> void:
+	SaveJogo.jogador_morreu()
 
 
 func is_backpedaling_vector(direction: Vector2) -> bool:
@@ -71,6 +142,14 @@ func update_animation() -> void:
 			spr.speed_scale = 1.0
 
 
+## Mesmo limiar de "esta parado" que update_animation() ja usa (idle vs walk).
+func _atualizar_som_de_passo() -> void:
+	if _passo_player == null or _passo_player.stream == null:
+		return
+	var esta_parado := velocity.length() <= 1.0
+	_passo_player.volume_db = VOLUME_PASSO_MUDO_DB if esta_parado else VOLUME_PASSO_AUDIVEL_DB
+
+
 func _physics_process(delta: float) -> void:
 	var mouse_position := get_global_mouse_position()
 	aim_direction = (mouse_position - global_position).normalized()
@@ -79,6 +158,7 @@ func _physics_process(delta: float) -> void:
 	var input_dir := get_movement_input()
 	apply_movement(input_dir, delta)
 	update_animation()
+	_atualizar_som_de_passo()
 
 	if weapon != null:
 		weapon.rotation = aim_angle

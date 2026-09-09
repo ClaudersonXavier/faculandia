@@ -18,12 +18,12 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameState="*res://scripts/world/game_state.gd"
+MusicaTema="*res://scripts/audio/musica_tema.gd"
 
 [display]
 
 window/size/mode=3
 window/stretch/mode="viewport"
-window/stretch/aspect="keep"
 
 [input]
 

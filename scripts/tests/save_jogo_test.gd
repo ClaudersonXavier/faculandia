@@ -3,6 +3,7 @@ extends SceneTree
 const SaveSlotsScript := preload("res://scripts/core/save_slots.gd")
 const SaveJogoScript := preload("res://scripts/world/save_jogo.gd")
 const EstadoDoJogoScript := preload("res://scripts/world/game_state.gd")
+const ZonaPopuladorScript := preload("res://scripts/world/zona_populador.gd")
 
 const PREFIXO_TESTE := "user://teste_save_"
 const CENA_LOJA := "res://scenes/world/loja.tscn"
@@ -36,6 +37,8 @@ func _run() -> void:
 	_test_to_dict_espelha_padroes()
 	_test_from_dict_usa_padroes_para_campos_faltando()
 	_test_from_dict_preserva_tipos_inteiros()
+	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
+	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -47,6 +50,16 @@ func _run() -> void:
 	_test_iniciar_nova_partida_reseta_e_reivindica_o_slot()
 	_test_carregar_slot_vazio_devolve_string_vazia()
 	_test_rotulo_de_slot_vazio_e_cheio()
+	_test_nomes_de_cena_cobre_selecao()
+	_test_iniciar_nova_partida_manda_para_selecao()
+	_test_jogador_morreu_restaura_autosave_com_vida_cheia_no_hub()
+
+	# --- ZonaPopulador (snapshot de mundo, secao "mundo" do save) ---
+	_test_snapshot_de_dict_round_trip()
+	_test_snapshot_ausente_cai_para_lista_vazia()
+	_test_zona_malformada_nao_derruba_as_outras()
+	_test_montar_secoes_inclui_secao_mundo()
+	_test_aplicar_restaura_snapshots_em_memoria()
 
 	_limpar()
 	_liberar_estado()
@@ -85,6 +98,7 @@ func _liberar_estado() -> void:
 func _limpar() -> void:
 	for slot: int in SaveSlotsScript.slots():
 		SaveSlotsScript.apagar(slot, PREFIXO_TESTE)
+	ZonaPopuladorScript.limpar_para_testes()
 
 
 # --- SaveSlots ---
@@ -219,17 +233,48 @@ func _test_from_dict_preserva_tipos_inteiros() -> void:
 	estado.free()
 
 
+func _test_vida_round_trip_e_cai_para_padrao_quando_ausente() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({"vida": 2})
+	_assert_true(estado.vida == 2, "vida presente deve ser aplicada (obtido: %d)" % estado.vida)
+	estado.from_dict({})
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "vida ausente deve cair no padrao (obtido: %d)" % estado.vida)
+	var dados := estado.to_dict()
+	_assert_true(dados.has("vida"), "to_dict deve conter o campo 'vida'")
+	estado.free()
+
+
+func _test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({"nivel_dano": 2, "nivel_tambor": 1, "nivel_reserva": 3, "nivel_critico": 2})
+	_assert_true(estado.nivel_dano == 2, "nivel_dano presente deve ser aplicado")
+	_assert_true(estado.nivel_tambor == 1, "nivel_tambor presente deve ser aplicado")
+	_assert_true(estado.nivel_reserva == 3, "nivel_reserva presente deve ser aplicado")
+	_assert_true(estado.nivel_critico == 2, "nivel_critico presente deve ser aplicado")
+	estado.from_dict({})
+	_assert_true(estado.nivel_dano == 0, "nivel_dano ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_tambor == 0, "nivel_tambor ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_reserva == 0, "nivel_reserva ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_critico == 0, "nivel_critico ausente deve cair no padrao (0)")
+	var dados := estado.to_dict()
+	for chave in ["nivel_dano", "nivel_tambor", "nivel_reserva", "nivel_critico"]:
+		_assert_true(dados.has(chave), "to_dict deve conter o campo '%s'" % chave)
+	estado.free()
+
+
 func _test_reset_volta_para_padroes() -> void:
 	var estado := EstadoDoJogoScript.new()
 	estado.dinheiro = 999
 	estado.municao_pente = 0
 	estado.cena = CENA_LOJA
 	estado.voltando_da_loja = true
+	estado.vida = 1
 	estado.reset()
 	_assert_true(estado.dinheiro == 0, "reset deve zerar o dinheiro")
 	_assert_true(estado.municao_pente == 7, "reset deve devolver o pente cheio")
 	_assert_true(estado.cena == String(EstadoDoJogoScript.PADROES.cena), "reset deve voltar a cena inicial")
 	_assert_false(estado.voltando_da_loja, "reset deve limpar as flags de transicao")
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "reset deve devolver a vida cheia")
 	estado.free()
 
 
@@ -301,10 +346,27 @@ func _test_iniciar_nova_partida_reseta_e_reivindica_o_slot() -> void:
 	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
 	estado.dinheiro = 500
 	var cena := SaveJogoScript.iniciar_nova_partida(3, PREFIXO_TESTE)
-	_assert_true(cena == SaveJogoScript.CENA_CENARIO, "nova partida deve devolver a cena inicial")
+	_assert_true(cena == SaveJogoScript.CENA_SELECAO, "nova partida deve devolver o hub de selecao, nao uma zona direto")
 	_assert_true(estado.dinheiro == 0, "nova partida deve resetar o estado")
 	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "nova partida deve reivindicar o slot 3 imediatamente")
 	_assert_true(SaveJogoScript.slot_atual() == 3, "slot atual deve ser o slot escolhido")
+	_limpar()
+
+
+func _test_jogador_morreu_restaura_autosave_com_vida_cheia_no_hub() -> void:
+	_limpar()
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	estado.dinheiro = 55
+	estado.vida = 3
+	SaveJogoScript.autosalvar(SaveJogoScript.CENA_ZONA_NORTE, PREFIXO_TESTE)
+
+	estado.vida = 0
+	estado.dinheiro = 0
+	SaveJogoScript.jogador_morreu(PREFIXO_TESTE)
+
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "jogador_morreu deve restaurar a vida cheia (obtido: %d)" % estado.vida)
+	_assert_true(estado.dinheiro == 55, "jogador_morreu deve restaurar o dinheiro do ultimo autosave (obtido: %d)" % estado.dinheiro)
 	_limpar()
 
 
@@ -334,11 +396,105 @@ func _test_rotulo_de_slot_vazio_e_cheio() -> void:
 	var entradas := SaveSlotsScript.listar(PREFIXO_TESTE)
 	var rotulo_cheio := SaveJogoScript.rotulo(entradas[2])
 	_assert_true(rotulo_cheio.find("$120") != -1, "rotulo de slot cheio deve conter o dinheiro (obtido: '%s')" % rotulo_cheio)
-	_assert_true(rotulo_cheio.find("Cenário") != -1, "rotulo de slot cheio deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
+	_assert_true(rotulo_cheio.find("Zona Norte") != -1, "rotulo de slot cheio deve conter o nome da cena (obtido: '%s')" % rotulo_cheio)
 	_assert_true(rotulo_cheio.find("Slot 2") != -1, "rotulo de slot cheio deve identificar o slot (obtido: '%s')" % rotulo_cheio)
 
 	var rotulo_auto := SaveJogoScript.rotulo(entradas[0])
 	_assert_true(rotulo_auto.find("(slot") != -1, "rotulo do autosave deve indicar o slot de origem (obtido: '%s')" % rotulo_auto)
+	_limpar()
+
+
+func _test_nomes_de_cena_cobre_selecao() -> void:
+	_assert_true(SaveJogoScript.NOMES_DE_CENA.has(SaveJogoScript.CENA_SELECAO), "NOMES_DE_CENA deve ter entrada para CENA_SELECAO")
+	_assert_true(SaveJogoScript.NOMES_DE_CENA.has(SaveJogoScript.CENA_ZONA_SUL), "NOMES_DE_CENA deve ter entrada para CENA_ZONA_SUL")
+	_assert_true(SaveJogoScript.nome_da_cena(SaveJogoScript.CENA_SELECAO) != "Fase", "nome_da_cena nao deve cair no fallback generico para CENA_SELECAO")
+
+
+func _test_iniciar_nova_partida_manda_para_selecao() -> void:
+	_limpar()
+	var cena := SaveJogoScript.iniciar_nova_partida(1, PREFIXO_TESTE)
+	_assert_true(cena == SaveJogoScript.CENA_SELECAO, "iniciar_nova_partida deve devolver CENA_SELECAO, nao uma zona direto")
+	_limpar()
+
+
+# --- ZonaPopulador ---
+
+func _test_snapshot_de_dict_round_trip() -> void:
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	var inimigos: Array = [
+		{"id": 0, "pos": Vector2(10, 20), "estado": ZonaPopuladorScript.ESTADO_VIVO},
+		{"id": 1, "pos": Vector2(30, 40), "estado": ZonaPopuladorScript.ESTADO_MORTO},
+		{"id": 2, "pos": Vector2(50, 60), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+	]
+	_limpar()
+	SaveSlotsScript.gravar(1, {"mundo": {cena: ZonaPopuladorScript.snapshot_para_dict(cena, inimigos)}}, PREFIXO_TESTE)
+	var dados := SaveSlotsScript.ler(1, PREFIXO_TESTE)
+	var restaurado: Array = ZonaPopuladorScript.snapshot_de_dict(dados.get("mundo", {}).get(cena, {}))
+	_assert_true(restaurado.size() == 3, "snapshot deve preservar as 3 entradas (obtido: %d)" % restaurado.size())
+	for i: int in range(3):
+		_assert_true(int(restaurado[i]["id"]) == i, "id da entrada %d deve ser preservado" % i)
+		_assert_true(restaurado[i]["pos"] == inimigos[i]["pos"], "posicao da entrada %d deve ser preservada" % i)
+		_assert_true(restaurado[i]["estado"] == inimigos[i]["estado"], "estado da entrada %d deve ser preservado" % i)
+	_limpar()
+
+
+func _test_snapshot_ausente_cai_para_lista_vazia() -> void:
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({}).is_empty(), "dict vazio deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({"gerado": false}).is_empty(), "gerado=false deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({"gerado": true, "inimigos": "nao e array"}).is_empty(), "inimigos malformado deve cair para lista vazia")
+	# Regressao: dados[cena] pode nao ser nem um Dictionary (save editado a mao,
+	# versao antiga) — antes disso, um valor assim quebrava com SCRIPT ERROR
+	# (tipagem estrita do parametro) e derrubava o carregamento de TODAS as
+	# outras zonas, nao so a malformada.
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict(123).is_empty(), "valor nao-Dictionary deve cair para lista vazia, sem erro")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict("lixo").is_empty(), "String no lugar do dict da zona deve cair para lista vazia, sem erro")
+
+
+func _test_zona_malformada_nao_derruba_as_outras() -> void:
+	ZonaPopuladorScript.limpar_para_testes()
+	var dados := {
+		SaveJogoScript.CENA_ZONA_NORTE: 123,
+		SaveJogoScript.CENA_ZONA_SUL: {"gerado": true, "inimigos": [{"id": 0, "pos": Vector2.ZERO, "estado": ZonaPopuladorScript.ESTADO_VIVO}]},
+	}
+	ZonaPopuladorScript.carregar_todos_snapshots_de_dict(dados)
+	_assert_true(ZonaPopuladorScript.obter_snapshot(SaveJogoScript.CENA_ZONA_NORTE).is_empty(), "zona malformada deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.obter_snapshot(SaveJogoScript.CENA_ZONA_SUL).size() == 1, "zona valida no mesmo dict nao deve ser afetada pela malformada")
+	ZonaPopuladorScript.limpar_para_testes()
+
+
+func _test_montar_secoes_inclui_secao_mundo() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_SUL
+	var inimigos: Array = [{"id": 0, "pos": Vector2(1, 2), "estado": ZonaPopuladorScript.ESTADO_VIVO}]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos)
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	_assert_true(SaveJogoScript.autosalvar("", PREFIXO_TESTE), "autosalvar deve escrever com a secao mundo presente")
+	var dados := SaveSlotsScript.ler(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
+	var mundo: Dictionary = dados.get("mundo", {})
+	_assert_true(mundo.has(cena), "secao mundo deve conter a zona registrada")
+	var restaurado := ZonaPopuladorScript.snapshot_de_dict(mundo.get(cena, {}))
+	_assert_true(restaurado.size() == 1, "snapshot gravado no autosave deve preservar a entrada registrada")
+	_limpar()
+
+
+func _test_aplicar_restaura_snapshots_em_memoria() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	var inimigos: Array = [{"id": 0, "pos": Vector2(5, 6), "estado": ZonaPopuladorScript.ESTADO_MORTO}]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos)
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	SaveJogoScript.autosalvar("", PREFIXO_TESTE)
+
+	ZonaPopuladorScript.limpar_para_testes()
+	_assert_false(ZonaPopuladorScript.tem_snapshot(cena), "snapshot deve estar limpo antes de carregar")
+
+	SaveJogoScript.carregar_slot(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
+	_assert_true(ZonaPopuladorScript.tem_snapshot(cena), "carregar_slot deve repovoar o snapshot em memoria")
+	var restaurado := ZonaPopuladorScript.obter_snapshot(cena)
+	_assert_true(restaurado.size() == 1, "snapshot restaurado deve ter a mesma quantidade de entradas")
+	_assert_true(restaurado[0]["estado"] == ZonaPopuladorScript.ESTADO_MORTO, "estado da entrada restaurada deve ser preservado")
 	_limpar()
 
 

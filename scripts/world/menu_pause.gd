@@ -10,7 +10,7 @@ extends CanvasLayer
 
 ## Restaurado ao retomar: na cena principal o cursor fica escondido,
 ## na loja fica visivel.
-var _modo_mouse_anterior: int = Input.MOUSE_MODE_HIDDEN
+var _modo_mouse_anterior: Input.MouseMode = Input.MOUSE_MODE_HIDDEN
 
 
 func _ready() -> void:

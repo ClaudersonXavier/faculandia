@@ -2,6 +2,7 @@
 
 [ext_resource type="Shader" uid="uid://b7x1p12l55vt2" path="res://shaders/visao_conica.gdshader" id="1_shader"]
 [ext_resource type="Script" uid="uid://baamqyjj7y8iv" path="res://scripts/world/hud.gd" id="2_hud"]
+[ext_resource type="Texture2D" uid="uid://y7ycg0vdpm1l" path="res://resources/sprites/characters/ameaca.png" id="3_ameaca"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("1_shader")
@@ -23,6 +24,10 @@ shader_parameter/outside_saturation = 0.12
 shader_parameter/outside_brightness = 0.2
 shader_parameter/fade_edge = 26.0
 shader_parameter/warm_light = Vector3(1, 0.78, 0.42)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ameaca_icone"]
+atlas = ExtResource("3_ameaca")
+region = Rect2(32, 0, 32, 32)
 
 [node name="camada_ui" type="CanvasLayer" unique_id=1070808397]
 
@@ -78,3 +83,59 @@ offset_bottom = 45.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 20
 text = "$0"
+
+[node name="IndicadoresSuperiores" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 300.0
+offset_bottom = 46.0
+theme_override_constants/separation = 20
+
+[node name="Vida" type="HBoxContainer" parent="IndicadoresSuperiores"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Caixa1" type="ColorRect" parent="IndicadoresSuperiores/Vida"]
+custom_minimum_size = Vector2(16, 24)
+layout_mode = 2
+color = Color(0.85, 0.1, 0.1, 1)
+
+[node name="Caixa2" type="ColorRect" parent="IndicadoresSuperiores/Vida"]
+custom_minimum_size = Vector2(16, 24)
+layout_mode = 2
+color = Color(0.85, 0.1, 0.1, 1)
+
+[node name="Caixa3" type="ColorRect" parent="IndicadoresSuperiores/Vida"]
+custom_minimum_size = Vector2(16, 24)
+layout_mode = 2
+color = Color(0.85, 0.1, 0.1, 1)
+
+[node name="Caixa4" type="ColorRect" parent="IndicadoresSuperiores/Vida"]
+custom_minimum_size = Vector2(16, 24)
+layout_mode = 2
+color = Color(0.85, 0.1, 0.1, 1)
+
+[node name="Caixa5" type="ColorRect" parent="IndicadoresSuperiores/Vida"]
+custom_minimum_size = Vector2(16, 24)
+layout_mode = 2
+color = Color(0.85, 0.1, 0.1, 1)
+
+[node name="DensidadeAmeaca" type="HBoxContainer" parent="IndicadoresSuperiores"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icone" type="TextureRect" parent="IndicadoresSuperiores/DensidadeAmeaca"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = SubResource("AtlasTexture_ameaca_icone")
+stretch_mode = 4
+
+[node name="DensidadeAmeacaLabel" type="Label" parent="IndicadoresSuperiores/DensidadeAmeaca"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 20
+text = "Limpa"
