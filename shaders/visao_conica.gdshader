@@ -60,7 +60,14 @@ void fragment() {
 		}
 	}
 
-	float visible_amount = clamp(max(max(cone_visible, inner_visible), total_light_visible), 0.0, 1.0);
+	// Combinacao suave (screen blend) em vez de max(): com max(), a regiao
+	// onde o cone e o circulo interno se cruzam salta abruptamente para
+	// "quem for mais forte ali", criando um degrau/emenda visivel entre as
+	// duas formas. Screen blend funde as contribuicoes continuamente (sem
+	// nunca estourar acima de 1.0), entao a transicao cone<->circulo fica
+	// uma unica luz homogenea em vez de dois formatos colados.
+	float visible_amount = 1.0 - (1.0 - cone_visible) * (1.0 - inner_visible) * (1.0 - total_light_visible);
+	visible_amount = clamp(visible_amount, 0.0, 1.0);
 
 	float gray = dot(base.rgb, vec3(0.299, 0.587, 0.114));
 	float outside_darkness = mix(1.0, outside_brightness, darkness_alpha);

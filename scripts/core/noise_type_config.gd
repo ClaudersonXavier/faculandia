@@ -5,7 +5,7 @@ static func get_volume_db(noise_type: StringName) -> float:
 		&"footstep":
 			return -23.0
 		&"gunshot":
-			return -6.0
+			return 2.0
 		&"bullet_impact":
 			return -17.0
 		&"zombie_growl":

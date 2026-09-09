@@ -1,8 +1,6 @@
 [gd_scene format=3 uid="uid://djlmx6kejub5r"]
 
 [ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player/player_moviment.gd" id="1_moviment"]
-[ext_resource type="Texture2D" uid="uid://c4sqt5p8s02l7" path="res://resources/sprites/mira_placeholder.png" id="2_mira"]
-[ext_resource type="Script" uid="uid://boff4cv6ld4l0" path="res://scripts/player/crosshair.gd" id="3_crosshair"]
 [ext_resource type="Script" uid="uid://bb406q67khtjw" path="res://scripts/weapons/pistol.gd" id="4_pistol"]
 [ext_resource type="Texture2D" uid="uid://cbk4cauan8rwa" path="res://resources/sprites/items/pistola.png" id="5_pistola"]
 [ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player/player_vision.gd" id="6_vision"]
@@ -59,11 +57,6 @@ animations = [{
 collision_layer = 2
 collision_mask = 13
 script = ExtResource("1_moviment")
-
-[node name="crosshair" type="Sprite2D" parent="." unique_id=16264884]
-position = Vector2(-548, -273)
-texture = ExtResource("2_mira")
-script = ExtResource("3_crosshair")
 
 [node name="player_collision" type="CollisionShape2D" parent="." unique_id=1265250815]
 shape = SubResource("RectangleShape2D_pgf2v")
