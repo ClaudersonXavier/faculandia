@@ -3,6 +3,7 @@ extends SceneTree
 const SaveSlotsScript := preload("res://scripts/core/save_slots.gd")
 const SaveJogoScript := preload("res://scripts/world/save_jogo.gd")
 const EstadoDoJogoScript := preload("res://scripts/world/game_state.gd")
+const ZonaPopuladorScript := preload("res://scripts/world/zona_populador.gd")
 
 const PREFIXO_TESTE := "user://teste_save_"
 const CENA_LOJA := "res://scenes/world/loja.tscn"
@@ -50,6 +51,13 @@ func _run() -> void:
 	_test_nomes_de_cena_cobre_selecao()
 	_test_iniciar_nova_partida_manda_para_selecao()
 
+	# --- ZonaPopulador (snapshot de mundo, secao "mundo" do save) ---
+	_test_snapshot_de_dict_round_trip()
+	_test_snapshot_ausente_cai_para_lista_vazia()
+	_test_zona_malformada_nao_derruba_as_outras()
+	_test_montar_secoes_inclui_secao_mundo()
+	_test_aplicar_restaura_snapshots_em_memoria()
+
 	_limpar()
 	_liberar_estado()
 
@@ -87,6 +95,7 @@ func _liberar_estado() -> void:
 func _limpar() -> void:
 	for slot: int in SaveSlotsScript.slots():
 		SaveSlotsScript.apagar(slot, PREFIXO_TESTE)
+	ZonaPopuladorScript.limpar_para_testes()
 
 
 # --- SaveSlots ---
@@ -354,6 +363,87 @@ func _test_iniciar_nova_partida_manda_para_selecao() -> void:
 	_limpar()
 	var cena := SaveJogoScript.iniciar_nova_partida(1, PREFIXO_TESTE)
 	_assert_true(cena == SaveJogoScript.CENA_SELECAO, "iniciar_nova_partida deve devolver CENA_SELECAO, nao uma zona direto")
+	_limpar()
+
+
+# --- ZonaPopulador ---
+
+func _test_snapshot_de_dict_round_trip() -> void:
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	var inimigos: Array = [
+		{"id": 0, "pos": Vector2(10, 20), "estado": ZonaPopuladorScript.ESTADO_VIVO},
+		{"id": 1, "pos": Vector2(30, 40), "estado": ZonaPopuladorScript.ESTADO_MORTO},
+		{"id": 2, "pos": Vector2(50, 60), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+	]
+	_limpar()
+	SaveSlotsScript.gravar(1, {"mundo": {cena: ZonaPopuladorScript.snapshot_para_dict(cena, inimigos)}}, PREFIXO_TESTE)
+	var dados := SaveSlotsScript.ler(1, PREFIXO_TESTE)
+	var restaurado: Array = ZonaPopuladorScript.snapshot_de_dict(dados.get("mundo", {}).get(cena, {}))
+	_assert_true(restaurado.size() == 3, "snapshot deve preservar as 3 entradas (obtido: %d)" % restaurado.size())
+	for i: int in range(3):
+		_assert_true(int(restaurado[i]["id"]) == i, "id da entrada %d deve ser preservado" % i)
+		_assert_true(restaurado[i]["pos"] == inimigos[i]["pos"], "posicao da entrada %d deve ser preservada" % i)
+		_assert_true(restaurado[i]["estado"] == inimigos[i]["estado"], "estado da entrada %d deve ser preservado" % i)
+	_limpar()
+
+
+func _test_snapshot_ausente_cai_para_lista_vazia() -> void:
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({}).is_empty(), "dict vazio deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({"gerado": false}).is_empty(), "gerado=false deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict({"gerado": true, "inimigos": "nao e array"}).is_empty(), "inimigos malformado deve cair para lista vazia")
+	# Regressao: dados[cena] pode nao ser nem um Dictionary (save editado a mao,
+	# versao antiga) — antes disso, um valor assim quebrava com SCRIPT ERROR
+	# (tipagem estrita do parametro) e derrubava o carregamento de TODAS as
+	# outras zonas, nao so a malformada.
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict(123).is_empty(), "valor nao-Dictionary deve cair para lista vazia, sem erro")
+	_assert_true(ZonaPopuladorScript.snapshot_de_dict("lixo").is_empty(), "String no lugar do dict da zona deve cair para lista vazia, sem erro")
+
+
+func _test_zona_malformada_nao_derruba_as_outras() -> void:
+	ZonaPopuladorScript.limpar_para_testes()
+	var dados := {
+		SaveJogoScript.CENA_ZONA_NORTE: 123,
+		SaveJogoScript.CENA_ZONA_SUL: {"gerado": true, "inimigos": [{"id": 0, "pos": Vector2.ZERO, "estado": ZonaPopuladorScript.ESTADO_VIVO}]},
+	}
+	ZonaPopuladorScript.carregar_todos_snapshots_de_dict(dados)
+	_assert_true(ZonaPopuladorScript.obter_snapshot(SaveJogoScript.CENA_ZONA_NORTE).is_empty(), "zona malformada deve cair para lista vazia")
+	_assert_true(ZonaPopuladorScript.obter_snapshot(SaveJogoScript.CENA_ZONA_SUL).size() == 1, "zona valida no mesmo dict nao deve ser afetada pela malformada")
+	ZonaPopuladorScript.limpar_para_testes()
+
+
+func _test_montar_secoes_inclui_secao_mundo() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_SUL
+	var inimigos: Array = [{"id": 0, "pos": Vector2(1, 2), "estado": ZonaPopuladorScript.ESTADO_VIVO}]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos)
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	_assert_true(SaveJogoScript.autosalvar("", PREFIXO_TESTE), "autosalvar deve escrever com a secao mundo presente")
+	var dados := SaveSlotsScript.ler(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
+	var mundo: Dictionary = dados.get("mundo", {})
+	_assert_true(mundo.has(cena), "secao mundo deve conter a zona registrada")
+	var restaurado := ZonaPopuladorScript.snapshot_de_dict(mundo.get(cena, {}))
+	_assert_true(restaurado.size() == 1, "snapshot gravado no autosave deve preservar a entrada registrada")
+	_limpar()
+
+
+func _test_aplicar_restaura_snapshots_em_memoria() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	var inimigos: Array = [{"id": 0, "pos": Vector2(5, 6), "estado": ZonaPopuladorScript.ESTADO_MORTO}]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos)
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	SaveJogoScript.autosalvar("", PREFIXO_TESTE)
+
+	ZonaPopuladorScript.limpar_para_testes()
+	_assert_false(ZonaPopuladorScript.tem_snapshot(cena), "snapshot deve estar limpo antes de carregar")
+
+	SaveJogoScript.carregar_slot(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE)
+	_assert_true(ZonaPopuladorScript.tem_snapshot(cena), "carregar_slot deve repovoar o snapshot em memoria")
+	var restaurado := ZonaPopuladorScript.obter_snapshot(cena)
+	_assert_true(restaurado.size() == 1, "snapshot restaurado deve ter a mesma quantidade de entradas")
+	_assert_true(restaurado[0]["estado"] == ZonaPopuladorScript.ESTADO_MORTO, "estado da entrada restaurada deve ser preservado")
 	_limpar()
 
 

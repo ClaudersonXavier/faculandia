@@ -539,7 +539,10 @@ func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
 	fixture.root.add_child(fake_player)
 
 	ameaca.global_position = Vector2(100, 100)
-	fake_player.global_position = Vector2(500, 100)
+	# 300px: dentro de Ameaca.vision_range (380 por padrao), com folga —
+	# nao usar um valor perto do limite pra nao ficar fragil se vision_range
+	# for reajustado de novo.
+	fake_player.global_position = Vector2(400, 100)
 	await process_frame
 
 	var initial_pos := ameaca.global_position

@@ -18,7 +18,7 @@ enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LA
 @export var separation_radius: float = 60.0
 @export var separation_weight: float = 0.6
 @export var hearing_sensitivity: float = 1.0
-@export var vision_range: float = 600.0
+@export var vision_range: float = 380.0
 @export var sound_investigate_stop_distance: float = 30.0
 @export var debug_logging: bool = false
 
@@ -28,6 +28,11 @@ var _hit_flash_tween: Tween = null
 var _is_dead: bool = false
 var _jogador_na_area_loot: bool = false
 var _path_timer: float = 0.0
+
+## Id estavel dentro do snapshot da zona (ver scripts/world/zona_populador.gd).
+## -1 = nao veio de um snapshot (ex. instancia fixa em cena de teste).
+var spawn_id: int = -1
+var _looteado: bool = false
 
 var _sound_target_pos: Vector2 = Vector2.INF
 var _has_sound_target: bool = false
@@ -117,6 +122,19 @@ func investigate_sound(sound_pos: Vector2) -> void:
 
 func is_dead() -> bool:
 	return _is_dead
+
+
+func foi_looteado() -> bool:
+	return _looteado
+
+
+## Coloca a ameaca direto no estado de corpo (sem passar por take_damage/die
+## visualmente) — usado ao restaurar um snapshot onde essa ameaca ja morreu
+## numa visita anterior a zona. So deve ser chamada logo apos add_child, ja
+## que reaproveita die() (que assume _ready() ja rodou e setou max_health).
+func spawn_como_corpo() -> void:
+	health = 0.0
+	die()
 
 
 func get_behavior_state() -> BehaviorState:
@@ -433,6 +451,9 @@ func _process(_delta: float) -> void:
 
 
 func _lootar() -> void:
+	if _looteado:
+		return
+	_looteado = true
 	var game_state = get_node_or_null("/root/GameState")
 	if game_state:
 		game_state.dinheiro += 5

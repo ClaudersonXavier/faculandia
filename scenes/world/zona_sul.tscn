@@ -2,7 +2,6 @@
 
 [ext_resource type="TileSet" uid="uid://bo8s2jbh30206" path="res://resources/tilesets/tileset_chao.tres" id="1_chao"]
 [ext_resource type="TileSet" uid="uid://6wnex0nuy6nk" path="res://resources/tilesets/tileset_parede.tres" id="2_paredes"]
-[ext_resource type="Script" uid="uid://dvj66m0lwpxub" path="res://scripts/testing/test_spawner.gd" id="3_test_spawner"]
 [ext_resource type="Script" uid="uid://wvb4eb1q0svn" path="res://scripts/noise/noise_visualizer.gd" id="4_noise_visualizer"]
 [ext_resource type="Script" uid="uid://d1ye5ecojtpkd" path="res://scripts/noise/noise_bus.gd" id="5_noise_bus"]
 [ext_resource type="Script" uid="uid://b5iatckxfj3vs" path="res://scripts/world/navegacao_cenario.gd" id="6_nav"]
@@ -11,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://djlmx6kejub5r" path="res://scenes/objects/player.tscn" id="8_player"]
 [ext_resource type="PackedScene" uid="uid://cur7gqfk1kfdx" path="res://scenes/ui/camada_ui.tscn" id="9_camada_ui"]
 [ext_resource type="PackedScene" uid="uid://bd8noi53bxvtr" path="res://scenes/ui/menu_pause.tscn" id="10_menu_pause"]
+[ext_resource type="Script" path="res://scripts/world/zona_mundo_sync.gd" id="11_zona_sync"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_zonasul"]
 
@@ -21,9 +21,10 @@
 [node name="NoiseBus" type="Node" parent="." unique_id=364283182]
 script = ExtResource("5_noise_bus")
 
-[node name="TestSpawner" type="Node" parent="." unique_id=486906191 node_paths=PackedStringArray("world")]
-script = ExtResource("3_test_spawner")
+[node name="ZonaMundoSync" type="Node" parent="." node_paths=PackedStringArray("world")]
+script = ExtResource("11_zona_sync")
 world = NodePath("../Mundo")
+cena_id = "res://scenes/world/zona_sul.tscn"
 
 [node name="Mundo" type="Node2D" parent="." unique_id=809990072]
 

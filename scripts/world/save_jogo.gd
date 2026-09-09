@@ -1,8 +1,8 @@
 class_name SaveJogo
 ## Fachada de save: monta e aplica o conteudo da partida, sabe qual slot esta
 ## em uso, descreve um slot para a UI e centraliza as trocas de fase.
-## Hoje o conteudo e so o EstadoDoJogo; o snapshot completo do mundo entra em
-## _montar_secoes()/_aplicar(), sem mexer no SaveSlots nem nos call sites.
+## O conteudo tem duas secoes: "estado" (EstadoDoJogo, campos flat) e "mundo"
+## (ZonaPopulador, snapshot de Ameaca por zona — ver AGENTS.md, "Save Schema").
 
 const CENA_ZONA_NORTE := "res://scenes/world/zona_norte.tscn"
 const CENA_ZONA_SUL := "res://scenes/world/zona_sul.tscn"
@@ -77,8 +77,9 @@ static func carregar_slot(slot: int, prefixo: String = SaveSlots.PREFIXO_PADRAO)
 	return _aplicar(dados)
 
 
-## Unico caminho para trocar de fase: autossalva, despausa (SceneTree.paused
-## sobrevive a troca de cena) e troca. Gancho do snapshot de mundo futuro.
+## Unico caminho para trocar de fase: autossalva (o que tambem captura o
+## snapshot de Ameaca da zona atual, via _capturar_snapshot_da_cena_atual),
+## despausa (SceneTree.paused sobrevive a troca de cena) e troca.
 static func trocar_fase(cena: String) -> void:
 	autosalvar(cena)
 	var arvore := _arvore()
@@ -126,6 +127,7 @@ static func nome_da_cena(cena: String) -> String:
 
 
 static func _montar_secoes(cena: String) -> Dictionary:
+	_capturar_snapshot_da_cena_atual()
 	var estado := _estado()
 	if estado != null and not cena.is_empty():
 		estado.cena = cena
@@ -133,6 +135,7 @@ static func _montar_secoes(cena: String) -> Dictionary:
 	return {
 		SaveSlots.SECAO_META: {"slot_origem": _slot_atual},
 		"estado": conteudo,
+		"mundo": ZonaPopulador.todos_snapshots_para_dict(),
 	}
 
 
@@ -140,9 +143,34 @@ static func _aplicar(dados: Dictionary) -> String:
 	var estado := _estado()
 	if estado != null:
 		estado.from_dict(dados.get("estado", {}))
+	ZonaPopulador.carregar_todos_snapshots_de_dict(dados.get("mundo", {}))
 	var meta: Dictionary = dados.get(SaveSlots.SECAO_META, {})
 	definir_slot_atual(int(meta.get("slot_origem", _slot_atual)))
 	return estado.cena if estado != null else CENA_ZONA_NORTE
+
+
+## Se uma zona jogavel estiver carregada agora (achavel pelo grupo
+## "zona_mundo_sync"), atualiza o snapshot dela em memoria com o estado atual
+## das Ameaca vivas na arvore, antes que a cena seja trocada e elas se percam.
+## Sem zona carregada (loja, hub, menu), e um no-op — os snapshots ja
+## registrados continuam validos como estao.
+static func _capturar_snapshot_da_cena_atual() -> void:
+	var arvore := _arvore()
+	if arvore == null:
+		return
+	var sync := arvore.get_first_node_in_group(&"zona_mundo_sync")
+	if sync == null:
+		return
+	var cena_id: String = sync.cena_id
+	if not ZonaPopulador.tem_snapshot(cena_id):
+		# ZonaMundoSync ainda nao terminou a geracao inicial (esta no meio do
+		# await de fisica) — nao ha nada de valido pra capturar ainda. Sem essa
+		# guarda, um trocar_fase disparado nesse instante registraria um
+		# snapshot vazio e a zona ficaria selada como "gerada com 0 inimigos"
+		# para sempre.
+		return
+	var anterior := ZonaPopulador.obter_snapshot(cena_id)
+	ZonaPopulador.registrar_snapshot(cena_id, ZonaPopulador.capturar_snapshot(arvore, anterior))
 
 
 ## Time.get_unix_time_from_system() e get_datetime_dict_from_unix_time() sao
