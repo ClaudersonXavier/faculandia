@@ -49,13 +49,16 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/enemies/ameaca.gd`: persegue o jogador por visão direta quando possível, senão usa `NavigationAgent2D`; separação suave entre ameaças próximas (`scripts/core/flocking_utils.gd`)
 - Vida (`max_health=20.0` por padrão), dano e flash ao ser atingido; morte desativa colisão e movimento, mas não remove o nó — o corpo fica lootável
 - Ataca o jogador corpo-a-corpo: assim que chega perto o bastante pra parar de andar (`DEFAULT_STOP_DISTANCE`, 30px — perto do contato físico real entre os dois corpos, não do alcance de visão), desconta 1 de `GameState.vida` a cada `ATTACK_COOLDOWN` (1s) via `target_player.take_damage(amount)` — mesmo contrato duck-typed que `bullet.gd` já usa nela própria
+- Geme periodicamente (som "zombie_growl", intervalo aleatório sorteado por instância pra não gemerem juntas) — o jogador ouve com volume por distância (o sistema de ruído já faz isso automaticamente), mas outras `Ameaça` ignoram o gemido de propósito (não é estímulo de IA, senão os zumbis "investigariam" o gemido uns dos outros)
 - `scripts/enemies/ameaca_debug_logger.gd`: diagnóstico opcional (`debug_logging`), desligado por padrão
 - Loot: `AreaLoot`/`LootLabel` detectam o jogador por perto de um corpo morto; apertar `interact` (`E`) chama `_lootar()`, que credita `GameState.dinheiro` e remove o nó (idempotente via `_looteado`)
 - `scripts/world/zona_populador.gd` (`class_name ZonaPopulador`) + `scripts/world/zona_mundo_sync.gd`: cada zona (Zona Norte, Zona Sul) espalha ~30 `Ameaca` em posições aleatórias na primeira visita (longe do spawn do jogador, fora de paredes — `PhysicsUtils.is_position_clear` — e fora do alcance de visão do jogador quando não há parede no meio — `PhysicsUtils.has_clear_line`, evita nascer já perseguindo sem o jogador andar/fazer barulho), e o estado de cada uma (viva/morta com corpo/já lootada) é salvo/restaurado a cada troca de fase e a cada save/load. Ao voltar pra uma zona já visitada, `Ameaca` vivas que ficaram a menos de 400px da `ZonaSaida` são reposicionadas pra não cercar o jogador assim que ele reentra — corpos mortos nunca são movidos, ficam exatamente onde morreram — ver "Menu Principal, Save e Pause" abaixo
 
-### Sistema de Ruído
-- `scripts/noise/noise_bus.gd`: bus de eventos de ruído (passos, tiro, impacto), consultável por posição/raio/idade
-- `scripts/noise/noise_synthesizer.gd` + `noise_sfx_player.gd`: sons sintetizados por código (sem arquivos de áudio)
+### Sistema de Ruído e Áudio
+- `scripts/noise/noise_bus.gd`: bus de eventos de ruído (passos, tiro, impacto, gemido de zumbi), consultável por posição/raio/idade
+- `scripts/noise/noise_synthesizer.gd` + `noise_sfx_player.gd`: sons sintetizados por código como base, mas `noise_sfx_player.gd` prefere um `.mp3` real se existir em `resources/sounds/sfx/{tiro,impacto,zumbi}.mp3` — sem o arquivo, cai no sintetizado. Tiro/zumbi já têm arquivo real; impacto de bala continua sintetizado (nunca foi pedido um arquivo pra esse)
+- Som de passo (`resources/sounds/sfx/passo.mp3`) **não** passa por `noise_sfx_player.gd` — o arquivo real dura ~13s, incompatível com um `AudioStreamPlayer2D` novo por evento de ruído (que dispara a cada ~27px andados, sobreporia dezenas de instâncias). Em vez disso, `player_moviment.gd` toca ele em loop contínuo desde o `_ready()` e só liga/desliga o volume conforme anda ou fica parado — o evento de ruído `"footstep"` continua sendo emitido normalmente, só para a IA da `Ameaça` ouvir, sem tocar áudio nenhum por conta própria
+- `scripts/audio/musica_tema.gd` (autoload `MusicaTema`): música-tema do menu/hub/loja (nunca toca dentro de fase — `parar()` roda no `_ready()` do player, que existe em toda zona). Já tem arquivo real (`resources/sounds/musica/tema.mp3`, com loop ativado no `.import`)
 - `scripts/noise/noise_visualizer.gd`: visualização de depuração (tecla F3, desligado por padrão)
 
 ### Vida do Jogador e Morte
@@ -201,7 +204,7 @@ Teclas adicionais de debug (via `test_spawner.gd`, sem action própria, só em `
 2. **Loja funcional** — hoje só reabastece munição; falta usar `GameState.dinheiro` para de fato comprar algo
 3. **Mais armas** — Shotgun (dispersão), Rifle (cadência maior), usando a herança de `Weapon` já existente
 4. **Animação de tiro** — flash no cano da arma
-5. **Áudio ambiente/música** — `resources/sounds/` já está reservado para isso
+5. ~~**Áudio ambiente/música**~~ — implementado: música-tema + tiro/passo/zumbi já usam arquivo `.mp3` real (`musica_tema.gd` + `noise_sfx_player.gd`); só o impacto de bala continua sintetizado, sem pedido de arquivo pra ele
 6. **Mais tipos de ameaça** — a estrutura de `scripts/enemies/` já separa IA de debug logging, facilitando compor novos comportamentos a partir de `ameaca.gd`
 7. ~~**Progresso por zona e snapshot do mundo**~~ — implementado via `ZonaPopulador` + `ZonaMundoSync` (`scripts/world/zona_populador.gd`, `scripts/world/zona_mundo_sync.gd`) e a seção `"mundo"` do save. Cada zona gera ~30 `Ameaca` na primeira visita e persiste viva/morta/lootada em todo `trocar_fase`/`autosalvar`. Não implementado: vida regenerando em Ameaça viva até "limpar" a zona (a ideia original mencionava isso; hoje uma Ameaça viva sempre recarrega com vida cheia, sem regeneração incremental)
 8. **Desenhar a Zona Sul** — `zona_sul.tscn` já tem toda a infraestrutura (Player, câmera, visão, HUD, `ZonaSaida`, menu de pause, `ZonaMundoSync` já populando ~30 Ameaça); falta só pintar `chao`/`paredes` com o tileset

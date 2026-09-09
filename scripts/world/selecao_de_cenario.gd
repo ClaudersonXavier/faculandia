@@ -14,6 +14,7 @@ const ZONAS := [
 func _ready() -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	MusicaTema.tocar()
 	cartoes.alignment = BoxContainer.ALIGNMENT_CENTER
 	botao_voltar.pressed.connect(_ao_voltar)
 	_construir_cartoes()

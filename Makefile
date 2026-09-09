@@ -24,3 +24,4 @@ test:
 	$(GODOT) --path . --headless --script res://scripts/tests/save_jogo_test.gd
 	$(GODOT) --path . --headless --script res://scripts/tests/zona_populador_test.gd
 	$(GODOT) --path . --headless --script res://scripts/tests/upgrades_pistola_test.gd
+	$(GODOT) --path . --headless --script res://scripts/tests/musica_tema_test.gd

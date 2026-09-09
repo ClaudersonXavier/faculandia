@@ -32,6 +32,12 @@ enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LA
 @export var vision_range: float = 380.0
 @export var sound_investigate_stop_distance: float = 30.0
 @export var debug_logging: bool = false
+## Som ambiente de zumbi (ver scripts/noise/noise_sfx_player.gd, tipo
+## "zombie_growl") — nao e' estimulo de IA pra outras Ameaca (ver guarda em
+## _on_noise_emitted), so audio que o jogador ouve se estiver perto.
+@export var growl_interval_min: float = 4.0
+@export var growl_interval_max: float = 9.0
+@export var growl_noise_radius: float = 500.0
 
 var health: float = 20.0
 var target_player: Node2D = null
@@ -55,6 +61,7 @@ var _last_nav_target: Vector2 = Vector2.INF
 var _stuck_check_pos: Vector2 = Vector2.INF
 var _stuck_frame_count: int = 0
 var _attack_cooldown_timer: float = 0.0
+var _growl_timer: float = 0.0
 
 var _debug_logger: AmeacaDebugLogger
 var _debug_visualizer: Node2D
@@ -88,6 +95,9 @@ func _ready() -> void:
 	add_child(_debug_visualizer)
 	if navigation_agent:
 		navigation_agent.path_desired_distance = DEFAULT_PATH_DESIRED_DISTANCE
+	# Sorteia o primeiro intervalo ja na criacao, senao as ~30 Ameaca de uma
+	# zona recem-gerada gemeriam todas juntas no mesmo frame.
+	_growl_timer = randf_range(growl_interval_min, growl_interval_max)
 
 
 func _connect_noise_bus() -> void:
@@ -109,6 +119,11 @@ func _on_noise_emitted(event: NoiseEvent) -> void:
 	if _is_dead or not is_inside_tree():
 		return
 	if event == null or event.emitter == self:
+		return
+	if event.emitter != null and event.emitter.is_in_group(&"ameacas"):
+		# Gemido de outra Ameaca e' so audio ambiente pro jogador, nao
+		# estimulo de IA — senao os zumbis passam a "investigar" o gemido
+		# uns dos outros e andam em direcao um ao outro sem sentido.
 		return
 	if NoiseBus.is_noise_heard(global_position, event, hearing_sensitivity):
 		_on_noise_heard(event)
@@ -211,6 +226,11 @@ func has_direct_vision_to_player() -> bool:
 func _physics_process(delta: float) -> void:
 	if _is_dead:
 		return
+
+	_growl_timer -= delta
+	if _growl_timer <= 0.0:
+		NoiseBus.emit(global_position, growl_noise_radius, &"zombie_growl", self)
+		_growl_timer = randf_range(growl_interval_min, growl_interval_max)
 
 	if not _is_noise_bus_connected:
 		_connect_noise_bus()
