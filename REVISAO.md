@@ -39,7 +39,8 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 - Tiro semi-automático (botão esquerdo do mouse), recarga com tecla própria (`reload`)
 - Munição (pente atual / reserva) persistida em `GameState` (autoload), inclusive ao trocar de cena
-- Dano da pistola é variável: `damage_min=7.0`/`damage_max=9.0` em `pistol.gd`, sorteado a cada tiro em `Weapon.shoot()` (a base `Weapon` também aceita um `damage` fixo pra armas futuras que não quiserem variação)
+- Dano da pistola é variável, sorteado a cada tiro em `Weapon.shoot()` (a base `Weapon` também aceita um `damage` fixo pra armas futuras que não quiserem variação); tiros também podem ser críticos (`crit_chance`, dobra o dano)
+- `scripts/weapons/upgrades_pistola.gd` (`class_name UpgradesPistola`): sistema de upgrade da pistola vendido na loja — 4 trilhas (dano, tambor, reserva máxima, crítico), 3 níveis compráveis cada, persistidos em `GameState` (`nivel_dano`/`nivel_tambor`/`nivel_reserva`/`nivel_critico`). `pistol.gd` aplica os níveis atuais toda vez que a arma é recriada (`_ready()`), então um upgrade comprado já vale na próxima zona sem sincronização extra
 
 ### Projétil
 - `scripts/weapons/bullet.gd`: `Area2D` criado 100% por código, viaja em linha reta, some após 2s ou ao colidir, emite ruído de impacto
@@ -64,7 +65,7 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 ### HUD e Loja
 - `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga; no canto superior esquerdo, lado a lado: vida (`%Vida`, 5 retângulos — vermelho preenchido = vida ali, vazio/translúcido = perdida) e a densidade de `Ameaça` viva na zona (ícone reaproveitado de `ameaca.png` + texto/cor: "Limpa" verde com 0, "Baixa" amarelo com 1-10, "Média" laranja com 11-20, "Alta" vermelho com 21+, contado direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
-- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição e curar a vida, com confirmação ao tentar sair sem reabastecer
+- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição e curar a vida, com confirmação ao tentar sair sem reabastecer. Painel de upgrades da pistola (`%PainelUpgrades`): 4 linhas (dano/tambor/reserva/crítico), cada uma com o nível atual e um botão "Comprar" que chama `UpgradesPistola.comprar` — vira "MÁXIMO" desabilitado no nível 3. Primeiro lugar do jogo que gasta `GameState.dinheiro` (antes, só era incrementado ao lootar `Ameaça`)
 - `scripts/world/exit_zone.gd`: área que leva o jogador da cena principal para a loja
 
 ### Menu Principal, Save e Pause

@@ -38,6 +38,7 @@ func _run() -> void:
 	_test_from_dict_usa_padroes_para_campos_faltando()
 	_test_from_dict_preserva_tipos_inteiros()
 	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
+	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -240,6 +241,24 @@ func _test_vida_round_trip_e_cai_para_padrao_quando_ausente() -> void:
 	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "vida ausente deve cair no padrao (obtido: %d)" % estado.vida)
 	var dados := estado.to_dict()
 	_assert_true(dados.has("vida"), "to_dict deve conter o campo 'vida'")
+	estado.free()
+
+
+func _test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({"nivel_dano": 2, "nivel_tambor": 1, "nivel_reserva": 3, "nivel_critico": 2})
+	_assert_true(estado.nivel_dano == 2, "nivel_dano presente deve ser aplicado")
+	_assert_true(estado.nivel_tambor == 1, "nivel_tambor presente deve ser aplicado")
+	_assert_true(estado.nivel_reserva == 3, "nivel_reserva presente deve ser aplicado")
+	_assert_true(estado.nivel_critico == 2, "nivel_critico presente deve ser aplicado")
+	estado.from_dict({})
+	_assert_true(estado.nivel_dano == 0, "nivel_dano ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_tambor == 0, "nivel_tambor ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_reserva == 0, "nivel_reserva ausente deve cair no padrao (0)")
+	_assert_true(estado.nivel_critico == 0, "nivel_critico ausente deve cair no padrao (0)")
+	var dados := estado.to_dict()
+	for chave in ["nivel_dano", "nivel_tambor", "nivel_reserva", "nivel_critico"]:
+		_assert_true(dados.has(chave), "to_dict deve conter o campo '%s'" % chave)
 	estado.free()
 
 

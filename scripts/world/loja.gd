@@ -1,6 +1,26 @@
 extends Control
 
+const TRILHAS := [
+	UpgradesPistola.Trilha.DANO,
+	UpgradesPistola.Trilha.TAMBOR,
+	UpgradesPistola.Trilha.RESERVA,
+	UpgradesPistola.Trilha.CRITICO,
+]
+
 @onready var dialog: ConfirmationDialog = %ConfirmarPartidaSemReabastecer
+@onready var dinheiro_label: Label = %DinheiroLoja
+@onready var info_labels := {
+	UpgradesPistola.Trilha.DANO: %InfoDano,
+	UpgradesPistola.Trilha.TAMBOR: %InfoTambor,
+	UpgradesPistola.Trilha.RESERVA: %InfoReserva,
+	UpgradesPistola.Trilha.CRITICO: %InfoCritico,
+}
+@onready var comprar_buttons := {
+	UpgradesPistola.Trilha.DANO: %ComprarDano,
+	UpgradesPistola.Trilha.TAMBOR: %ComprarTambor,
+	UpgradesPistola.Trilha.RESERVA: %ComprarReserva,
+	UpgradesPistola.Trilha.CRITICO: %ComprarCritico,
+}
 
 
 func _ready() -> void:
@@ -8,6 +28,9 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# A loja e' um ponto seguro: cura a vida, igual ja reabastece municao.
 	GameState.vida = GameState.PADROES.vida
+	for trilha: UpgradesPistola.Trilha in TRILHAS:
+		(comprar_buttons[trilha] as Button).pressed.connect(_comprar.bind(trilha))
+	_atualizar_upgrades()
 
 
 func _on_button_pressed() -> void:
@@ -31,3 +54,39 @@ func _voltar_pro_jogo() -> void:
 
 func _on_confirmation_dialog_confirmed() -> void:
 	_voltar_pro_jogo()
+
+
+## UpgradesPistola.comprar() e' o unico lugar que mexe em dinheiro/nivel —
+## aqui so chama e re-renderiza se deu certo.
+func _comprar(trilha: UpgradesPistola.Trilha) -> void:
+	if UpgradesPistola.comprar(GameState, trilha):
+		_atualizar_upgrades()
+
+
+func _atualizar_upgrades() -> void:
+	dinheiro_label.text = "$%d" % GameState.dinheiro
+	for trilha: UpgradesPistola.Trilha in TRILHAS:
+		var nivel := UpgradesPistola.nivel_atual(GameState, trilha)
+		var custo := UpgradesPistola.custo_do_proximo_nivel(GameState, trilha)
+		(info_labels[trilha] as Label).text = _texto_info(trilha, nivel)
+		var botao := comprar_buttons[trilha] as Button
+		if custo < 0:
+			botao.text = "MÁXIMO"
+			botao.disabled = true
+		else:
+			botao.text = "Comprar ($%d)" % custo
+			botao.disabled = GameState.dinheiro < custo
+
+
+func _texto_info(trilha: UpgradesPistola.Trilha, nivel: int) -> String:
+	match trilha:
+		UpgradesPistola.Trilha.DANO:
+			var faixa: Vector2 = UpgradesPistola.FAIXA_DANO[nivel]
+			return "Dano: Nível %d/3 (%d-%d)" % [nivel, int(faixa.x), int(faixa.y)]
+		UpgradesPistola.Trilha.TAMBOR:
+			return "Tambor: Nível %d/3 (%d tiros)" % [nivel, UpgradesPistola.TAMBOR[nivel]]
+		UpgradesPistola.Trilha.RESERVA:
+			return "Reserva máxima: Nível %d/3 (%d)" % [nivel, UpgradesPistola.RESERVA_MAXIMA[nivel]]
+		UpgradesPistola.Trilha.CRITICO:
+			return "Crítico: Nível %d/3 (%d%%)" % [nivel, int(UpgradesPistola.CHANCE_CRITICO[nivel] * 100)]
+	return ""
