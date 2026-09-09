@@ -1,6 +1,7 @@
 extends SceneTree
 
 const AmeacaScene := preload("res://scenes/objects/ameaca.tscn")
+const PlayerMovementScript := preload("res://scripts/player/player_moviment.gd")
 
 var failures := 0
 
@@ -12,6 +13,9 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	await _test_tomar_dano_aciona_flash_visual()
+	await _test_tres_danos_de_pistola_matam_ameaca()
+	await _test_ameaca_aplica_dano_de_contato_com_intervalo()
+	await _test_ameaca_realmente_se_aproxima_e_fere_o_jogador()
 	await _test_flash_visual_retorna_para_cor_base()
 	await _test_multiplos_danos_reiniciam_flash()
 	await _test_morte_da_ameaca_apos_dano_letal()
@@ -69,6 +73,76 @@ func _test_tomar_dano_aciona_flash_visual() -> void:
 		"Modulacao da ameaca deve mudar para hit_flash_color imediatamente ao tomar dano"
 	)
 
+	fixture.root.queue_free()
+
+
+func _test_tres_danos_de_pistola_matam_ameaca() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	await process_frame
+
+	ameaca.take_damage(8.0)
+	_assert_true(is_equal_approx(ameaca.health, 16.0), "Ameaca deve perder 8 de Vida no primeiro tiro")
+	ameaca.take_damage(8.0)
+	_assert_true(is_equal_approx(ameaca.health, 8.0), "Ameaca deve perder 8 de Vida no segundo tiro")
+	ameaca.take_damage(8.0)
+	_assert_true(is_equal_approx(ameaca.health, 0.0), "Ameaca deve ficar com Vida zero no terceiro tiro")
+	_assert_true(ameaca.is_dead(), "Tres tiros de 8 de Dano devem matar uma Ameaca de 24 de Vida")
+
+	fixture.root.queue_free()
+
+
+func _test_ameaca_aplica_dano_de_contato_com_intervalo() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	var game_state := get_root().get_node_or_null(^"GameState")
+	if game_state != null:
+		game_state.reset()
+	var player = PlayerMovementScript.new()
+	player.name = "Player"
+	player.collision_layer = 2
+	player.collision_mask = 13
+	fixture.root.add_child(player)
+	await process_frame
+
+	_assert_true(ameaca.apply_contact_damage(player), "Ameaca deve aplicar Dano ao jogador em contato")
+	_assert_true(is_equal_approx(player.health, 92.0), "Contato deve causar 8 de Dano")
+	_assert_true(not ameaca.apply_contact_damage(player), "Ameaca nao deve atacar novamente durante o intervalo")
+	await create_timer(ameaca.contact_damage_interval + 0.05).timeout
+	_assert_true(ameaca.apply_contact_damage(player), "Ameaca deve atacar novamente apos 1 segundo")
+	_assert_true(is_equal_approx(player.health, 84.0), "Segundo contato valido deve remover mais 8 de Vida")
+
+	fixture.root.queue_free()
+
+
+func _test_ameaca_realmente_se_aproxima_e_fere_o_jogador() -> void:
+	await process_frame
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	var game_state := get_root().get_node_or_null(^"GameState")
+	if game_state != null:
+		game_state.reset()
+	var player = PlayerMovementScript.new()
+	player.name = "Player"
+	var player_collision := CollisionShape2D.new()
+	player.collision_layer = 2
+	player.collision_mask = 13
+	var player_shape := RectangleShape2D.new()
+	player_shape.size = Vector2(16.0, 16.0)
+	player_collision.shape = player_shape
+	player.add_child(player_collision)
+	fixture.root.add_child(player)
+	ameaca.global_position = Vector2(100.0, 160.0)
+	player.global_position = Vector2(100.0, 100.0)
+	await process_frame
+	for i in 45:
+		await physics_frame
+
+	_assert_true(
+		ameaca.global_position.distance_to(player.global_position) < 30.0,
+		"Ameaca deve se aproximar ate a distancia de contato (distancia atual: %.1f)" % ameaca.global_position.distance_to(player.global_position)
+	)
+	_assert_true(player.health < 100.0, "Ameaca em contato deve causar Dano ao jogador")
 	fixture.root.queue_free()
 
 

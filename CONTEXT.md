@@ -28,6 +28,22 @@ _Avoid_: Hub, mapa, selecao de fase, selecao de nivel
 Entidade que pode ferir ou pressionar o jogador. Sua capacidade de agir nao depende de estar perceptivel para o jogador.
 _Avoid_: Inimigo, monstro, zumbi
 
+**Vida**:
+Quantidade de resistencia que uma entidade ainda possui antes de ficar incapaz de continuar a partida.
+_Avoid_: HP, barra de vida
+
+**Dano**:
+Quantidade de Vida removida por um impacto ou ataque.
+_Avoid_: Ataque, golpe
+
+**Estado de Vida**:
+Par de valores formado pela Vida atual e pela Vida maxima de uma entidade.
+_Avoid_: Status, energia
+
+**Game Over**:
+Estado apresentado quando a Vida do jogador chega a zero, oferecendo retorno ao save mais recente disponivel.
+_Avoid_: Morte definitiva, fim de fase
+
 **Percepcao da Ameaca**:
 Capacidade de uma Ameaca notar o jogador por sinais como presenca, ruido ou luz.
 _Avoid_: Visao do jogador, agro automatico, alerta garantido

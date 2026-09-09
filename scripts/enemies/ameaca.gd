@@ -2,7 +2,8 @@ class_name Ameaca
 extends CharacterBody2D
 
 const MIN_MOVEMENT_DISTANCE_SQUARED: float = 0.001
-const DEFAULT_STOP_DISTANCE: float = 60.0
+# Distancia de contato: raio da Ameaca (14px) + metade do colisor do jogador (8px).
+const DEFAULT_STOP_DISTANCE: float = 22.0
 const DEFAULT_PATH_DESIRED_DISTANCE: float = 8.0
 const STUCK_CHECK_FRAMES: int = 15
 const STUCK_MIN_DISTANCE_SQ: float = 16.0  # 4px
@@ -11,6 +12,8 @@ const AmeacaDebugVisualizerScript := preload("res://scripts/enemies/ameaca_debug
 enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LAST_SEEN }
 
 @export var max_health: float = 24.0
+@export var contact_damage: float = 8.0
+@export var contact_damage_interval: float = 1.0
 @export var speed: float = 70.0
 @export var hit_flash_color: Color = Color(1.0, 0.3, 0.3, 1.0)
 @export var hit_flash_duration: float = 0.1
@@ -26,6 +29,7 @@ var health: float = 24.0
 var target_player: Node2D = null
 var _hit_flash_tween: Tween = null
 var _is_dead: bool = false
+var _contact_damage_cooldown: float = 0.0
 var _jogador_na_area_loot: bool = false
 var _path_timer: float = 0.0
 
@@ -181,6 +185,7 @@ func has_direct_vision_to_player() -> bool:
 func _physics_process(delta: float) -> void:
 	if _is_dead:
 		return
+	_contact_damage_cooldown = maxf(_contact_damage_cooldown - delta, 0.0)
 
 	if not _is_noise_bus_connected:
 		_connect_noise_bus()
@@ -335,6 +340,28 @@ func _physics_process(delta: float) -> void:
 	AmeacaDebugVisualizerScript.check_toggle_input()
 	if _debug_visualizer != null:
 		_debug_visualizer.update_frame()
+
+	_try_damage_overlapping_players()
+
+
+func apply_contact_damage(target: Node) -> bool:
+	if _is_dead or _contact_damage_cooldown > 0.0 or target == null:
+		return false
+	if not target.is_in_group(&"player") or not target.has_method("take_damage"):
+		return false
+	var applied: bool = target.take_damage(contact_damage)
+	if applied:
+		_contact_damage_cooldown = contact_damage_interval
+	return applied
+
+
+func _try_damage_overlapping_players() -> void:
+	var attack_area := get_node_or_null("AttackArea") as Area2D
+	if attack_area == null:
+		return
+	for body: Node2D in attack_area.get_overlapping_bodies():
+		if apply_contact_damage(body):
+			return
 
 
 func _calculate_separation_vector(forward_dir: Vector2) -> Vector2:

@@ -77,6 +77,23 @@ static func carregar_slot(slot: int, prefixo: String = SaveSlots.PREFIXO_PADRAO)
 	return _aplicar(dados)
 
 
+## Carrega o checkpoint com o maior timestamp entre autosave e slots manuais.
+## Em empate, a ordem de listar() faz o slot manual mais alto prevalecer.
+static func carregar_mais_recente(prefixo: String = SaveSlots.PREFIXO_PADRAO) -> String:
+	var melhor_slot: int = -1
+	var melhor_timestamp: int = -1
+	for entrada: Dictionary in SaveSlots.listar(prefixo):
+		if bool(entrada.get("vazio", true)):
+			continue
+		var timestamp := int(entrada.get("salvo_em", 0))
+		if timestamp >= melhor_timestamp:
+			melhor_timestamp = timestamp
+			melhor_slot = int(entrada.get("slot", -1))
+	if melhor_slot < 0:
+		return ""
+	return carregar_slot(melhor_slot, prefixo)
+
+
 ## Unico caminho para trocar de fase: autossalva, despausa (SceneTree.paused
 ## sobrevive a troca de cena) e troca. Gancho do snapshot de mundo futuro.
 static func trocar_fase(cena: String) -> void:

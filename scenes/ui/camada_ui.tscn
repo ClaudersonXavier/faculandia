@@ -2,6 +2,7 @@
 
 [ext_resource type="Shader" uid="uid://b7x1p12l55vt2" path="res://shaders/visao_conica.gdshader" id="1_shader"]
 [ext_resource type="Script" uid="uid://baamqyjj7y8iv" path="res://scripts/world/hud.gd" id="2_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/game_over.tscn" id="3_game_over"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("1_shader")
@@ -78,3 +79,35 @@ offset_bottom = 45.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 20
 text = "$0"
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+grow_vertical = 0
+offset_left = 16.0
+offset_top = -55.0
+offset_right = 256.0
+offset_bottom = -33.0
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+grow_vertical = 0
+offset_left = 22.0
+offset_top = -31.0
+offset_right = 250.0
+offset_bottom = -5.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
+text = "100 / 100"
+
+[node name="GameOver" parent="." instance=ExtResource("3_game_over")]
