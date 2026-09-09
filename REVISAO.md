@@ -56,7 +56,7 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/noise/noise_visualizer.gd`: visualização de depuração (tecla F3, desligado por padrão)
 
 ### HUD e Loja
-- `scripts/world/hud.gd`: mostra munição atual/reserva e indicador de recarga
+- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga, e a densidade de `Ameaça` viva na zona (canto superior esquerdo — ícone reaproveitado de `ameaca.png` + texto/cor: "Limpa" verde com 0, "Baixa" amarelo com 1-10, "Média" laranja com 11-20, "Alta" vermelho com 21+, contado direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
 - `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição, com confirmação ao tentar sair sem reabastecer
 - `scripts/world/exit_zone.gd`: área que leva o jogador da cena principal para a loja
 
