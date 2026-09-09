@@ -3,6 +3,11 @@ extends Node2D
 
 @export var weapon_name: String = "Arma Base"
 @export var damage: float = 10.0
+## Se damage_max > damage_min, shoot() sorteia o dano de cada tiro nesse
+## intervalo em vez de usar o damage fixo acima. Default -1/-1 (desligado)
+## mantem retrocompatibilidade com armas que so configuram damage.
+@export var damage_min: float = -1.0
+@export var damage_max: float = -1.0
 @export var bullet_speed: float = 600.0
 @export var fire_rate: float = 0.4
 @export var bullet_lifetime: float = 2.0
@@ -48,7 +53,7 @@ func shoot(aim_direction: Vector2, _aim_angle: float) -> void:
 	bullet.set_script(preload("res://scripts/weapons/bullet.gd"))
 	bullet.direction = aim_direction
 	bullet.speed = bullet_speed
-	bullet.damage = damage
+	bullet.damage = randf_range(damage_min, damage_max) if damage_max > damage_min else damage
 	bullet.lifetime = bullet_lifetime
 	bullet.bullet_texture = bullet_texture
 	bullet.collision_size = collision_size

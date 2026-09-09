@@ -5,11 +5,15 @@ const COR_DENSIDADE_BAIXA := Color(0.9, 0.85, 0.1)
 const COR_DENSIDADE_MEDIA := Color(0.95, 0.55, 0.1)
 const COR_DENSIDADE_ALTA := Color(0.9, 0.15, 0.15)
 
+const COR_VIDA_CHEIA := Color(0.85, 0.1, 0.1, 1.0)
+const COR_VIDA_VAZIA := Color(1.0, 1.0, 1.0, 0.15)
+
 @export var weapon: Weapon
 @onready var ammo_label: Label = $AmmoLabel
 @onready var reload_label: Label = $ReloadLabel
 @onready var dinheiro_label: Label = %DinheiroLabel
 @onready var densidade_ameaca_label: Label = %DensidadeAmeacaLabel
+@onready var vida_container: HBoxContainer = %Vida
 
 func _process(_delta: float) -> void:
 	var game_state = get_node_or_null("/root/GameState")
@@ -18,6 +22,9 @@ func _process(_delta: float) -> void:
 
 	if densidade_ameaca_label != null:
 		_atualizar_densidade_de_ameaca()
+
+	if vida_container != null:
+		_atualizar_vida(game_state)
 
 	if not weapon:
 		return
@@ -57,3 +64,10 @@ func _atualizar_densidade_de_ameaca() -> void:
 
 	densidade_ameaca_label.text = texto
 	densidade_ameaca_label.add_theme_color_override("font_color", cor)
+
+
+func _atualizar_vida(game_state: Variant) -> void:
+	var vida: int = game_state.vida if game_state != null else int(EstadoDoJogo.PADROES.vida)
+	var caixas := vida_container.get_children()
+	for i in range(caixas.size()):
+		(caixas[i] as ColorRect).color = COR_VIDA_CHEIA if i < vida else COR_VIDA_VAZIA

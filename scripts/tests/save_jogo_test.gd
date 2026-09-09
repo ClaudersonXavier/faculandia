@@ -37,6 +37,7 @@ func _run() -> void:
 	_test_to_dict_espelha_padroes()
 	_test_from_dict_usa_padroes_para_campos_faltando()
 	_test_from_dict_preserva_tipos_inteiros()
+	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -50,6 +51,7 @@ func _run() -> void:
 	_test_rotulo_de_slot_vazio_e_cheio()
 	_test_nomes_de_cena_cobre_selecao()
 	_test_iniciar_nova_partida_manda_para_selecao()
+	_test_jogador_morreu_restaura_autosave_com_vida_cheia_no_hub()
 
 	# --- ZonaPopulador (snapshot de mundo, secao "mundo" do save) ---
 	_test_snapshot_de_dict_round_trip()
@@ -230,17 +232,30 @@ func _test_from_dict_preserva_tipos_inteiros() -> void:
 	estado.free()
 
 
+func _test_vida_round_trip_e_cai_para_padrao_quando_ausente() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({"vida": 2})
+	_assert_true(estado.vida == 2, "vida presente deve ser aplicada (obtido: %d)" % estado.vida)
+	estado.from_dict({})
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "vida ausente deve cair no padrao (obtido: %d)" % estado.vida)
+	var dados := estado.to_dict()
+	_assert_true(dados.has("vida"), "to_dict deve conter o campo 'vida'")
+	estado.free()
+
+
 func _test_reset_volta_para_padroes() -> void:
 	var estado := EstadoDoJogoScript.new()
 	estado.dinheiro = 999
 	estado.municao_pente = 0
 	estado.cena = CENA_LOJA
 	estado.voltando_da_loja = true
+	estado.vida = 1
 	estado.reset()
 	_assert_true(estado.dinheiro == 0, "reset deve zerar o dinheiro")
 	_assert_true(estado.municao_pente == 7, "reset deve devolver o pente cheio")
 	_assert_true(estado.cena == String(EstadoDoJogoScript.PADROES.cena), "reset deve voltar a cena inicial")
 	_assert_false(estado.voltando_da_loja, "reset deve limpar as flags de transicao")
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "reset deve devolver a vida cheia")
 	estado.free()
 
 
@@ -316,6 +331,23 @@ func _test_iniciar_nova_partida_reseta_e_reivindica_o_slot() -> void:
 	_assert_true(estado.dinheiro == 0, "nova partida deve resetar o estado")
 	_assert_false(SaveSlotsScript.ler(3, PREFIXO_TESTE).is_empty(), "nova partida deve reivindicar o slot 3 imediatamente")
 	_assert_true(SaveJogoScript.slot_atual() == 3, "slot atual deve ser o slot escolhido")
+	_limpar()
+
+
+func _test_jogador_morreu_restaura_autosave_com_vida_cheia_no_hub() -> void:
+	_limpar()
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	estado.dinheiro = 55
+	estado.vida = 3
+	SaveJogoScript.autosalvar(SaveJogoScript.CENA_ZONA_NORTE, PREFIXO_TESTE)
+
+	estado.vida = 0
+	estado.dinheiro = 0
+	SaveJogoScript.jogador_morreu(PREFIXO_TESTE)
+
+	_assert_true(estado.vida == int(EstadoDoJogoScript.PADROES.vida), "jogador_morreu deve restaurar a vida cheia (obtido: %d)" % estado.vida)
+	_assert_true(estado.dinheiro == 55, "jogador_morreu deve restaurar o dinheiro do ultimo autosave (obtido: %d)" % estado.dinheiro)
 	_limpar()
 
 

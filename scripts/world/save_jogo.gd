@@ -99,6 +99,23 @@ static func sair_para_o_menu() -> void:
 	arvore.change_scene_to_file(CENA_MENU)
 
 
+## Recarrega o ultimo autosave (sem salvar o momento da morte por cima —
+## "ultimo autosave" e' literal, senao o jogador poderia "bancar" o estado
+## do instante em que morreu), forca vida cheia por cima, e manda pro hub
+## ignorando a cena que o autosave apontava — o jogador nao volta pra onde
+## morreu, ele "acorda" na base.
+static func jogador_morreu(prefixo: String = SaveSlots.PREFIXO_PADRAO) -> void:
+	carregar_slot(SaveSlots.SLOT_AUTOSAVE, prefixo)
+	var estado := _estado()
+	if estado != null:
+		estado.vida = int(EstadoDoJogo.PADROES.vida)
+	var arvore := _arvore()
+	if arvore == null:
+		return
+	arvore.paused = false
+	arvore.change_scene_to_file(CENA_SELECAO)
+
+
 ## Texto do botao de um slot, derivado em runtime a partir de uma entrada de
 ## SaveSlots.listar(). Nada disso e gravado no arquivo.
 static func rotulo(entrada: Dictionary) -> String:

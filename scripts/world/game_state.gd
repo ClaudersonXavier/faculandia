@@ -18,6 +18,7 @@ const PADROES := {
 	"municao_pente": 7,
 	"dinheiro": 0,
 	"cena": "res://scenes/world/zona_norte.tscn",
+	"vida": 5,
 }
 
 var municao_reserva: int
@@ -25,6 +26,7 @@ var municao_reserva_maxima: int
 var municao_pente: int
 var dinheiro: int
 var cena: String
+var vida: int
 
 ## Flag de transicao entre cenas; e runtime, nao entra no save.
 var voltando_da_loja: bool = false

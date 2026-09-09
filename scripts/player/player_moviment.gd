@@ -12,12 +12,17 @@ extends CharacterBody2D
 
 @onready var weapon: Node2D = get_node_or_null("Weapon")
 
+const HIT_FLASH_COLOR := Color(1.0, 0.3, 0.3, 1.0)
+const HIT_FLASH_DURATION := 0.15
+
 var aim_angle: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
 
 var _distance_walked: float = 0.0
 var _last_step_position: Vector2 = Vector2.INF
 var _is_backpedaling_state: bool = false
+var _hit_flash_tween: Tween = null
+var _morrendo: bool = false
 
 
 func _ready() -> void:
@@ -26,6 +31,38 @@ func _ready() -> void:
 	if game_state and game_state.voltando_da_loja:
 		position = Vector2(60, 50)
 		game_state.voltando_da_loja = false
+
+
+## Contrato duck-typed identico ao de Ameaca.take_damage — bullet.gd ja chama
+## qualquer target.take_damage(amount) generico, e Ameaca._atacar_jogador()
+## chama isso direto (ataque corpo-a-corpo, sem passar por bullet/Area2D).
+func take_damage(amount: int) -> void:
+	if _morrendo:
+		return
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	game_state.vida -= amount
+	_play_hit_flash()
+	if game_state.vida <= 0:
+		# _morrendo evita que 2+ Ameaca acertando o jogador no mesmo frame
+		# (cercado, vida ja baixa) agendem _morrer() mais de uma vez.
+		# Deferido: quem chama take_damage aqui e' o _physics_process de uma
+		# Ameaca atacante — trocar de cena nesse meio do callback dela e' arriscado.
+		_morrendo = true
+		call_deferred("_morrer")
+
+
+func _play_hit_flash() -> void:
+	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+	modulate = HIT_FLASH_COLOR
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, HIT_FLASH_DURATION)
+
+
+func _morrer() -> void:
+	SaveJogo.jogador_morreu()
 
 
 func is_backpedaling_vector(direction: Vector2) -> bool:

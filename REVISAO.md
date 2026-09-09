@@ -39,13 +39,15 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 - Tiro semi-automático (botão esquerdo do mouse), recarga com tecla própria (`reload`)
 - Munição (pente atual / reserva) persistida em `GameState` (autoload), inclusive ao trocar de cena
+- Dano da pistola é variável: `damage_min=7.0`/`damage_max=9.0` em `pistol.gd`, sorteado a cada tiro em `Weapon.shoot()` (a base `Weapon` também aceita um `damage` fixo pra armas futuras que não quiserem variação)
 
 ### Projétil
 - `scripts/weapons/bullet.gd`: `Area2D` criado 100% por código, viaja em linha reta, some após 2s ou ao colidir, emite ruído de impacto
 
 ### Ameaças (Inimigos)
 - `scripts/enemies/ameaca.gd`: persegue o jogador por visão direta quando possível, senão usa `NavigationAgent2D`; separação suave entre ameaças próximas (`scripts/core/flocking_utils.gd`)
-- Vida, dano e flash ao ser atingido; morte desativa colisão e movimento, mas não remove o nó — o corpo fica lootável
+- Vida (`max_health=20.0` por padrão), dano e flash ao ser atingido; morte desativa colisão e movimento, mas não remove o nó — o corpo fica lootável
+- Ataca o jogador corpo-a-corpo: assim que chega perto o bastante pra parar de andar (`DEFAULT_STOP_DISTANCE`, 30px — perto do contato físico real entre os dois corpos, não do alcance de visão), desconta 1 de `GameState.vida` a cada `ATTACK_COOLDOWN` (1s) via `target_player.take_damage(amount)` — mesmo contrato duck-typed que `bullet.gd` já usa nela própria
 - `scripts/enemies/ameaca_debug_logger.gd`: diagnóstico opcional (`debug_logging`), desligado por padrão
 - Loot: `AreaLoot`/`LootLabel` detectam o jogador por perto de um corpo morto; apertar `interact` (`E`) chama `_lootar()`, que credita `GameState.dinheiro` e remove o nó (idempotente via `_looteado`)
 - `scripts/world/zona_populador.gd` (`class_name ZonaPopulador`) + `scripts/world/zona_mundo_sync.gd`: cada zona (Zona Norte, Zona Sul) espalha ~30 `Ameaca` em posições aleatórias na primeira visita (longe do spawn do jogador, fora de paredes — `PhysicsUtils.is_position_clear` — e fora do alcance de visão do jogador quando não há parede no meio — `PhysicsUtils.has_clear_line`, evita nascer já perseguindo sem o jogador andar/fazer barulho), e o estado de cada uma (viva/morta com corpo/já lootada) é salvo/restaurado a cada troca de fase e a cada save/load. Ao voltar pra uma zona já visitada, `Ameaca` vivas que ficaram a menos de 400px da `ZonaSaida` são reposicionadas pra não cercar o jogador assim que ele reentra — corpos mortos nunca são movidos, ficam exatamente onde morreram — ver "Menu Principal, Save e Pause" abaixo
@@ -55,9 +57,14 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/noise/noise_synthesizer.gd` + `noise_sfx_player.gd`: sons sintetizados por código (sem arquivos de áudio)
 - `scripts/noise/noise_visualizer.gd`: visualização de depuração (tecla F3, desligado por padrão)
 
+### Vida do Jogador e Morte
+- `scripts/player/player_moviment.gd`: `take_damage(amount)` desconta `GameState.vida` (persistida, começa em 5) e faz o mesmo flash vermelho (`modulate` + `Tween`) que a `Ameaça` já tinha; ao chegar a 0, chama (deferido, pra não mexer na árvore no meio do `_physics_process` da Ameaça atacante) `SaveJogo.jogador_morreu()`
+- `SaveJogo.jogador_morreu()`: recarrega o **último autosave já existente** (não salva o momento da morte por cima — o jogador perde o que fez desde a última troca de fase), força vida cheia de novo, e manda pro hub (`selecao_de_cenario.tscn`) — nunca de volta pra zona onde morreu
+- Vida também enche ao entrar na loja (`loja.gd`), igual já reabastece munição
+
 ### HUD e Loja
-- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga, e a densidade de `Ameaça` viva na zona (canto superior esquerdo — ícone reaproveitado de `ameaca.png` + texto/cor: "Limpa" verde com 0, "Baixa" amarelo com 1-10, "Média" laranja com 11-20, "Alta" vermelho com 21+, contado direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
-- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição, com confirmação ao tentar sair sem reabastecer
+- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga; no canto superior esquerdo, lado a lado: vida (`%Vida`, 5 retângulos — vermelho preenchido = vida ali, vazio/translúcido = perdida) e a densidade de `Ameaça` viva na zona (ícone reaproveitado de `ameaca.png` + texto/cor: "Limpa" verde com 0, "Baixa" amarelo com 1-10, "Média" laranja com 11-20, "Alta" vermelho com 21+, contado direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
+- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição e curar a vida, com confirmação ao tentar sair sem reabastecer
 - `scripts/world/exit_zone.gd`: área que leva o jogador da cena principal para a loja
 
 ### Menu Principal, Save e Pause
