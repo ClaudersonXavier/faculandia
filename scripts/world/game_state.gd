@@ -20,6 +20,10 @@ const PADROES := {
 	"vida": 100.0,
 	"vida_maxima": 100.0,
 	"cena": "res://scenes/world/zona_norte.tscn",
+	"nivel_dano": 0,
+	"nivel_tambor": 0,
+	"nivel_reserva": 0,
+	"nivel_critico": 0,
 }
 
 var municao_reserva: int
@@ -29,6 +33,10 @@ var dinheiro: int
 var vida: float
 var vida_maxima: float
 var cena: String
+var nivel_dano: int
+var nivel_tambor: int
+var nivel_reserva: int
+var nivel_critico: int
 
 ## Flag de transicao entre cenas; e runtime, nao entra no save.
 var voltando_da_loja: bool = false

@@ -15,6 +15,7 @@ func _ready() -> void:
 	get_tree().paused = false
 	# O crosshair do jogo esconde o cursor do sistema; aqui ele e obrigatorio.
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	MusicaTema.tocar()
 
 	botao_novo_jogo.pressed.connect(_ao_pressionar_novo_jogo)
 	botao_continuar.pressed.connect(_ao_pressionar_continuar)

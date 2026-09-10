@@ -7,13 +7,36 @@ extends RefCounted
 
 const NoiseSynthesizerScript := preload("res://scripts/noise/noise_synthesizer.gd")
 
+## Caminhos fixos onde o audio de verdade vai entrar depois — se o arquivo
+## nao existir ainda, cai no efeito sintetizado de sempre (sem erro, sem
+## regressao). Basta o arquivo existir nesse caminho exato pra passar a
+## tocar ele, sem mexer em nenhum codigo.
+## "footstep" nao entra aqui de proposito: o som de passo real dura ~13s,
+## incompativel com um AudioStreamPlayer2D novo por evento de ruido (que
+## dispara a cada ~27px andados) — ele toca em loop continuo direto em
+## player_moviment.gd, so' com volume ligado/desligado. O evento de ruido
+## "footstep" continua sendo emitido normalmente, so' pra Ameaca ouvir.
+const CAMINHOS_REAIS := {
+	&"gunshot": "res://resources/sounds/sfx/tiro.mp3",
+	&"bullet_impact": "res://resources/sounds/sfx/impacto.mp3",
+	&"zombie_growl": "res://resources/sounds/sfx/zumbi.mp3",
+}
+
 var _audio_streams: Dictionary = {}
 
 
 func _init() -> void:
-	_audio_streams[&"footstep"] = NoiseSynthesizerScript.create_footstep_sfx()
-	_audio_streams[&"gunshot"] = NoiseSynthesizerScript.create_gunshot_sfx()
-	_audio_streams[&"bullet_impact"] = NoiseSynthesizerScript.create_impact_sfx()
+	_carregar_ou_sintetizar(&"gunshot", NoiseSynthesizerScript.create_gunshot_sfx())
+	_carregar_ou_sintetizar(&"bullet_impact", NoiseSynthesizerScript.create_impact_sfx())
+	_carregar_ou_sintetizar(&"zombie_growl", NoiseSynthesizerScript.create_zombie_growl_sfx())
+
+
+func _carregar_ou_sintetizar(tipo: StringName, sintetizado: AudioStreamWAV) -> void:
+	var caminho: String = CAMINHOS_REAIS.get(tipo, "")
+	if caminho != "" and ResourceLoader.exists(caminho):
+		_audio_streams[tipo] = load(caminho)
+	else:
+		_audio_streams[tipo] = sintetizado
 
 
 func play_for_event(parent: Node, event: NoiseEvent, master_volume_db: float) -> void:

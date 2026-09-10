@@ -17,7 +17,6 @@ const TEST_ENTITY_SCRIPT: Script = preload("res://scripts/testing/test_entity.gd
 func _ready() -> void:
 	for position in initial_zombies:
 		_spawn_zombie(position)
-	_spawn_light(initial_light_position)
 
 
 func _unhandled_input(event: InputEvent) -> void:

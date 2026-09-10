@@ -38,6 +38,9 @@ func _run() -> void:
 	await _test_ameaca_navigation_agent_distancias_adequadas()
 	await _test_multiplas_ameacas_possuem_separacao_suave_sem_picos()
 	await _test_ameaca_contorna_quina_sem_travar()
+	await _test_ameaca_emite_gemido_zombie_growl_periodicamente()
+	await _test_ameaca_nao_investiga_gemido_de_outra_ameaca()
+	await _test_ameaca_continua_investigando_som_de_nao_ameaca()
 
 	if failures > 0:
 		printerr("%d teste(s) falharam" % failures)
@@ -613,7 +616,10 @@ func _test_ameaca_aplica_velocidade_segura_avoidance() -> void:
 	fixture.root.add_child(fake_player)
 
 	ameaca.global_position = Vector2(100, 100)
-	fake_player.global_position = Vector2(500, 100)
+	# 300px: dentro de Ameaca.vision_range (380 por padrao), com folga —
+	# nao usar um valor perto do limite pra nao ficar fragil se vision_range
+	# for reajustado de novo.
+	fake_player.global_position = Vector2(400, 100)
 	await process_frame
 
 	var initial_pos := ameaca.global_position
@@ -803,6 +809,77 @@ func _test_ameaca_contorna_quina_sem_travar() -> void:
 	)
 
 	scene_root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_emite_gemido_zombie_growl_periodicamente() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	ameaca.growl_interval_min = 0.05
+	ameaca.growl_interval_max = 0.05
+	# _ready() ja sorteou _growl_timer com os valores padrao (4.0-9.0) antes
+	# do teste poder ajustar o intervalo — reseta pra nao esperar segundos.
+	ameaca._growl_timer = 0.05
+	await process_frame
+
+	var eventos: Array[NoiseEvent] = []
+	var bus := NoiseBus.get_instance()
+	var callback := func(event: NoiseEvent) -> void: eventos.append(event)
+	bus.noise_emitted.connect(callback)
+
+	for i in range(10):
+		ameaca._physics_process(0.02)
+		await process_frame
+
+	bus.noise_emitted.disconnect(callback)
+
+	var gemidos := eventos.filter(func(e: NoiseEvent) -> bool: return e.type == &"zombie_growl" and e.emitter == ameaca)
+	_assert_true(gemidos.size() > 0, "Ameaca deveria ter emitido pelo menos 1 zombie_growl em 0.2s com intervalo de 0.05s")
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_nao_investiga_gemido_de_outra_ameaca() -> void:
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	var outra := AmeacaScene.instantiate()
+	outra.global_position = Vector2(150, 100)
+	fixture.root.add_child(outra)
+	await process_frame
+
+	NoiseBus.emit(outra.global_position, 500.0, &"zombie_growl", outra)
+
+	_assert_false(
+		ameaca.has_investigate_target(),
+		"Ameaca nao deveria investigar o gemido de outra Ameaca (e' so audio ambiente, nao estimulo de IA)"
+	)
+
+	fixture.root.queue_free()
+	await process_frame
+
+
+func _test_ameaca_continua_investigando_som_de_nao_ameaca() -> void:
+	# Regressao: a guarda contra gemido de outra Ameaca nao pode quebrar a
+	# reacao normal a som de origem nao-Ameaca (passos/tiro do jogador).
+	var fixture := _create_fixture()
+	var ameaca: Ameaca = fixture.ameaca
+	ameaca.global_position = Vector2(100, 100)
+	await process_frame
+
+	var sound_pos := Vector2(150, 100)
+	NoiseBus.emit(sound_pos, 100.0, &"footstep")
+
+	_assert_true(
+		ameaca.has_investigate_target(),
+		"Ameaca ainda deve investigar som de origem nao-Ameaca (regressao da guarda de gemido)"
+	)
+
+	fixture.root.queue_free()
 	await process_frame
 
 

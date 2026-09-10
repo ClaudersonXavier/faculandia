@@ -8,6 +8,9 @@ const DEFAULT_PATH_DESIRED_DISTANCE: float = 8.0
 const STUCK_CHECK_FRAMES: int = 15
 const STUCK_MIN_DISTANCE_SQ: float = 16.0  # 4px
 const AmeacaDebugVisualizerScript := preload("res://scripts/enemies/ameaca_debug_visualizer.gd")
+## "Tapa" corpo-a-corpo: dispara quando a Ameaca ja chegou perto do jogador
+## (mesmo DEFAULT_STOP_DISTANCE que ja usa pra parar de andar), respeitando
+## um cooldown pra nao descontar vida a cada frame parada ali.
 
 enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LAST_SEEN }
 
@@ -21,17 +24,28 @@ enum BehaviorState { IDLE, CHASING_PLAYER, INVESTIGATING_SOUND, INVESTIGATING_LA
 @export var separation_radius: float = 60.0
 @export var separation_weight: float = 0.6
 @export var hearing_sensitivity: float = 1.0
-@export var vision_range: float = 600.0
+@export var vision_range: float = 380.0
 @export var sound_investigate_stop_distance: float = 30.0
 @export var debug_logging: bool = false
+## Som ambiente de zumbi (ver scripts/noise/noise_sfx_player.gd, tipo
+## "zombie_growl") — nao e' estimulo de IA pra outras Ameaca (ver guarda em
+## _on_noise_emitted), so audio que o jogador ouve se estiver perto.
+@export var growl_interval_min: float = 4.0
+@export var growl_interval_max: float = 9.0
+@export var growl_noise_radius: float = 500.0
 
-var health: float = 24.0
+var health: float = 20.0
 var target_player: Node2D = null
 var _hit_flash_tween: Tween = null
 var _is_dead: bool = false
 var _contact_damage_cooldown: float = 0.0
 var _jogador_na_area_loot: bool = false
 var _path_timer: float = 0.0
+
+## Id estavel dentro do snapshot da zona (ver scripts/world/zona_populador.gd).
+## -1 = nao veio de um snapshot (ex. instancia fixa em cena de teste).
+var spawn_id: int = -1
+var _looteado: bool = false
 
 var _sound_target_pos: Vector2 = Vector2.INF
 var _has_sound_target: bool = false
@@ -42,6 +56,7 @@ var _is_noise_bus_connected: bool = false
 var _last_nav_target: Vector2 = Vector2.INF
 var _stuck_check_pos: Vector2 = Vector2.INF
 var _stuck_frame_count: int = 0
+var _growl_timer: float = 0.0
 
 var _debug_logger: AmeacaDebugLogger
 var _debug_visualizer: Node2D
@@ -75,6 +90,9 @@ func _ready() -> void:
 	add_child(_debug_visualizer)
 	if navigation_agent:
 		navigation_agent.path_desired_distance = DEFAULT_PATH_DESIRED_DISTANCE
+	# Sorteia o primeiro intervalo ja na criacao, senao as ~30 Ameaca de uma
+	# zona recem-gerada gemeriam todas juntas no mesmo frame.
+	_growl_timer = randf_range(growl_interval_min, growl_interval_max)
 
 
 func _connect_noise_bus() -> void:
@@ -96,6 +114,11 @@ func _on_noise_emitted(event: NoiseEvent) -> void:
 	if _is_dead or not is_inside_tree():
 		return
 	if event == null or event.emitter == self:
+		return
+	if event.emitter != null and event.emitter.is_in_group(&"ameacas"):
+		# Gemido de outra Ameaca e' so audio ambiente pro jogador, nao
+		# estimulo de IA — senao os zumbis passam a "investigar" o gemido
+		# uns dos outros e andam em direcao um ao outro sem sentido.
 		return
 	if NoiseBus.is_noise_heard(global_position, event, hearing_sensitivity):
 		_on_noise_heard(event)
@@ -121,6 +144,19 @@ func investigate_sound(sound_pos: Vector2) -> void:
 
 func is_dead() -> bool:
 	return _is_dead
+
+
+func foi_looteado() -> bool:
+	return _looteado
+
+
+## Coloca a ameaca direto no estado de corpo (sem passar por take_damage/die
+## visualmente) — usado ao restaurar um snapshot onde essa ameaca ja morreu
+## numa visita anterior a zona. So deve ser chamada logo apos add_child, ja
+## que reaproveita die() (que assume _ready() ja rodou e setou max_health).
+func spawn_como_corpo() -> void:
+	health = 0.0
+	die()
 
 
 func get_behavior_state() -> BehaviorState:
@@ -186,6 +222,11 @@ func _physics_process(delta: float) -> void:
 	if _is_dead:
 		return
 	_contact_damage_cooldown = maxf(_contact_damage_cooldown - delta, 0.0)
+
+	_growl_timer -= delta
+	if _growl_timer <= 0.0:
+		NoiseBus.emit(global_position, growl_noise_radius, &"zombie_growl", self)
+		_growl_timer = randf_range(growl_interval_min, growl_interval_max)
 
 	if not _is_noise_bus_connected:
 		_connect_noise_bus()
@@ -400,7 +441,6 @@ func has_clear_path_to(target_pos: Vector2, body_radius: float = 13.0) -> bool:
 	return PhysicsUtils.has_clear_motion(space_state, global_position, target_pos, body_radius, PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO)
 
 
-
 func take_damage(amount: float) -> void:
 	if _is_dead:
 		return
@@ -460,6 +500,9 @@ func _process(_delta: float) -> void:
 
 
 func _lootar() -> void:
+	if _looteado:
+		return
+	_looteado = true
 	var game_state = get_node_or_null("/root/GameState")
 	if game_state:
 		game_state.dinheiro += 5

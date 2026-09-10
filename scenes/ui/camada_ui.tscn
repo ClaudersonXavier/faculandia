@@ -3,6 +3,9 @@
 [ext_resource type="Shader" uid="uid://b7x1p12l55vt2" path="res://shaders/visao_conica.gdshader" id="1_shader"]
 [ext_resource type="Script" uid="uid://baamqyjj7y8iv" path="res://scripts/world/hud.gd" id="2_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/game_over.tscn" id="3_game_over"]
+[ext_resource type="Texture2D" uid="uid://y7ycg0vdpm1l" path="res://resources/sprites/characters/ameaca.png" id="6_ameaca"]
+[ext_resource type="Texture2D" uid="uid://c4sqt5p8s02l7" path="res://resources/sprites/mira_placeholder.png" id="4_mira"]
+[ext_resource type="Script" uid="uid://boff4cv6ld4l0" path="res://scripts/player/crosshair.gd" id="5_crosshair"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_visao"]
 shader = ExtResource("1_shader")
@@ -24,6 +27,10 @@ shader_parameter/outside_saturation = 0.12
 shader_parameter/outside_brightness = 0.2
 shader_parameter/fade_edge = 26.0
 shader_parameter/warm_light = Vector3(1, 0.78, 0.42)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ameaca_icone"]
+atlas = ExtResource("6_ameaca")
+region = Rect2(32, 0, 32, 32)
 
 [node name="camada_ui" type="CanvasLayer" unique_id=1070808397]
 
@@ -111,3 +118,30 @@ theme_override_font_sizes/font_size = 16
 text = "100 / 100"
 
 [node name="GameOver" parent="." instance=ExtResource("3_game_over")]
+[node name="IndicadoresSuperiores" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 180.0
+offset_bottom = 46.0
+theme_override_constants/separation = 8
+
+[node name="DensidadeAmeaca" type="HBoxContainer" parent="IndicadoresSuperiores"]
+layout_mode = 2
+
+[node name="Icone" type="TextureRect" parent="IndicadoresSuperiores/DensidadeAmeaca"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = SubResource("AtlasTexture_ameaca_icone")
+stretch_mode = 4
+
+[node name="DensidadeAmeacaLabel" type="Label" parent="IndicadoresSuperiores/DensidadeAmeaca"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 20
+
+[node name="crosshair" type="Sprite2D" parent="." unique_id=16264884]
+texture = ExtResource("4_mira")
+script = ExtResource("5_crosshair")
+text = "Limpa"

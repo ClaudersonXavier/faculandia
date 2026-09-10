@@ -28,12 +28,12 @@ anchor_mode = 0
 
 [node name="RecarregarMunicaoPistola" type="Button" parent="." unique_id=771715366]
 layout_mode = 0
-offset_left = 130.0
-offset_top = 239.0
-offset_right = 230.0
-offset_bottom = 275.0
+offset_left = 503.0
+offset_top = 400.0
+offset_right = 674.0
+offset_bottom = 457.0
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 text = "Munição da Pistola 
 ($0)"
 
@@ -70,6 +70,93 @@ size_flags_vertical = 8
 theme_override_font_sizes/font_size = 27
 text = "Loja (em construção)
 "
+
+[node name="PainelUpgrades" type="VBoxContainer" parent="." unique_id=1328849634]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -170.0
+offset_top = 150.0
+offset_right = 170.0
+offset_bottom = 367.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+
+[node name="DinheiroLoja" type="Label" parent="PainelUpgrades" unique_id=1740453106]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "$0"
+horizontal_alignment = 1
+
+[node name="LinhaDano" type="HBoxContainer" parent="PainelUpgrades" unique_id=75212246]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InfoDano" type="Label" parent="PainelUpgrades/LinhaDano" unique_id=1315857561]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Dano: Nível 0/3 (7-9)"
+
+[node name="ComprarDano" type="Button" parent="PainelUpgrades/LinhaDano" unique_id=408787869]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaTambor" type="HBoxContainer" parent="PainelUpgrades" unique_id=1157074703]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InfoTambor" type="Label" parent="PainelUpgrades/LinhaTambor" unique_id=770524661]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Tambor: Nível 0/3 (7 tiros)"
+
+[node name="ComprarTambor" type="Button" parent="PainelUpgrades/LinhaTambor" unique_id=347746404]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaReserva" type="HBoxContainer" parent="PainelUpgrades" unique_id=1188887509]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InfoReserva" type="Label" parent="PainelUpgrades/LinhaReserva" unique_id=144885920]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Reserva máxima: Nível 0/3 (14)"
+
+[node name="ComprarReserva" type="Button" parent="PainelUpgrades/LinhaReserva" unique_id=1152938076]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaCritico" type="HBoxContainer" parent="PainelUpgrades" unique_id=301489640]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InfoCritico" type="Label" parent="PainelUpgrades/LinhaCritico" unique_id=1629390517]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Crítico: Nível 0/3 (0%)"
+
+[node name="ComprarCritico" type="Button" parent="PainelUpgrades/LinhaCritico" unique_id=1955648258]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
 
 [node name="ConfirmarPartidaSemReabastecer" type="ConfirmationDialog" parent="." unique_id=1797743046]
 unique_name_in_owner = true

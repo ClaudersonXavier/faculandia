@@ -24,3 +24,14 @@ static func has_clear_motion(space_state: PhysicsDirectSpaceState2D, from_pos: V
 	if cast_res.is_empty():
 		return true
 	return cast_res[1] >= 0.99
+
+
+static func is_position_clear(space_state: PhysicsDirectSpaceState2D, pos: Vector2, radius: float, mask: int, exclude: Array[RID] = []) -> bool:
+	var shape := CircleShape2D.new()
+	shape.radius = radius
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = shape
+	query.collision_mask = mask
+	query.exclude = exclude
+	query.transform = Transform2D(0.0, pos)
+	return space_state.intersect_shape(query, 1).is_empty()

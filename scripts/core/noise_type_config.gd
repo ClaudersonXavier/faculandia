@@ -5,9 +5,11 @@ static func get_volume_db(noise_type: StringName) -> float:
 		&"footstep":
 			return -23.0
 		&"gunshot":
-			return -15.0
+			return 2.0
 		&"bullet_impact":
 			return -17.0
+		&"zombie_growl":
+			return -4.0
 		_:
 			return -20.0
 
@@ -20,6 +22,8 @@ static func get_color(noise_type: StringName) -> Color:
 			return Color(1.0, 0.25, 0.2) # Vermelho / Laranja
 		&"bullet_impact":
 			return Color(1.0, 0.85, 0.25) # Amarelo ouro
+		&"zombie_growl":
+			return Color(0.35, 0.65, 0.25) # Verde musgo
 		_:
 			return Color(1.0, 1.0, 1.0)
 
@@ -32,5 +36,7 @@ static func get_duration(noise_type: StringName) -> float:
 			return 1.0
 		&"bullet_impact":
 			return 0.6
+		&"zombie_growl":
+			return 0.8
 		_:
 			return 0.6

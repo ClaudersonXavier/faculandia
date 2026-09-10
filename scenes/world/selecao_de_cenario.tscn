@@ -1,9 +1,9 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://b5cq0ffwdgfge"]
 
-[ext_resource type="Script" path="res://scripts/world/selecao_de_cenario.gd" id="1_selecao"]
-[ext_resource type="Texture2D" path="res://resources/sprites/ui/menu_background.png" id="2_fundo"]
+[ext_resource type="Script" uid="uid://gpdd20aktssu" path="res://scripts/world/selecao_de_cenario.gd" id="1_selecao"]
+[ext_resource type="Texture2D" uid="uid://cwb7g45ojjurd" path="res://resources/sprites/ui/menu_background.png" id="2_fundo"]
 
-[node name="SelecaoDeCenario" type="Control"]
+[node name="SelecaoDeCenario" type="Control" unique_id=942337013]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_selecao")
 
-[node name="Fundo" type="TextureRect" parent="."]
+[node name="Fundo" type="TextureRect" parent="." unique_id=1973459918]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +23,7 @@ texture = ExtResource("2_fundo")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Veu" type="ColorRect" parent="."]
+[node name="Veu" type="ColorRect" parent="." unique_id=227085952]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -32,7 +32,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.4)
 
-[node name="Titulo" type="Label" parent="."]
+[node name="Titulo" type="Label" parent="." unique_id=755819785]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -46,7 +46,7 @@ theme_override_font_sizes/font_size = 40
 text = "Escolha uma zona"
 horizontal_alignment = 1
 
-[node name="Cartoes" type="HBoxContainer" parent="."]
+[node name="Cartoes" type="HBoxContainer" parent="." unique_id=1319722834]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
@@ -62,7 +62,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 32
 
-[node name="Voltar" type="Button" parent="."]
+[node name="Voltar" type="Button" parent="." unique_id=1159410546]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 87.0
