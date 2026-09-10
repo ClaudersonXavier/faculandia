@@ -37,6 +37,8 @@ func _run() -> void:
 	_test_to_dict_espelha_padroes()
 	_test_from_dict_usa_padroes_para_campos_faltando()
 	_test_from_dict_preserva_tipos_inteiros()
+	_test_estado_de_vida_faz_round_trip()
+	_test_estado_de_vida_faltante_cai_no_padrao()
 	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
 	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
 	_test_reset_volta_para_padroes()
@@ -49,6 +51,7 @@ func _run() -> void:
 	_test_definir_slot_atual_invalido_e_ignorado()
 	_test_iniciar_nova_partida_reseta_e_reivindica_o_slot()
 	_test_carregar_slot_vazio_devolve_string_vazia()
+	_test_carregar_save_mais_recente()
 	_test_rotulo_de_slot_vazio_e_cheio()
 	_test_nomes_de_cena_cobre_selecao()
 	_test_iniciar_nova_partida_manda_para_selecao()
@@ -233,6 +236,27 @@ func _test_from_dict_preserva_tipos_inteiros() -> void:
 	estado.free()
 
 
+func _test_estado_de_vida_faz_round_trip() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.vida = 64.0
+	estado.vida_maxima = 125.0
+	var salvo := estado.to_dict()
+	var restaurado := EstadoDoJogoScript.new()
+	restaurado.from_dict(salvo)
+	_assert_true(is_equal_approx(restaurado.vida, 64.0), "round-trip deve preservar a Vida atual")
+	_assert_true(is_equal_approx(restaurado.vida_maxima, 125.0), "round-trip deve preservar a Vida maxima")
+	estado.free()
+	restaurado.free()
+
+
+func _test_estado_de_vida_faltante_cai_no_padrao() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({})
+	_assert_true(is_equal_approx(estado.vida, 100.0), "save antigo sem Vida deve usar 100.0")
+	_assert_true(is_equal_approx(estado.vida_maxima, 100.0), "save antigo sem Vida maxima deve usar 100.0")
+	estado.free()
+
+
 func _test_vida_round_trip_e_cai_para_padrao_quando_ausente() -> void:
 	var estado := EstadoDoJogoScript.new()
 	estado.from_dict({"vida": 2})
@@ -374,6 +398,33 @@ func _test_carregar_slot_vazio_devolve_string_vazia() -> void:
 	_limpar()
 	var cena := SaveJogoScript.carregar_slot(1, PREFIXO_TESTE)
 	_assert_true(cena.is_empty(), "carregar slot vazio deve devolver string vazia")
+
+
+func _test_carregar_save_mais_recente() -> void:
+	_limpar()
+	var estado: EstadoDoJogoScript = root.get_node(^"GameState")
+	estado.reset()
+	estado.dinheiro = 10
+	SaveSlotsScript.gravar(SaveSlotsScript.SLOT_AUTOSAVE, {"estado": estado.to_dict()}, PREFIXO_TESTE)
+	var auto_cfg := ConfigFile.new()
+	auto_cfg.load(SaveSlotsScript.caminho(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE))
+	auto_cfg.set_value("meta", "salvo_em", 100)
+	auto_cfg.save(SaveSlotsScript.caminho(SaveSlotsScript.SLOT_AUTOSAVE, PREFIXO_TESTE))
+
+	# O slot manual e gravado depois com um timestamp explicitamente maior para
+	# testar a selecao sem depender do relogio de parede do runner.
+	estado.dinheiro = 20
+	SaveSlotsScript.gravar(2, {"estado": estado.to_dict()}, PREFIXO_TESTE)
+	var cfg := ConfigFile.new()
+	cfg.load(SaveSlotsScript.caminho(2, PREFIXO_TESTE))
+	cfg.set_value("meta", "salvo_em", 200)
+	cfg.save(SaveSlotsScript.caminho(2, PREFIXO_TESTE))
+
+	estado.dinheiro = 0
+	var cena := SaveJogoScript.carregar_mais_recente(PREFIXO_TESTE)
+	_assert_false(cena.is_empty(), "deve carregar o save mais recente")
+	_assert_true(estado.dinheiro == 20, "deve aplicar o conteudo do save mais recente")
+	_limpar()
 
 
 func _test_rotulo_de_slot_vazio_e_cheio() -> void:

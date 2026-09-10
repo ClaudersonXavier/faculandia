@@ -77,6 +77,23 @@ static func carregar_slot(slot: int, prefixo: String = SaveSlots.PREFIXO_PADRAO)
 	return _aplicar(dados)
 
 
+## Carrega o checkpoint com o maior timestamp entre autosave e slots manuais.
+## Em empate, a ordem de listar() faz o slot manual mais alto prevalecer.
+static func carregar_mais_recente(prefixo: String = SaveSlots.PREFIXO_PADRAO) -> String:
+	var melhor_slot: int = -1
+	var melhor_timestamp: int = -1
+	for entrada: Dictionary in SaveSlots.listar(prefixo):
+		if bool(entrada.get("vazio", true)):
+			continue
+		var timestamp := int(entrada.get("salvo_em", 0))
+		if timestamp >= melhor_timestamp:
+			melhor_timestamp = timestamp
+			melhor_slot = int(entrada.get("slot", -1))
+	if melhor_slot < 0:
+		return ""
+	return carregar_slot(melhor_slot, prefixo)
+
+
 ## Unico caminho para trocar de fase: autossalva (o que tambem captura o
 ## snapshot de Ameaca da zona atual, via _capturar_snapshot_da_cena_atual),
 ## despausa (SceneTree.paused sobrevive a troca de cena) e troca.
@@ -99,16 +116,16 @@ static func sair_para_o_menu() -> void:
 	arvore.change_scene_to_file(CENA_MENU)
 
 
-## Recarrega o ultimo autosave (sem salvar o momento da morte por cima —
-## "ultimo autosave" e' literal, senao o jogador poderia "bancar" o estado
-## do instante em que morreu), forca vida cheia por cima, e manda pro hub
+## Recarrega o save mais recente entre autosave e slots manuais (sem salvar o
+## momento da morte por cima — senao o jogador poderia "bancar" o estado do
+## instante em que morreu), forca vida cheia por cima, e manda pro hub
 ## ignorando a cena que o autosave apontava — o jogador nao volta pra onde
 ## morreu, ele "acorda" na base.
 static func jogador_morreu(prefixo: String = SaveSlots.PREFIXO_PADRAO) -> void:
-	carregar_slot(SaveSlots.SLOT_AUTOSAVE, prefixo)
+	carregar_mais_recente(prefixo)
 	var estado := _estado()
 	if estado != null:
-		estado.vida = int(EstadoDoJogo.PADROES.vida)
+		estado.vida = float(EstadoDoJogo.PADROES.vida)
 	var arvore := _arvore()
 	if arvore == null:
 		return

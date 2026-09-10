@@ -39,6 +39,7 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 - Tiro semi-automático (botão esquerdo do mouse), recarga com tecla própria (`reload`)
 - Munição (pente atual / reserva) persistida em `GameState` (autoload), inclusive ao trocar de cena
+- Dano da pistola configurado em 8.0; cada `Ameaca` começa com 24.0 de Vida, portanto morre após três impactos
 - Dano da pistola é variável, sorteado a cada tiro em `Weapon.shoot()` (a base `Weapon` também aceita um `damage` fixo pra armas futuras que não quiserem variação); tiros também podem ser críticos (`crit_chance`, dobra o dano)
 - `scripts/weapons/upgrades_pistola.gd` (`class_name UpgradesPistola`): sistema de upgrade da pistola vendido na loja — 4 trilhas (dano, tambor, reserva máxima, crítico), 3 níveis compráveis cada, persistidos em `GameState` (`nivel_dano`/`nivel_tambor`/`nivel_reserva`/`nivel_critico`). `pistol.gd` aplica os níveis atuais toda vez que a arma é recriada (`_ready()`), então um upgrade comprado já vale na próxima zona sem sincronização extra
 
@@ -47,8 +48,10 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 
 ### Ameaças (Inimigos)
 - `scripts/enemies/ameaca.gd`: persegue o jogador por visão direta quando possível, senão usa `NavigationAgent2D`; separação suave entre ameaças próximas (`scripts/core/flocking_utils.gd`)
-- Vida (`max_health=20.0` por padrão), dano e flash ao ser atingido; morte desativa colisão e movimento, mas não remove o nó — o corpo fica lootável
-- Ataca o jogador corpo-a-corpo: assim que chega perto o bastante pra parar de andar (`DEFAULT_STOP_DISTANCE`, 30px — perto do contato físico real entre os dois corpos, não do alcance de visão), desconta 1 de `GameState.vida` a cada `ATTACK_COOLDOWN` (1s) via `target_player.take_damage(amount)` — mesmo contrato duck-typed que `bullet.gd` já usa nela própria
+- Vida numérica e dano de projéteis; morte desativa colisão e movimento
+- Dano de contato configurado em 8.0 a cada 1.0 s por Ameaca; a IA se aproxima até a distância de contato de 22 px e o jogador bloqueia golpes adicionais durante 0.2 s
+- Vida (`max_health=24.0` por padrão), dano numérico e flash ao ser atingido; morte desativa colisão e movimento, mas não remove o nó — o corpo fica lootável
+- Ataca o jogador corpo-a-corpo por `AttackArea`: quando chega a 22px, aplica 8.0 de dano a cada 1s, respeitando a invulnerabilidade de 0.2s do jogador
 - Geme periodicamente (som "zombie_growl", intervalo aleatório sorteado por instância pra não gemerem juntas) — o jogador ouve com volume por distância (o sistema de ruído já faz isso automaticamente), mas outras `Ameaça` ignoram o gemido de propósito (não é estímulo de IA, senão os zumbis "investigariam" o gemido uns dos outros)
 - `scripts/enemies/ameaca_debug_logger.gd`: diagnóstico opcional (`debug_logging`), desligado por padrão
 - Loot: `AreaLoot`/`LootLabel` detectam o jogador por perto de um corpo morto; apertar `interact` (`E`) chama `_lootar()`, que credita `GameState.dinheiro` e remove o nó (idempotente via `_looteado`)
@@ -62,17 +65,20 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scripts/noise/noise_visualizer.gd`: visualização de depuração (tecla F3, desligado por padrão)
 
 ### Vida do Jogador e Morte
-- `scripts/player/player_moviment.gd`: `take_damage(amount)` desconta `GameState.vida` (persistida, começa em 5) e faz o mesmo flash vermelho (`modulate` + `Tween`) que a `Ameaça` já tinha; ao chegar a 0, chama (deferido, pra não mexer na árvore no meio do `_physics_process` da Ameaça atacante) `SaveJogo.jogador_morreu()`
-- `SaveJogo.jogador_morreu()`: recarrega o **último autosave já existente** (não salva o momento da morte por cima — o jogador perde o que fez desde a última troca de fase), força vida cheia de novo, e manda pro hub (`selecao_de_cenario.tscn`) — nunca de volta pra zona onde morreu
+- `scripts/player/player_moviment.gd`: `take_damage(amount)` desconta a vida numérica persistida (começa em 100), aplica flash vermelho e bloqueia novos golpes por 0.2s; ao chegar a 0, emite o sinal de morte para o Game Over
+- `SaveJogo.jogador_morreu()`: recarrega o save mais recente entre autosave e slots manuais (não salva o momento da morte por cima), força vida cheia de novo, e manda pro hub (`selecao_de_cenario.tscn`) — nunca de volta pra zona onde morreu
 - Vida também enche ao entrar na loja (`loja.gd`), igual já reabastece munição
 
 ### HUD e Loja
-- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga; no canto superior esquerdo, lado a lado: vida (`%Vida`, 5 retângulos — vermelho preenchido = vida ali, vazio/translúcido = perdida) e a densidade de `Ameaça` viva na zona (ícone reaproveitado de `ameaca.png` + texto/cor: "Limpa" verde com 0, "Baixa" amarelo com 1-10, "Média" laranja com 11-20, "Alta" vermelho com 21+, contado direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
-- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição e curar a vida, com confirmação ao tentar sair sem reabastecer. Painel de upgrades da pistola (`%PainelUpgrades`): 4 linhas (dano/tambor/reserva/crítico), cada uma com o nível atual e um botão "Comprar" que chama `UpgradesPistola.comprar` — vira "MÁXIMO" desabilitado no nível 3. Primeiro lugar do jogo que gasta `GameState.dinheiro` (antes, só era incrementado ao lootar `Ameaça`)
+- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga e barra `Vida atual / Vida máxima` no canto inferior esquerdo, com cores por faixa de percentual
+- `scripts/world/game_over.gd` + `scenes/ui/game_over.tscn`: pausa o jogo quando a Vida do jogador chega a zero e carrega o save mais recente ou retorna ao menu, sem salvar a morte
+- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição, com confirmação ao tentar sair sem reabastecer
+- `scripts/world/hud.gd`: mostra munição atual/reserva, indicador de recarga, barra numérica `Vida atual / Vida máxima` no canto inferior esquerdo e a densidade de `Ameaça` viva no canto superior esquerdo (contada direto na árvore em tempo real, não pelo snapshot de `ZonaPopulador`)
+- `scripts/world/loja.gd` + `scenes/world/loja.tscn`: tela de loja para reabastecer munição, sem cura automática, com confirmação ao tentar sair sem reabastecer. Painel de upgrades da pistola (`%PainelUpgrades`): 4 linhas (dano/tambor/reserva/crítico), cada uma com o nível atual e um botão "Comprar" que chama `UpgradesPistola.comprar` — vira "MÁXIMO" desabilitado no nível 3. Primeiro lugar do jogo que gasta `GameState.dinheiro` (antes, só era incrementado ao lootar `Ameaça`)
 - `scripts/world/exit_zone.gd`: área que leva o jogador da cena principal para a loja
 
 ### Menu Principal, Save e Pause
-- `scripts/world/game_state.gd` (autoload `GameState`, `class_name EstadoDoJogo`): estado da partida em memória (munição, dinheiro, cena atual), com `to_dict()`/`from_dict()`/`reset()` guiados por `PADROES` — fonte única dos valores de partida nova e do schema persistido
+- `scripts/world/game_state.gd` (autoload `GameState`, `class_name EstadoDoJogo`): estado da partida em memória (munição, dinheiro, cena atual, `vida` e `vida_maxima`), com `to_dict()`/`from_dict()`/`reset()` guiados por `PADROES` — fonte única dos valores de partida nova e do schema persistido
 - `scripts/core/save_slots.gd` (`class_name SaveSlots`): mecanismo de 4 slots de save independentes em disco (`user://save_auto.cfg` + `save_slot_1/2/3.cfg`, formato `ConfigFile` com envelope `[meta]` versionado); não conhece o conteúdo da partida
 - `scripts/world/save_jogo.gd` (`class_name SaveJogo`): fachada que monta/aplica o payload da partida, guarda o slot em uso (`slot_atual`, `static var`) e centraliza as trocas de fase (`trocar_fase`, `sair_para_o_menu`) — autossalva no slot de autosave a cada troca. O payload tem duas seções: `"estado"` (`EstadoDoJogo`, campos flat) e `"mundo"` (`ZonaPopulador`, snapshot de `Ameaca` por zona, capturado da árvore viva antes de trocar de cena)
 - `scripts/world/menu_principal.gd` + `scenes/world/menu_principal.tscn`: primeira tela do jogo (`run/main_scene`), com título "FACULANDIA" e os botões Novo Jogo / Continuar / Sair
@@ -81,6 +87,7 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - `scenes/world/zona_norte.tscn`: a zona completa, jogável desde o início — cópia exata de `cena_principal.tscn` (mesmo tileset, mesmas 2 Ameaças, mesma `ZonaSaida`). `cena_principal.tscn` **não** faz parte do fluxo do jogador: é a cena de teste/dev, usada por `scripts/tests/player_vision_test.gd` e pelo atalho F3 acima. As duas cenas começam idênticas e podem divergir com o tempo — corrigir uma não propaga pra outra automaticamente
 - `scenes/world/zona_sul.tscn`: esqueleto da 2ª zona — toda a infraestrutura funcionando (Player, câmera, visão, HUD, menu de pause, `ZonaSaida` pra loja, `ZonaMundoSync`), mas sem tiles pintados; label "Zona Sul (em construção)" fixo na tela. Já popula ~30 `Ameaca` proceduralmente, igual à Zona Norte — falta só pintar `chao`/`paredes` com o tileset
 - `scripts/world/menu_pause.gd` + `scenes/ui/menu_pause.tscn`: menu de pause no ESC (`ui_cancel`), instanciado em toda cena jogável (`zona_norte.tscn`, `zona_sul.tscn`, `cena_principal.tscn`, `loja.tscn`); salva no slot da partida atual, sai para o menu ou fecha o jogo
+- **Limitação conhecida**: a vida de uma `Ameaca` viva é reiniciada ao recarregar o snapshot; a persistência atual registra viva/morta/lootada, não a vida parcial de uma ameaça viva.
 - Voltar da loja (ou fechar/reabrir o jogo) recarrega a zona do zero visualmente, mas `ZonaPopulador` restaura o estado de cada `Ameaca` exatamente como estava: mortas continuam mortas, corpos não-lootados continuam no lugar, corpos já lootados não voltam — resolvido pelo mecanismo descrito acima (era a limitação conhecida anterior, ver histórico do item 7 de Próximos Passos)
 
 ---
@@ -99,7 +106,7 @@ faculandia/
 │   ├── weapons/          # weapon, pistol, bullet
 │   ├── enemies/          # ameaca, ameaca_debug_logger
 │   ├── noise/            # noise_bus, noise_event, noise_synthesizer, noise_sfx_player, noise_visualizer
-│   ├── world/            # hud, loja, game_state, exit_zone, navegacao_cenario,
+│   ├── world/            # hud, game_over, loja, game_state, exit_zone, navegacao_cenario,
 │   │                     # save_jogo, menu_principal, menu_pause, selecao_de_save,
 │   │                     # selecao_de_cenario (hub de zonas), zona_populador,
 │   │                     # zona_mundo_sync (populacao/persistencia de Ameaca por zona)
@@ -114,8 +121,9 @@ faculandia/
 │   │                     # zona_norte.tscn, zona_sul.tscn (zonas jogáveis), loja.tscn,
 │   │                     # cena_principal.tscn (cena de teste/dev, fora do fluxo do jogador)
 │   ├── objects/          # ameaca.tscn, barril.tscn, caixa.tscn, player.tscn (instanciáveis)
-│   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD, reusável entre cenas),
-│                          # menu_pause.tscn (overlay de pause), selecao_de_save.tscn (painel de slots)
+│   └── ui/               # camada_ui.tscn (overlay de escuridão + HUD + barra de Vida),
+│                          # game_over.tscn (overlay de derrota), menu_pause.tscn (overlay de pause),
+│                          # selecao_de_save.tscn (painel de slots)
 ├── resources/
 │   ├── sprites/          # characters/, environment/, items/, test/
 │   ├── tilesets/         # tileset_chao.tres, tileset_parede.tres
@@ -151,6 +159,8 @@ MainLoop (Node2D)
 ├── camada_ui (instância de camada_ui.tscn)
 │   ├── visibilidade (ColorRect, shader de escuridão)
 │   ├── HUD (Control) [hud.gd]
+│   │   ├── HealthBar / HealthLabel (barra de Vida do jogador)
+│   │   └── GameOver (overlay de derrota)
 │   └── ConfirmationDialog (específico desta cena, confirma saída sem reabastecer)
 └── menu_pause (instância de scenes/ui/menu_pause.tscn) → abre no ESC (`ui_cancel`)
 ```
@@ -206,5 +216,8 @@ Teclas adicionais de debug (via `test_spawner.gd`, sem action própria, só em `
 4. **Animação de tiro** — flash no cano da arma
 5. ~~**Áudio ambiente/música**~~ — implementado: música-tema + tiro/passo/zumbi já usam arquivo `.mp3` real (`musica_tema.gd` + `noise_sfx_player.gd`); só o impacto de bala continua sintetizado, sem pedido de arquivo pra ele
 6. **Mais tipos de ameaça** — a estrutura de `scripts/enemies/` já separa IA de debug logging, facilitando compor novos comportamentos a partir de `ameaca.gd`
+7. **Progresso por zona e snapshot do mundo** — a navegação hub → zona → loja → hub já existe (`selecao_de_cenario.tscn`); falta o rastreio de Ameaças mortas/regeneração/conclusão de zona ao voltar. Cada zona com uma quantidade de Ameaças, mortas permanentemente mortas e vivas regenerando vida até limpar a zona; o save já tem o gancho para isso (`versao` no envelope, `cena` já aponta para qual zona/tela o jogador está, `SaveJogo` como ponto único de montagem/aplicação do payload), falta a seção de conteúdo do mundo em si. Resolve de quebra a limitação de "voltar da loja ressuscita as Ameaças" — alternativa menor no meio-tempo: transformar a loja num overlay pausado em vez de trocar de cena
+8. **Cura do jogador** — a Vida já é persistida e exibida, mas nesta versão só diminui; adicionar loja/item de cura quando houver economia de itens
+9. **Desenhar a Zona Sul** — `zona_sul.tscn` já tem toda a infraestrutura (Player, câmera, visão, HUD, `ZonaSaida`, menu de pause); falta pintar `chao`/`paredes` com o tileset e posicionar Ameaças/objetos
 7. ~~**Progresso por zona e snapshot do mundo**~~ — implementado via `ZonaPopulador` + `ZonaMundoSync` (`scripts/world/zona_populador.gd`, `scripts/world/zona_mundo_sync.gd`) e a seção `"mundo"` do save. Cada zona gera ~30 `Ameaca` na primeira visita e persiste viva/morta/lootada em todo `trocar_fase`/`autosalvar`. Não implementado: vida regenerando em Ameaça viva até "limpar" a zona (a ideia original mencionava isso; hoje uma Ameaça viva sempre recarrega com vida cheia, sem regeneração incremental)
 8. **Desenhar a Zona Sul** — `zona_sul.tscn` já tem toda a infraestrutura (Player, câmera, visão, HUD, `ZonaSaida`, menu de pause, `ZonaMundoSync` já populando ~30 Ameaça); falta só pintar `chao`/`paredes` com o tileset

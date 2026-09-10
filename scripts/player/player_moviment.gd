@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+signal health_changed(health: float, max_health: float)
+signal died
+
 @export var speed: float = 135.0
 @export var acceleration: float = 1200.0
 @export var friction: float = 1400.0
@@ -9,6 +12,10 @@ extends CharacterBody2D
 @export var vision_range: float = 450.0
 @export var footstep_noise_radius: float = 120.0
 @export var footstep_distance_threshold: float = 27.0
+@export var max_health: float = 100.0
+@export var damage_invulnerability_duration: float = 0.2
+@export var hit_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0)
+@export var hit_flash_duration: float = 0.1
 
 @onready var weapon: Node2D = get_node_or_null("Weapon")
 
@@ -29,12 +36,14 @@ const VOLUME_PASSO_AUDIVEL_DB := -22.0
 
 var aim_angle: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
+var health: float = 100.0
 
 var _distance_walked: float = 0.0
 var _last_step_position: Vector2 = Vector2.INF
 var _is_backpedaling_state: bool = false
+var _damage_invulnerability_remaining: float = 0.0
+var _is_dead: bool = false
 var _hit_flash_tween: Tween = null
-var _morrendo: bool = false
 var _passo_player: AudioStreamPlayer
 
 
@@ -49,6 +58,14 @@ func _ready() -> void:
 	if musica:
 		musica.parar()
 	var game_state = get_node_or_null("/root/GameState")
+	if game_state:
+		max_health = maxf(float(game_state.get("vida_maxima")), 1.0)
+		health = clampf(float(game_state.get("vida")), 0.0, max_health)
+	else:
+		health = max_health
+	_sync_health_to_game_state()
+	health_changed.emit(health, max_health)
+
 	if game_state and game_state.voltando_da_loja:
 		position = Vector2(60, 50)
 		game_state.voltando_da_loja = false
@@ -67,36 +84,58 @@ func _iniciar_som_de_passo() -> void:
 	_passo_player.play()
 
 
-## Contrato duck-typed identico ao de Ameaca.take_damage — bullet.gd ja chama
-## qualquer target.take_damage(amount) generico, e Ameaca._atacar_jogador()
-## chama isso direto (ataque corpo-a-corpo, sem passar por bullet/Area2D).
-func take_damage(amount: int) -> void:
-	if _morrendo:
-		return
-	var game_state = get_node_or_null("/root/GameState")
-	if game_state == null:
-		return
-	game_state.vida -= amount
+func get_health() -> float:
+	return health
+
+
+func get_max_health() -> float:
+	return max_health
+
+
+func is_dead() -> bool:
+	return _is_dead
+
+
+func take_damage(amount: float) -> bool:
+	if _is_dead or amount <= 0.0 or _damage_invulnerability_remaining > 0.0:
+		return false
+
+	_damage_invulnerability_remaining = damage_invulnerability_duration
+	health = maxf(health - amount, 0.0)
+	_sync_health_to_game_state()
+	health_changed.emit(health, max_health)
 	_play_hit_flash()
-	if game_state.vida <= 0:
-		# _morrendo evita que 2+ Ameaca acertando o jogador no mesmo frame
-		# (cercado, vida ja baixa) agendem _morrer() mais de uma vez.
-		# Deferido: quem chama take_damage aqui e' o _physics_process de uma
-		# Ameaca atacante — trocar de cena nesse meio do callback dela e' arriscado.
-		_morrendo = true
-		call_deferred("_morrer")
+
+	if health <= 0.0:
+		die()
+	return true
+
+
+func die() -> void:
+	if _is_dead:
+		return
+	_is_dead = true
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	var col := get_node_or_null("player_collision") as CollisionShape2D
+	if col != null:
+		col.set_deferred("disabled", true)
+	died.emit()
+
+
+func _sync_health_to_game_state() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state:
+		game_state.set("vida", health)
+		game_state.set("vida_maxima", max_health)
 
 
 func _play_hit_flash() -> void:
 	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
 		_hit_flash_tween.kill()
-	modulate = HIT_FLASH_COLOR
+	modulate = hit_flash_color
 	_hit_flash_tween = create_tween()
-	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, HIT_FLASH_DURATION)
-
-
-func _morrer() -> void:
-	SaveJogo.jogador_morreu()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, hit_flash_duration)
 
 
 func is_backpedaling_vector(direction: Vector2) -> bool:
@@ -151,6 +190,10 @@ func _atualizar_som_de_passo() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_damage_invulnerability_remaining = maxf(_damage_invulnerability_remaining - delta, 0.0)
+	if _is_dead:
+		return
+
 	var mouse_position := get_global_mouse_position()
 	aim_direction = (mouse_position - global_position).normalized()
 	aim_angle = aim_direction.angle()

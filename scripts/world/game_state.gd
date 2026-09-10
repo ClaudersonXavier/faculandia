@@ -17,8 +17,9 @@ const PADROES := {
 	"municao_reserva_maxima": 14,
 	"municao_pente": 7,
 	"dinheiro": 0,
+	"vida": 100.0,
+	"vida_maxima": 100.0,
 	"cena": "res://scenes/world/zona_norte.tscn",
-	"vida": 5,
 	"nivel_dano": 0,
 	"nivel_tambor": 0,
 	"nivel_reserva": 0,
@@ -29,8 +30,9 @@ var municao_reserva: int
 var municao_reserva_maxima: int
 var municao_pente: int
 var dinheiro: int
+var vida: float
+var vida_maxima: float
 var cena: String
-var vida: int
 var nivel_dano: int
 var nivel_tambor: int
 var nivel_reserva: int

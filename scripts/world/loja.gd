@@ -27,8 +27,6 @@ func _ready() -> void:
 	# A cena principal esconde o cursor; a loja precisa dele de volta.
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MusicaTema.tocar()
-	# A loja e' um ponto seguro: cura a vida, igual ja reabastece municao.
-	GameState.vida = GameState.PADROES.vida
 	for trilha: UpgradesPistola.Trilha in TRILHAS:
 		(comprar_buttons[trilha] as Button).pressed.connect(_comprar.bind(trilha))
 	_atualizar_upgrades()
