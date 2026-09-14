@@ -9,8 +9,8 @@
 - Run game: `make run` (`godot --path .`).
 - Open editor: `make editor` (`godot --path . --editor`).
 - If Godot binary is not `godot`, override with `make run GODOT=/path/to/godot`.
-- `make test` runs the headless suites in `scripts/tests/` (`--headless --script res://scripts/tests/*.gd`); each prints its own pass/fail and exits non-zero on failure. `scripts/tests/weapon_reload_hud_test.gd` is intentionally excluded from the `test` target (it conflicts with the `GameState` autoload being present).
-- Headless `--script` runs need the project's global class cache populated first (`.godot/global_script_class_cache.cfg`); on a fresh clone, run `make editor` once (open and close is enough) before `make test`, or `class_name` types like `EstadoDoJogo`/`SaveJogo`/`SaveSlots` may fail to resolve.
+- Setup/reparo de cache e assets: `make setup` (executa `scripts/setup_godot.sh`). Alvos como `make run` e `make test` já dependem de `.godot/global_script_class_cache.cfg` e executam essa inicialização automaticamente se a pasta `.godot/` não existir.
+- Headless `--script` runs precisam do cache de classes preenchido (`.godot/global_script_class_cache.cfg`), que agora é garantido automaticamente pelo `make test` ou manualmente via `make setup`.
 
 ## Code Map
 - Scripts are organized by domain under `scripts/`: `player/`, `weapons/`, `enemies/`, `noise/`, `world/`, `testing/`, and `core/` (shared utilities used across domains). There is no `scripts/ui/`: UI scripts live in `scripts/world/` even when their scene is under `scenes/ui/` (e.g. `scripts/world/hud.gd` for `scenes/ui/camada_ui.tscn`) — follow that precedent for new UI rather than creating a `ui/` folder for a couple of files.
