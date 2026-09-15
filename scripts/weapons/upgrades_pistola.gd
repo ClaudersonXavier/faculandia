@@ -24,6 +24,10 @@ const RESERVA_MAXIMA := [14, 21, 28, 35]
 const CHANCE_CRITICO := [0.0, 0.10, 0.20, 0.30]
 
 
+static func capacidade_tambor(game_state: EstadoDoJogo) -> int:
+	return TAMBOR[nivel_atual(game_state, Trilha.TAMBOR)]
+
+
 ## Sempre clampado em [0, NIVEL_MAXIMO] — um save corrompido/editado a mao
 ## com um nivel_* fora da faixa (ex. negativo ou 99) nao pode estourar o
 ## indice das tabelas abaixo (FAIXA_DANO/TAMBOR/RESERVA_MAXIMA/CHANCE_CRITICO).
@@ -86,5 +90,5 @@ static func aplicar_em_pistola(weapon: Weapon, game_state: EstadoDoJogo) -> void
 	var faixa: Vector2 = FAIXA_DANO[nivel_atual(game_state, Trilha.DANO)]
 	weapon.damage_min = faixa.x
 	weapon.damage_max = faixa.y
-	weapon.magazine_size = TAMBOR[nivel_atual(game_state, Trilha.TAMBOR)]
+	weapon.magazine_size = capacidade_tambor(game_state)
 	weapon.crit_chance = CHANCE_CRITICO[nivel_atual(game_state, Trilha.CRITICO)]

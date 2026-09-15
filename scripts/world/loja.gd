@@ -33,13 +33,14 @@ func _ready() -> void:
 
 
 func _on_button_pressed() -> void:
-	if GameState.municao_pente < 7 or GameState.municao_reserva < GameState.municao_reserva_maxima:
+	var tambor_max := UpgradesPistola.capacidade_tambor(GameState)
+	if GameState.municao_pente < tambor_max or GameState.municao_reserva < GameState.municao_reserva_maxima:
 		dialog.popup_centered()
 	else:
 		_voltar_pro_jogo()
 
 func _on_recarregar_pressed() -> void:
-	GameState.municao_pente = 7
+	GameState.municao_pente = UpgradesPistola.capacidade_tambor(GameState)
 	GameState.municao_reserva = GameState.municao_reserva_maxima
 
 

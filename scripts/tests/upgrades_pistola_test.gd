@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_comprar_deduz_e_incrementa()
 	_test_comprar_reserva_atualiza_municao_maxima()
 	_test_aplicar_em_pistola_usa_niveis_corretos()
+	_test_capacidade_tambor()
 	_test_nivel_fora_da_faixa_nao_estoura_indice()
 
 	if failures > 0:
@@ -89,6 +90,15 @@ func _test_aplicar_em_pistola_usa_niveis_corretos() -> void:
 	_assert_true(arma.crit_chance == 0.30, "critico nivel 3 deveria ser 0.30 (obtido %.2f)" % arma.crit_chance)
 	estado.free()
 	arma.free()
+
+func _test_capacidade_tambor() -> void:
+	var estado := EstadoDoJogoScript.new()
+	_assert_true(UpgradesPistolaScript.capacidade_tambor(estado) == 7, "capacidade base deve ser 7")
+	estado.nivel_tambor = 1
+	_assert_true(UpgradesPistolaScript.capacidade_tambor(estado) == 8, "nivel 1 deve ser 8")
+	estado.nivel_tambor = 3
+	_assert_true(UpgradesPistolaScript.capacidade_tambor(estado) == 10, "nivel 3 deve ser 10")
+	estado.free()
 
 
 ## Regressao: um save corrompido/editado a mao com nivel_* fora de [0,3]

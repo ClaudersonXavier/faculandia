@@ -109,9 +109,6 @@ offset_bottom = -3.0
 [node name="HUD" parent="camada_ui" index="1" unique_id=1990862348 node_paths=PackedStringArray("weapon")]
 weapon = NodePath("../../Mundo/Player/Weapon")
 
-[node name="AmmoLabel" parent="camada_ui/HUD" index="1" unique_id=1704437824]
-offset_right = 36.0
-
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="camada_ui" unique_id=1171936512]
 unique_name_in_owner = true
 process_mode = 3
