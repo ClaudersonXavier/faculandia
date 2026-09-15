@@ -10,6 +10,15 @@
 **Faculândia** é um jogo de tiro tático com visão aérea (*top-down shooter*) e elementos de sobrevivência (*survival horror*). Ambientado nos corredores e setores de um campus universitário sombrio e hostil tomado por criaturas hostis denominadas **Ameaças**, o jogador precisa explorar diferentes zonas acadêmicas, enfrentar ou despistar inimigos no escuro guiado por um feixe de visão cônica, gerenciar sua saúde e escassez de munição, saquear recursos caídos e retornar à **Loja** para se reabastecer e aprimorar seus equipamentos.
 
 ### Demonstração do Jogo
+
+![Menu Principal - Faculândia](docs/screenshots/menu_principal.png)
+*Tela Inicial: Menu Principal com opções de Novo Jogo, gerenciamento de slots e carregamento de progresso.*
+
+| Exploração e Visão Tática | Combate e Sobrevivência |
+| :---: | :---: |
+| ![Exploração e Visão Tática](docs/screenshots/gameplay_exploracao.png) | ![Combate contra Ameaças](docs/screenshots/gameplay_combate.png) |
+| *Feixe de visão direta cônica, percepção periférica e sombras geométricas projetadas em tempo real.* | *Confronto contra Ameaças no escuro, gerenciamento de saúde crítica e escassez de munição.* |
+
 A experiência de jogo foi estruturada em um ciclo de gameplay coeso e imersivo:
 
 1. **Menu Principal e Gerenciamento de Saves**:
@@ -49,6 +58,7 @@ Projeto concebido e desenvolvido pelos discentes do curso de **Ciência da Compu
 | :--- | :--- |
 | **Aline Fernanda** | [@alinesors](https://github.com/alinesors) — `aline.fernanda@ufape.edu.br` |
 | **Clauderson Branco Xavier** | [@ClaudersonXavier](https://github.com/ClaudersonXavier) — `xavierclauderson98@gmail.com` |
+| **Fernando Emídio** | [@fernando7492](https://github.com/fernando7492) — `emidio8000@gmail.com` |
 | **Victor Alexandre Saraiva Pimentel** | [@Victor-Saraiva-P](https://github.com/Victor-Saraiva-P) — `victor.saraiva.pimentel@gmail.com` |
 
 * **Repositório do Projeto:** [ClaudersonXavier/faculandia](https://github.com/ClaudersonXavier/faculandia)
@@ -136,12 +146,12 @@ faculandia/
 │   └── tests/                     # 10 suites de testes automatizados headless
 ├── shaders/                       # Shaders GLSL de visão cônica e descarte de visibilidade
 ├── resources/                     # Texturas, spritesheets, tilesets e áudios do jogo
-└── docs/                          # Registros de Decisões Arquiteturais (ADRs) e glossário
+└── docs/                          # ADRs, glossário e capturas de tela (screenshots/)
 ```
 
 ### Créditos e Atribuições de Recursos
 * **Engine**: [Godot Engine 4](https://godotengine.org/) (Licença MIT).
-* **Desenvolvimento e Código**: Discentes da UFAPE (Aline Fernanda, Clauderson Branco Xavier, Victor Alexandre Saraiva Pimentel).
+* **Desenvolvimento e Código**: Discentes da UFAPE (Aline Fernanda, Clauderson Branco Xavier, Fernando Emídio, Victor Alexandre Saraiva Pimentel).
 * **Sprites e Tilesets**:
   - Tilesets de ambientes acadêmicos e pós-apocalípticos baseados em recursos livres e modificados a partir de coleções *Liberated Pixel Cup (LPC)* e artistas da comunidade *OpenGameArt* / *itch.io*.
   - Sprites de personagens, armas e interface desenhadas e integradas especificamente para o projeto.
