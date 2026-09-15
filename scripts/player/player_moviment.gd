@@ -67,7 +67,17 @@ func _ready() -> void:
 	health_changed.emit(health, max_health)
 
 	if game_state and game_state.voltando_da_loja:
-		position = Vector2(60, 50)
+		var saida := get_tree().current_scene.find_child("ZonaSaida", true, false) as Node2D
+		if saida != null:
+			# Afasta o jogador levemente da saida no eixo mais adequado
+			# Se a saida estiver no topo da tela (y <= 50, ex: Zona Norte), desce 30px
+			# Caso contrario (ex: Zona Sul, saida no canto direito), afasta para a esquerda 40px
+			if saida.global_position.y <= 50.0:
+				global_position = saida.global_position + Vector2(0, 30)
+			else:
+				global_position = saida.global_position + Vector2(-40, 0)
+		else:
+			position = Vector2(60, 50)
 		game_state.voltando_da_loja = false
 	_iniciar_som_de_passo()
 
