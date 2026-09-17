@@ -41,6 +41,8 @@ func _run() -> void:
 	_test_estado_de_vida_faltante_cai_no_padrao()
 	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
 	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
+	_test_shotgun_campos_round_trip()
+	_test_shotgun_campos_faltantes_caem_no_padrao()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -283,6 +285,54 @@ func _test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes() -> 
 	var dados := estado.to_dict()
 	for chave in ["nivel_dano", "nivel_tambor", "nivel_reserva", "nivel_critico"]:
 		_assert_true(dados.has(chave), "to_dict deve conter o campo '%s'" % chave)
+	estado.free()
+
+
+func _test_shotgun_campos_round_trip() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({
+		"shotgun_pente": 3,
+		"shotgun_reserva": 8,
+		"shotgun_reserva_maxima": 10,
+		"possui_shotgun": true,
+		"shotgun_nivel_dano": 2,
+		"shotgun_nivel_tubo": 1,
+		"shotgun_nivel_reserva": 3,
+		"shotgun_nivel_recarga": 2,
+		"arma_ativa": "shotgun",
+	})
+	_assert_true(estado.shotgun_pente == 3, "shotgun_pente deve ser preservado")
+	_assert_true(estado.shotgun_reserva == 8, "shotgun_reserva deve ser preservado")
+	_assert_true(estado.shotgun_reserva_maxima == 10, "shotgun_reserva_maxima deve ser preservado")
+	_assert_true(estado.possui_shotgun == true, "possui_shotgun deve ser preservado")
+	_assert_true(estado.shotgun_nivel_dano == 2, "shotgun_nivel_dano deve ser preservado")
+	_assert_true(estado.shotgun_nivel_tubo == 1, "shotgun_nivel_tubo deve ser preservado")
+	_assert_true(estado.shotgun_nivel_reserva == 3, "shotgun_nivel_reserva deve ser preservado")
+	_assert_true(estado.shotgun_nivel_recarga == 2, "shotgun_nivel_recarga deve ser preservado")
+	_assert_true(estado.arma_ativa == "shotgun", "arma_ativa deve ser preservado")
+
+	var dict := estado.to_dict()
+	var novo := EstadoDoJogoScript.new()
+	novo.from_dict(dict)
+	_assert_true(novo.possui_shotgun == true, "round trip to_dict/from_dict deve manter possui_shotgun")
+	_assert_true(novo.shotgun_pente == 3, "round trip deve manter shotgun_pente")
+	_assert_true(novo.arma_ativa == "shotgun", "round trip deve manter arma_ativa")
+	estado.free()
+	novo.free()
+
+
+func _test_shotgun_campos_faltantes_caem_no_padrao() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({})
+	_assert_true(estado.shotgun_pente == 0, "shotgun_pente default deve ser 0")
+	_assert_true(estado.shotgun_reserva == 0, "shotgun_reserva default deve ser 0")
+	_assert_true(estado.shotgun_reserva_maxima == 4, "shotgun_reserva_maxima default deve ser 4")
+	_assert_true(estado.possui_shotgun == false, "possui_shotgun default deve ser false")
+	_assert_true(estado.shotgun_nivel_dano == 0, "shotgun_nivel_dano default deve ser 0")
+	_assert_true(estado.shotgun_nivel_tubo == 0, "shotgun_nivel_tubo default deve ser 0")
+	_assert_true(estado.shotgun_nivel_reserva == 0, "shotgun_nivel_reserva default deve ser 0")
+	_assert_true(estado.shotgun_nivel_recarga == 0, "shotgun_nivel_recarga default deve ser 0")
+	_assert_true(estado.arma_ativa == "pistola", "arma_ativa default deve ser pistola")
 	estado.free()
 
 

@@ -7,6 +7,7 @@ var lifetime: float = 2.0
 var bullet_texture: Texture2D
 var collision_size: Vector2
 var impact_noise_radius: float = 250.0
+var knockback_force: float = 0.0
 
 
 func _ready() -> void:
@@ -51,6 +52,8 @@ func _handle_impact(target: Node = null) -> void:
 		return
 	if target != null and target.has_method("take_damage"):
 		target.take_damage(damage)
+	if target != null and knockback_force > 0.0 and target.has_method("apply_knockback"):
+		target.apply_knockback(direction * knockback_force)
 	NoiseBus.emit(global_position, impact_noise_radius, &"bullet_impact", self)
 	queue_free()
 

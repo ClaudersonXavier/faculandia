@@ -24,6 +24,15 @@ const PADROES := {
 	"nivel_tambor": 0,
 	"nivel_reserva": 0,
 	"nivel_critico": 0,
+	"shotgun_pente": 0,
+	"shotgun_reserva": 0,
+	"shotgun_reserva_maxima": 4,
+	"possui_shotgun": false,
+	"shotgun_nivel_dano": 0,
+	"shotgun_nivel_tubo": 0,
+	"shotgun_nivel_reserva": 0,
+	"shotgun_nivel_recarga": 0,
+	"arma_ativa": "pistola",
 }
 
 var municao_reserva: int
@@ -37,6 +46,15 @@ var nivel_dano: int
 var nivel_tambor: int
 var nivel_reserva: int
 var nivel_critico: int
+var shotgun_pente: int
+var shotgun_reserva: int
+var shotgun_reserva_maxima: int
+var possui_shotgun: bool
+var shotgun_nivel_dano: int
+var shotgun_nivel_tubo: int
+var shotgun_nivel_reserva: int
+var shotgun_nivel_recarga: int
+var arma_ativa: String
 
 ## Flag de transicao entre cenas; e runtime, nao entra no save.
 var voltando_da_loja: bool = false

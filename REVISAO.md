@@ -31,17 +31,22 @@ Sistema de raycast físico (não é iluminação nativa do Godot) com três cama
 - Objetos fora de qualquer uma dessas três áreas são ocultados de verdade (`discard` no shader), não apenas escurecidos
 - Ver `docs/adr/0001-projecao-de-sombras-e-camadas-de-bloqueadores.md` para a decisão de arquitetura completa
 
-### Sistema de Armas (Herança) e Munição
+### Sistema de Armas (Herança), Munição e Troca
 | Arquivo | Classe | Função |
 |---------|--------|--------|
-| `scripts/weapons/weapon.gd` | `Weapon` (base) | Spawn de bala, cooldown, recarga, munição |
-| `scripts/weapons/pistol.gd` | `Pistol extends Weapon` | Stats da pistola |
+| `scripts/weapons/weapon.gd` | `Weapon` (base) | Spawn de projéteis (único ou múltiplos), cooldown, recarga (em lote ou incremental), munição, knockback |
+| `scripts/weapons/pistol.gd` | `Pistol extends Weapon` | Stats da pistola e integração com upgrades |
+| `scripts/weapons/shotgun.gd` | `Shotgun extends Weapon` | Stats da escopeta (6 bagos em cone, recarga incremental, knockback) |
+| `scripts/weapons/upgrades_pistola.gd` | `UpgradesPistola` | Progressão e custos de upgrades da pistola (Dano, Tambor, Reserva, Crítico) |
+| `scripts/weapons/upgrades_shotgun.gd` | `UpgradesShotgun` | Progressão e custos de upgrades da escopeta (Dano, Tubo, Reserva, Recarga) |
 
-- Tiro semi-automático (botão esquerdo do mouse), recarga com tecla própria (`reload`)
-- Munição (pente atual / reserva) persistida em `GameState` (autoload), inclusive ao trocar de cena
-- Dano da pistola configurado em 8.0; cada `Ameaca` começa com 24.0 de Vida, portanto morre após três impactos
-- Dano da pistola é variável, sorteado a cada tiro em `Weapon.shoot()` (a base `Weapon` também aceita um `damage` fixo pra armas futuras que não quiserem variação); tiros também podem ser críticos (`crit_chance`, dobra o dano)
-- `scripts/weapons/upgrades_pistola.gd` (`class_name UpgradesPistola`): sistema de upgrade da pistola vendido na loja — 4 trilhas (dano, tambor, reserva máxima, crítico), 3 níveis compráveis cada, persistidos em `GameState` (`nivel_dano`/`nivel_tambor`/`nivel_reserva`/`nivel_critico`). `pistol.gd` aplica os níveis atuais toda vez que a arma é recriada (`_ready()`), então um upgrade comprado já vale na próxima zona sem sincronização extra
+- Tiro semi-automático (botão esquerdo do mouse), recarga com tecla própria (`reload` / `R`).
+- Troca de armas via teclas `1` (Pistola) e `2` (Escopeta), com tempo de troca de 350ms onde o tiro fica bloqueado.
+- Munição separada por arma persistida em `GameState` (autoload), inclusive ao trocar de cena:
+  - Pistola: `municao_pente`, `municao_reserva`, `municao_reserva_maxima`
+  - Escopeta: `shotgun_pente`, `shotgun_reserva`, `shotgun_reserva_maxima`, `possui_shotgun`, `arma_ativa`
+- Dano variável por tiro e crítico para pistola; escopeta com volume de múltiplos projéteis, dispersão e knockback físico nos zumbis.
+- Loja com duas colunas de upgrades independentes, botão de compra da escopeta ($50) e recarga dedicada da escopeta ($10).
 
 ### Projétil
 - `scripts/weapons/bullet.gd`: `Area2D` criado 100% por código, viaja em linha reta, some após 2s ou ao colidir, emite ruído de impacto
