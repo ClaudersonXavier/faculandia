@@ -50,8 +50,12 @@ static func registrar_snapshot(cena: String, inimigos: Array) -> void:
 	_snapshots[cena] = inimigos
 
 
-static func limpar_para_testes() -> void:
+static func limpar_todos_snapshots() -> void:
 	_snapshots.clear()
+
+
+static func limpar_para_testes() -> void:
+	limpar_todos_snapshots()
 
 
 static func todos_snapshots_para_dict() -> Dictionary:

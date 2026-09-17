@@ -65,6 +65,7 @@ func _run() -> void:
 	_test_zona_malformada_nao_derruba_as_outras()
 	_test_montar_secoes_inclui_secao_mundo()
 	_test_aplicar_restaura_snapshots_em_memoria()
+	_test_iniciar_nova_partida_limpa_snapshots_de_mundo()
 
 	_limpar()
 	_liberar_estado()
@@ -596,6 +597,31 @@ func _test_aplicar_restaura_snapshots_em_memoria() -> void:
 	var restaurado := ZonaPopuladorScript.obter_snapshot(cena)
 	_assert_true(restaurado.size() == 1, "snapshot restaurado deve ter a mesma quantidade de entradas")
 	_assert_true(restaurado[0]["estado"] == ZonaPopuladorScript.ESTADO_MORTO, "estado da entrada restaurada deve ser preservado")
+	_limpar()
+
+
+func _test_iniciar_nova_partida_limpa_snapshots_de_mundo() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	# Simula que uma partida anterior registrou zumbis mortos
+	var inimigos_mortos: Array = [
+		{"id": 0, "pos": Vector2(100, 100), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+		{"id": 1, "pos": Vector2(200, 200), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+	]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos_mortos)
+	_assert_true(ZonaPopuladorScript.tem_snapshot(cena), "deve ter snapshot registrado antes de novo jogo")
+
+	# Inicia nova partida
+	SaveJogoScript.iniciar_nova_partida(1, PREFIXO_TESTE)
+
+	# Memoria deve estar limpa de snapshots da partida anterior
+	_assert_false(ZonaPopuladorScript.tem_snapshot(cena), "iniciar_nova_partida deve limpar snapshots em memoria")
+
+	# Disco do novo save deve ter secao mundo vazia
+	var dados := SaveSlotsScript.ler(1, PREFIXO_TESTE)
+	var mundo: Dictionary = dados.get("mundo", {})
+	_assert_true(mundo.is_empty(), "novo jogo gravado em disco deve ter secao mundo vazia")
+
 	_limpar()
 
 

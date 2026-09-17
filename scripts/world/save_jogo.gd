@@ -57,6 +57,7 @@ static func iniciar_nova_partida(slot: int, prefixo: String = SaveSlots.PREFIXO_
 	var estado := _estado()
 	if estado != null:
 		estado.reset()
+	ZonaPopulador.limpar_todos_snapshots()
 	SaveSlots.gravar(slot, _montar_secoes(CENA_SELECAO), prefixo)
 	return CENA_SELECAO
 
