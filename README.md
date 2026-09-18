@@ -38,15 +38,18 @@ A experiência de jogo foi estruturada em um ciclo de gameplay coeso e imersivo:
 
 4. **Coleta de Recursos e Economia**:
    - Ao abater uma ameaça, o corpo permanece no chão como vestígio e pode ser saqueado com a tecla interativa (`E`) para recolher dinheiro.
+   - Caixas de suprimentos espalhadas pelos setores podem ser abertas (`E`) para obter recursos financeiros adicionais.
 
-5. **Loja do Campus e Upgrades**:
+5. **Loja do Campus, Armas e Power-ups**:
    - Zona segura acessada ao alcançar a área de saída de cada setor.
-   - Permite reabastecer a munição da arma e investir o dinheiro acumulado em um catálogo progressivo de melhorias para a pistola (Dano, Capacidade do Tambor, Munição Reserva e Chance de Crítico).
+   - Permite comprar a Escopeta e reabastecer a munição de cada arma de fogo (com indicadores de munição atual).
+   - Catálogo de melhorias para Pistola (Dano, Tambor, Reserva, Crítico) e Escopeta (Dano, Tubo, Reserva, Recarga).
+   - Coluna de Power-ups com abertura da Lanterna, Sapatos de Corrida (desbloqueio de Dash), Curativos e Boletim Informativo de contagem de ameaças.
    - Retorno automático ao Hub de Seleção de Cenários para a próxima incursão.
 
 6. **HUD e Interface Informativa**:
-   - Painel superior com contagem em tempo real da densidade de ameaças ativas na zona.
-   - Painel inferior esquerdo com barra dinâmica de saúde (`Vida Atual / Vida Máxima`), contadores de munição do pente e reserva, e indicadores visuais de recarga.
+   - Painel superior com indicador de densidade de ameaças (com contagem numérica ao adquirir o Boletim Informativo).
+   - Painel inferior esquerdo com barra de saúde (`Vida Atual / Vida Máxima`), contadores de munição do pente e reserva da arma ativa, e indicadores visuais de recarga.
    - Menu de pausa completo (`ESC`) permitindo salvar o jogo a qualquer instante, reiniciar ou retornar ao menu.
 
 ---
@@ -82,29 +85,32 @@ Projeto concebido e desenvolvido pelos discentes do curso de **Ciência da Compu
 * As ameaças reagem diretamente aos ruídos, alternando de patrulha para investigação do ponto de origem acústico.
 * Áudio híbrido: efeitos sonoros reais em `.mp3` (passos, tiros e grunhidos) com suporte a sintetizador procedural dinâmico para impactos.
 
-### 🧟 Inteligência Artificial das Ameaças
+### 🧟 Inteligência Artificial e Variantes das Ameaças
 * **Detecção Adaptativa**: Ameaças possuem campo de visão próprio. Ao obter linha de visada desobstruída (`PhysicsUtils.has_clear_line`), entram em perseguição direta ao jogador.
 * **Navegação Inteligente**: Caso percam o contato visual ou precisem contornar paredes e salas, utilizam `NavigationAgent2D` para calcular rotas contornando quinas e obstáculos.
 * **Separação em Bando (*Flocking*)**: Algoritmo de dispersão mútua (`flocking_utils.gd`) que evita sobreposição não natural de inimigos durante investidas em grupo.
-* **Combate Corpo a Corpo**: Ao alcançar 22px do jogador, desferem golpes periódicos de contato (8.0 de dano por segundo), respeitando a janela de invulnerabilidade do jogador.
+* **Variantes de Inimigos**:
+  - *Ameaça Padrão*: Inimigo equilibrado (velocidade 70 px/s, 8.0 de dano por segundo e 24.0 de vida).
+  - *Ameaça Rápida* (`AmeacaRapida`): Inimigo ágil com spritesheet dedicado (velocidade 110 px/s, 4.0 de dano de contato e 16.0 de vida), compondo 25% da população de cada zona.
 
-### 🔫 Armamento, Balística e Upgrades
-* **Arquitetura Modular de Armas**: Estrutura base extensível (`Weapon`) com especialização da pistola (`Pistol`).
+### 🔫 Armamento, Balística, Power-ups e Loja
+* **Arsenal e Troca de Armas**:
+  - *Pistola*: Arma inicial precisa, com disparo semi-automático e recarga por pente.
+  - *Escopeta* (`Shotgun`): Arma comprável na loja que dispara 6 bagos em cone de dispersão lateral com knockback de impacto e recarga incremental cartucho por cartucho.
+  - *Troca Rápida*: Teclas <kbd>1</kbd> e <kbd>2</kbd> com transição de 350ms e trava para armas não adquiridas.
 * **Balística Precisa**: Projéteis físicos instanciados com direção, velocidade uniforme, tempo de vida e cálculo de ricochete/impacto sonoro.
-* **Dano Dinâmico e Tiros Críticos**: Dano variável por disparo e sistema probabilístico de acertos críticos com dano dobrado.
-* **Oficina de Melhorias na Loja**: 4 trilhas de evolução vendidas na Loja com persistência permanente:
-  - *Dano*: Eleva o intervalo mínimo e máximo de dano por projétil.
-  - *Tambor*: Expande a quantidade de munição no pente antes de recarregar.
-  - *Reserva*: Aumenta o teto de munição sobressalente carregada na mochila.
-  - *Crítico*: Incrementa a porcentagem de probabilidade de disparos críticos.
+* **Oficina de Melhorias e Power-ups**:
+  - *Upgrades de Pistola*: Dano, Capacidade do Tambor, Munição Reserva e Chance de Crítico.
+  - *Upgrades de Escopeta*: Dano por bago, Tubo de Cartuchos, Reserva Total e Velocidade de Recarga.
+  - *Power-ups Gerais*: Abertura do cone de luz da Lanterna, Sapatos de Corrida (ação de Dash), Curativos consumíveis e Boletim Informativo (contador numérico no HUD).
 
 ### 💾 Persistência de Estado e Snapshot de Cenários
 * **Slots de Salvamento Independentes**: 4 slots no formato `ConfigFile` com metadados versionados (envelope seguro contra corrupção).
 * **Autosave Integrado**: Salvamento automático executado em todas as transições críticas de fase e retorno da loja.
-* **Snapshot Vivo das Zonas**: A população de ameaças em cada cenário é persistida em memória e disco. Ao retornar a uma zona anteriormente explorada:
+* **Snapshot Vivo das Zonas**: A população de ameaças e o estado das caixas de suprimentos em cada cenário são persistidos em memória e disco. Ao retornar a uma zona anteriormente explorada:
   - Ameaças abatidas continuam mortas.
-  - Corpos não saqueados permanecem na exata posição em que caíram.
-  - Corpos já saqueados não reaparecem.
+  - Corpos não saqueados e caixas não coletadas permanecem na exata posição.
+  - Corpos e caixas já saqueados não reaparecem.
   - Ameaças vivas que ficaram próximas à porta de entrada são reposicionadas para uma distância segura, prevenindo emboscadas imediatas no carregamento.
 * **Game Over com Recuperação Justa**: Ao zerar a vida, a tela de Game Over carrega o checkpoint mais recente sem persistir o estado de derrota, garantindo que o progresso do jogador não seja corrompido.
 
@@ -117,8 +123,10 @@ Projeto concebido e desenvolvido pelos discentes do curso de **Ciência da Compu
 | **Movimentação** | <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> ou <kbd>Setas</kbd> / Gamepad | Move o personagem pelo cenário. Andar para trás (*backpedal*) aplica penalidade de 15% na velocidade. |
 | **Mirar** | `Movimento do Mouse` | Aponta a arma e orienta o cone de visão direta para o cursor. |
 | **Atirar** | `Botão Esquerdo do Mouse` | Efetua disparos com a arma equipada, consumindo munição e emitindo som audível. |
-| **Recarregar** | <kbd>R</kbd> | Recarrega o pente da arma com munição disponível na reserva. |
-| **Interagir / Saquear** | <kbd>E</kbd> | Saqueia corpos de ameaças caídas para recolher dinheiro. |
+| **Recarregar** | <kbd>R</kbd> | Recarrega a arma ativa com munição disponível na reserva. |
+| **Trocar de Arma** | <kbd>1</kbd> / <kbd>2</kbd> | Alterna entre a Pistola (<kbd>1</kbd>) e a Escopeta (<kbd>2</kbd>, se adquirida). |
+| **Dash / Investida** | <kbd>Shift</kbd> | Arranco direcional de velocidade com breve invulnerabilidade (requer Sapatos de Corrida). |
+| **Interagir / Saquear** | <kbd>E</kbd> | Saqueia corpos de ameaças caídas e abre caixas de suprimentos para recolher dinheiro. |
 | **Menu de Pause** | <kbd>ESC</kbd> | Pausa o jogo, permitindo salvar no slot em uso, voltar ao menu ou sair da aplicação. |
 
 ---
@@ -138,12 +146,12 @@ faculandia/
 │   └── ui/                        # Camadas de interface (HUD, Pause, Game Over, Saves)
 ├── scripts/
 │   ├── core/                      # Utilitários compartilhados (física, flocking, slots de save)
-│   ├── player/                    # Movimentação do jogador, mira e visão tática
-│   ├── weapons/                   # Sistema base de armas, projéteis e tabela de upgrades
-│   ├── enemies/                   # IA, navegação, ataques e estados das ameaças
+│   ├── player/                    # Movimentação do jogador, mira, dash e visão tática
+│   ├── weapons/                   # Sistema base de armas, pistola, escopeta, projéteis e upgrades
+│   ├── enemies/                   # IA, navegação, ataques e variantes das ameaças
 │   ├── noise/                     # Barramento de ruído, sintetizador e reprodutor SFX
-│   ├── world/                     # Gerenciamento de fases, HUD, loja e sincronização de zonas
-│   └── tests/                     # 10 suites de testes automatizados headless
+│   ├── world/                     # Gerenciamento de fases, HUD, loja, power-ups, caixas e sync de zonas
+│   └── tests/                     # 15 suites de testes automatizados headless
 ├── shaders/                       # Shaders GLSL de visão cônica e descarte de visibilidade
 ├── resources/                     # Texturas, spritesheets, tilesets e áudios do jogo
 └── docs/                          # ADRs, glossário e capturas de tela (screenshots/)
