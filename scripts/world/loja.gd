@@ -1,5 +1,7 @@
 extends Control
 
+const UpgradesPowerupsScript := preload("res://scripts/world/upgrades_powerups.gd")
+
 const CUSTO_COMPRA_SHOTGUN := 50
 const CUSTO_RECARGA_SHOTGUN := 10
 
@@ -24,6 +26,18 @@ const TRILHAS_SHOTGUN := [
 @onready var coluna_shotgun: VBoxContainer = %ColunaShotgun
 @onready var recarregar_pistola_btn: Button = %RecarregarMunicaoPistola
 @onready var recarregar_shotgun_btn: Button = %RecarregarMunicaoShotgun
+
+@onready var info_municao_pistola: Label = %InfoMunicaoPistola
+@onready var info_municao_shotgun: Label = %InfoMunicaoShotgun
+
+@onready var info_lanterna: Label = %InfoLanterna
+@onready var btn_lanterna: Button = %ComprarLanterna
+@onready var info_sapatos: Label = %InfoSapatos
+@onready var btn_sapatos: Button = %ComprarSapatos
+@onready var info_cura: Label = %InfoCura
+@onready var btn_cura: Button = %ComprarCura
+@onready var info_boletim: Label = %InfoBoletim
+@onready var btn_boletim: Button = %ComprarBoletim
 
 @onready var info_labels_pistola := {
 	UpgradesPistola.Trilha.DANO: %InfoDano,
@@ -56,6 +70,11 @@ func _ready() -> void:
 	# A cena principal esconde o cursor; a loja precisa dele de volta.
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MusicaTema.tocar()
+
+	btn_lanterna.pressed.connect(_comprar_powerup.bind(UpgradesPowerupsScript.Trilha.LANTERNA))
+	btn_sapatos.pressed.connect(_comprar_powerup.bind(UpgradesPowerupsScript.Trilha.SAPATOS))
+	btn_cura.pressed.connect(_comprar_cura)
+	btn_boletim.pressed.connect(_comprar_boletim)
 
 	for trilha: UpgradesPistola.Trilha in TRILHAS_PISTOLA:
 		(comprar_buttons_pistola[trilha] as Button).pressed.connect(_comprar_pistola.bind(trilha))
@@ -134,8 +153,68 @@ func _comprar_shotgun(trilha: UpgradesShotgun.Trilha) -> void:
 		_atualizar_tudo()
 
 
+func _comprar_powerup(trilha: UpgradesPowerupsScript.Trilha) -> void:
+	if UpgradesPowerupsScript.comprar(GameState, trilha):
+		_atualizar_tudo()
+
+
+func _comprar_cura() -> void:
+	if UpgradesPowerupsScript.comprar_cura(GameState):
+		_atualizar_tudo()
+
+
+func _comprar_boletim() -> void:
+	if UpgradesPowerupsScript.comprar_boletim(GameState):
+		_atualizar_tudo()
+
+
 func _atualizar_tudo() -> void:
 	dinheiro_label.text = "$%d" % GameState.dinheiro
+
+	# --- Atualiza Power-ups ---
+	var nivel_lanterna := UpgradesPowerupsScript.nivel_atual(GameState, UpgradesPowerupsScript.Trilha.LANTERNA)
+	var custo_lanterna := UpgradesPowerupsScript.custo_do_proximo_nivel(GameState, UpgradesPowerupsScript.Trilha.LANTERNA)
+	var angulo := UpgradesPowerupsScript.angulo_lanterna(GameState)
+	info_lanterna.text = "Lanterna: Nível %d/3 (%d°)" % [nivel_lanterna, int(angulo)]
+	if custo_lanterna < 0:
+		btn_lanterna.text = "MÁXIMO"
+		btn_lanterna.disabled = true
+	else:
+		btn_lanterna.text = "Comprar ($%d)" % custo_lanterna
+		btn_lanterna.disabled = GameState.dinheiro < custo_lanterna
+
+	var nivel_sapatos := UpgradesPowerupsScript.nivel_atual(GameState, UpgradesPowerupsScript.Trilha.SAPATOS)
+	var custo_sapatos := UpgradesPowerupsScript.custo_do_proximo_nivel(GameState, UpgradesPowerupsScript.Trilha.SAPATOS)
+	var recarga_sapatos := UpgradesPowerupsScript.recarga_dash(GameState)
+	info_sapatos.text = "Sapatos: Nível %d/2 (%s)" % [nivel_sapatos, "Bloq." if nivel_sapatos == 0 else "%ds" % int(recarga_sapatos)]
+	if custo_sapatos < 0:
+		btn_sapatos.text = "MÁXIMO"
+		btn_sapatos.disabled = true
+	else:
+		btn_sapatos.text = "Comprar ($%d)" % custo_sapatos
+		btn_sapatos.disabled = GameState.dinheiro < custo_sapatos
+
+	info_cura.text = "Cura (%d/%d HP)" % [roundi(GameState.vida), roundi(GameState.vida_maxima)]
+	if GameState.vida >= GameState.vida_maxima:
+		btn_cura.text = "Vida Cheia"
+		btn_cura.disabled = true
+	else:
+		btn_cura.text = "Comprar ($%d)" % UpgradesPowerupsScript.CUSTO_CURA
+		btn_cura.disabled = GameState.dinheiro < UpgradesPowerupsScript.CUSTO_CURA
+
+	if GameState.powerup_boletim:
+		info_boletim.text = "Boletim (Ativo)"
+		btn_boletim.text = "COMPRADO"
+		btn_boletim.disabled = true
+	else:
+		info_boletim.text = "Boletim (Contador HUD)"
+		btn_boletim.text = "Comprar ($%d)" % UpgradesPowerupsScript.CUSTO_BOLETIM
+		btn_boletim.disabled = GameState.dinheiro < UpgradesPowerupsScript.CUSTO_BOLETIM
+
+	# --- Atualiza Indicadores de Municao ---
+	info_municao_pistola.text = "Atual: %d / %d" % [GameState.municao_pente, GameState.municao_reserva]
+	info_municao_shotgun.text = "Atual: %d / %d" % [GameState.shotgun_pente, GameState.shotgun_reserva]
+
 
 	# --- Atualiza Pistola ---
 	for trilha: UpgradesPistola.Trilha in TRILHAS_PISTOLA:

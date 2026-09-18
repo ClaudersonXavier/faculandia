@@ -132,5 +132,9 @@ func _atualizar_densidade_de_ameaca() -> void:
 		texto = "Alta"
 		cor = COR_DENSIDADE_ALTA
 
-	densidade_ameaca_label.text = texto
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state != null and bool(game_state.get("powerup_boletim")):
+		densidade_ameaca_label.text = "%s (%d)" % [texto, vivas]
+	else:
+		densidade_ameaca_label.text = texto
 	densidade_ameaca_label.add_theme_color_override("font_color", cor)

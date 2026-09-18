@@ -40,6 +40,14 @@ var aim_angle: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
 var health: float = 100.0
 
+const UpgradesPowerupsScript := preload("res://scripts/world/upgrades_powerups.gd")
+
+const DURACAO_DASH: float = 0.18
+const VELOCIDADE_DASH: float = 380.0
+var _dash_cooldown_timer: float = 0.0
+var _dash_duration_remaining: float = 0.0
+var _dash_direction: Vector2 = Vector2.ZERO
+
 var _distance_walked: float = 0.0
 var _last_step_position: Vector2 = Vector2.INF
 var _is_backpedaling_state: bool = false
@@ -277,8 +285,17 @@ func _atualizar_som_de_passo() -> void:
 	_passo_player.volume_db = VOLUME_PASSO_MUDO_DB if esta_parado else VOLUME_PASSO_AUDIVEL_DB
 
 
+func _play_dash_effect() -> void:
+	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+	modulate = Color(0.5, 0.8, 1.0, 0.8)
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, DURACAO_DASH)
+
+
 func _physics_process(delta: float) -> void:
 	_damage_invulnerability_remaining = maxf(_damage_invulnerability_remaining - delta, 0.0)
+	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
 	if _is_dead:
 		return
 
@@ -287,7 +304,21 @@ func _physics_process(delta: float) -> void:
 	aim_angle = aim_direction.angle()
 
 	var input_dir := get_movement_input()
-	apply_movement(input_dir, delta)
+	if _dash_duration_remaining > 0.0:
+		_dash_duration_remaining = maxf(_dash_duration_remaining - delta, 0.0)
+		velocity = _dash_direction * VELOCIDADE_DASH
+		_damage_invulnerability_remaining = maxf(_damage_invulnerability_remaining, 0.1)
+	else:
+		apply_movement(input_dir, delta)
+		if Input.is_action_just_pressed(&"dash") and _dash_cooldown_timer <= 0.0 and input_dir != Vector2.ZERO:
+			var game_state = get_node_or_null("/root/GameState")
+			var recarga: float = UpgradesPowerupsScript.recarga_dash(game_state) if game_state != null else 0.0
+			if recarga > 0.0:
+				_dash_direction = input_dir.normalized()
+				_dash_duration_remaining = DURACAO_DASH
+				_dash_cooldown_timer = recarga
+				_play_dash_effect()
+
 	update_animation()
 	_atualizar_som_de_passo()
 

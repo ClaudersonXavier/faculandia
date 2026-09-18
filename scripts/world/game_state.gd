@@ -33,6 +33,10 @@ const PADROES := {
 	"shotgun_nivel_reserva": 0,
 	"shotgun_nivel_recarga": 0,
 	"arma_ativa": "pistola",
+	"powerup_lanterna_nivel": 0,
+	"powerup_sapatos_nivel": 0,
+	"powerup_boletim": false,
+	"caixas_coletadas": [],
 }
 
 var municao_reserva: int
@@ -55,6 +59,10 @@ var shotgun_nivel_tubo: int
 var shotgun_nivel_reserva: int
 var shotgun_nivel_recarga: int
 var arma_ativa: String
+var powerup_lanterna_nivel: int
+var powerup_sapatos_nivel: int
+var powerup_boletim: bool
+var caixas_coletadas: Array
 
 ## Flag de transicao entre cenas; e runtime, nao entra no save.
 var voltando_da_loja: bool = false
@@ -77,7 +85,13 @@ func to_dict() -> Dictionary:
 ## migracao quando campos novos aparecerem.
 func from_dict(dados: Dictionary) -> void:
 	for chave: String in PADROES:
-		set(chave, dados.get(chave, PADROES[chave]))
+		var valor_padrao = PADROES[chave]
+		if valor_padrao is Array:
+			valor_padrao = valor_padrao.duplicate(true)
+		var val = dados.get(chave, valor_padrao)
+		if val is Array:
+			val = val.duplicate(true)
+		set(chave, val)
 	if not ResourceLoader.exists(cena):
 		push_warning("Cena do save nao existe mais: %s" % cena)
 		cena = String(PADROES.cena)

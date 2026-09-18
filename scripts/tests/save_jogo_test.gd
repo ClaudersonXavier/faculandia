@@ -43,6 +43,8 @@ func _run() -> void:
 	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
 	_test_shotgun_campos_round_trip()
 	_test_shotgun_campos_faltantes_caem_no_padrao()
+	_test_powerups_e_caixas_campos_round_trip()
+	_test_powerups_e_caixas_faltantes_caem_no_padrao()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -334,6 +336,41 @@ func _test_shotgun_campos_faltantes_caem_no_padrao() -> void:
 	_assert_true(estado.shotgun_nivel_reserva == 0, "shotgun_nivel_reserva default deve ser 0")
 	_assert_true(estado.shotgun_nivel_recarga == 0, "shotgun_nivel_recarga default deve ser 0")
 	_assert_true(estado.arma_ativa == "pistola", "arma_ativa default deve ser pistola")
+	estado.free()
+
+
+func _test_powerups_e_caixas_campos_round_trip() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({
+		"powerup_lanterna_nivel": 2,
+		"powerup_sapatos_nivel": 1,
+		"powerup_boletim": true,
+		"caixas_coletadas": ["zn_caixa_1", "zs_caixa_2"],
+	})
+	_assert_true(estado.powerup_lanterna_nivel == 2, "powerup_lanterna_nivel deve ser preservado")
+	_assert_true(estado.powerup_sapatos_nivel == 1, "powerup_sapatos_nivel deve ser preservado")
+	_assert_true(estado.powerup_boletim == true, "powerup_boletim deve ser preservado")
+	_assert_true(estado.caixas_coletadas.size() == 2, "caixas_coletadas deve ter tamanho 2")
+	_assert_true(estado.caixas_coletadas.has("zn_caixa_1"), "caixas_coletadas deve conter zn_caixa_1")
+
+	var dict := estado.to_dict()
+	var novo := EstadoDoJogoScript.new()
+	novo.from_dict(dict)
+	_assert_true(novo.powerup_lanterna_nivel == 2, "round trip deve manter powerup_lanterna_nivel")
+	_assert_true(novo.powerup_sapatos_nivel == 1, "round trip deve manter powerup_sapatos_nivel")
+	_assert_true(novo.powerup_boletim == true, "round trip deve manter powerup_boletim")
+	_assert_true(novo.caixas_coletadas.size() == 2, "round trip deve manter caixas_coletadas")
+	estado.free()
+	novo.free()
+
+
+func _test_powerups_e_caixas_faltantes_caem_no_padrao() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({})
+	_assert_true(estado.powerup_lanterna_nivel == 0, "powerup_lanterna_nivel default deve ser 0")
+	_assert_true(estado.powerup_sapatos_nivel == 0, "powerup_sapatos_nivel default deve ser 0")
+	_assert_true(estado.powerup_boletim == false, "powerup_boletim default deve ser false")
+	_assert_true(estado.caixas_coletadas.is_empty(), "caixas_coletadas default deve ser vazio")
 	estado.free()
 
 
