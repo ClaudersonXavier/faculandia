@@ -46,17 +46,15 @@ void fragment() {
 
 	// 3. Fontes de Luz no cenario
 	float total_light_visible = 0.0;
-	if (inside_omni) {
-		for(int l = 0; l < MAX_LIGHT_SOURCES; l++) {
-			if (l >= light_count) break;
-			int start = light_starts[l];
-			int end = light_ends[l];
-			if (end - start > 2 && point_in_light_polygon(pixel_pos, start, end)) {
-				float light_dist = length(pixel_pos - light_centers[l]);
-				float light_rad = light_radii[l];
-				float light_fade = 1.0 - smoothstep(light_rad * 0.45, light_rad, light_dist);
-				total_light_visible = max(total_light_visible, light_fade);
-			}
+	for(int l = 0; l < MAX_LIGHT_SOURCES; l++) {
+		if (l >= light_count) break;
+		int start = light_starts[l];
+		int end = light_ends[l];
+		if (end - start > 2 && point_in_light_polygon(pixel_pos, start, end)) {
+			float light_dist = length(pixel_pos - light_centers[l]);
+			float light_rad = light_radii[l];
+			float light_fade = 1.0 - smoothstep(light_rad * 0.45, light_rad, light_dist);
+			total_light_visible = max(total_light_visible, light_fade);
 		}
 	}
 
