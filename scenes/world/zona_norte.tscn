@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://cur7gqfk1kfdx" path="res://scenes/ui/camada_ui.tscn" id="22_camada_ui"]
 [ext_resource type="PackedScene" uid="uid://bd8noi53bxvtr" path="res://scenes/ui/menu_pause.tscn" id="23_menu_pause"]
 [ext_resource type="Script" uid="uid://djnpydeifvto8" path="res://scripts/world/zona_mundo_sync.gd" id="24_zona_sync"]
+[ext_resource type="PackedScene" uid="uid://bmmrdbvsqhaj1" path="res://scenes/objects/caixa.tscn" id="25_caixa"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_mundo"]
 vertices = PackedVector2Array(0, 0, 1152, 0, 1152, 1632, 0, 1632)
@@ -94,6 +95,18 @@ script = ExtResource("20_exit_zone")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Mundo/ZonaSaida" unique_id=538374323]
 shape = SubResource("RectangleShape2D_laicf")
+
+[node name="Caixa1" parent="Mundo" instance=ExtResource("25_caixa")]
+position = Vector2(160, 200)
+id_caixa = "zn_caixa_1"
+
+[node name="Caixa2" parent="Mundo" instance=ExtResource("25_caixa")]
+position = Vector2(750, 420)
+id_caixa = "zn_caixa_2"
+
+[node name="Caixa3" parent="Mundo" instance=ExtResource("25_caixa")]
+position = Vector2(272, 912)
+id_caixa = "zn_caixa_3"
 
 [node name="camada_ui" parent="." unique_id=1383988796 instance=ExtResource("22_camada_ui")]
 
