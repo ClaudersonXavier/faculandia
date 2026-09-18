@@ -3,6 +3,10 @@ class_name ZonaPopulador
 ## Ver AGENTS.md, secao "Save Schema" (adendo sobre a secao "mundo" do save).
 
 const AMEACA_SCENE: PackedScene = preload("res://scenes/objects/ameaca.tscn")
+const AMEACA_RAPIDA_SCENE: PackedScene = preload("res://scenes/objects/ameaca_rapida.tscn")
+
+const TIPO_PADRAO := "padrao"
+const TIPO_RAPIDA := "rapida"
 
 const NUM_INIMIGOS := 30
 const RAIO_EXCLUSAO_SPAWN_JOGADOR := 180.0
@@ -222,7 +226,8 @@ static func dar_folga_para_vivos_perto_da_saida(
 static func montar_snapshot_inicial(posicoes: Array) -> Array:
 	var inimigos: Array = []
 	for i in range(posicoes.size()):
-		inimigos.append({"id": i, "pos": posicoes[i], "estado": ESTADO_VIVO})
+		var tipo := TIPO_RAPIDA if (i % 4 == 0) else TIPO_PADRAO
+		inimigos.append({"id": i, "pos": posicoes[i], "estado": ESTADO_VIVO, "tipo": tipo})
 	return inimigos
 
 
@@ -233,8 +238,11 @@ static func aplicar_snapshot(mundo: Node2D, snapshot: Array) -> void:
 		var estado: String = entrada.get("estado", ESTADO_VIVO)
 		if estado == ESTADO_LOOTEADO:
 			continue
-		var ameaca: Ameaca = AMEACA_SCENE.instantiate()
+		var tipo: String = entrada.get("tipo", TIPO_PADRAO)
+		var cena: PackedScene = AMEACA_RAPIDA_SCENE if tipo == TIPO_RAPIDA else AMEACA_SCENE
+		var ameaca: Ameaca = cena.instantiate()
 		ameaca.spawn_id = entrada.get("id", -1)
+		ameaca.set_meta("tipo", tipo)
 		ameaca.global_position = entrada.get("pos", Vector2.ZERO)
 		# add_child NAO pode ser deferred aqui: spawn_como_corpo() depende de
 		# _ready() ja ter rodado (e setado health = max_health) antes dela
@@ -260,14 +268,15 @@ static func capturar_snapshot(arvore: SceneTree, snapshot_anterior: Array) -> Ar
 		if not (entrada is Dictionary):
 			continue
 		var id: int = entrada.get("id", -1)
+		var tipo: String = entrada.get("tipo", TIPO_PADRAO)
 		if entrada.get("estado", ESTADO_VIVO) == ESTADO_LOOTEADO:
 			resultado.append(entrada)
 			continue
 		if not vivos_por_id.has(id):
 			# Nao esta mais na arvore: so pode ter sido _lootar() (queue_free()).
-			resultado.append({"id": id, "pos": entrada.get("pos", Vector2.ZERO), "estado": ESTADO_LOOTEADO})
+			resultado.append({"id": id, "pos": entrada.get("pos", Vector2.ZERO), "estado": ESTADO_LOOTEADO, "tipo": tipo})
 			continue
 		var ameaca: Ameaca = vivos_por_id[id]
 		var estado := ESTADO_MORTO if ameaca.is_dead() else ESTADO_VIVO
-		resultado.append({"id": id, "pos": ameaca.global_position, "estado": estado})
+		resultado.append({"id": id, "pos": ameaca.global_position, "estado": estado, "tipo": tipo})
 	return resultado

@@ -18,6 +18,7 @@ func _run() -> void:
 	await _test_geracao_nao_nasce_com_visao_livre_do_jogador("res://scenes/world/zona_sul.tscn")
 	await _test_folga_ao_voltar_afasta_vivos_da_saida("res://scenes/world/zona_norte.tscn")
 	await _test_folga_ao_voltar_afasta_vivos_da_saida("res://scenes/world/zona_sul.tscn")
+	_test_variante_rapida_distribuicao_e_tipo()
 
 	if failures > 0:
 		printerr("%d teste(s) de zona_populador falharam" % failures)
@@ -118,7 +119,22 @@ func _test_folga_ao_voltar_afasta_vivos_da_saida(caminho: String) -> void:
 	await process_frame
 
 
+func _test_variante_rapida_distribuicao_e_tipo() -> void:
+	var posicoes: Array = []
+	for i in range(20):
+		posicoes.append(Vector2(i * 10, i * 10))
+	var snapshot := ZonaPopuladorScript.montar_snapshot_inicial(posicoes)
+	_assert_true(snapshot.size() == 20, "Snapshot deve conter 20 inimigos")
+	var rapidas := 0
+	for entrada in snapshot:
+		if entrada.get("tipo") == ZonaPopuladorScript.TIPO_RAPIDA:
+			rapidas += 1
+	# Com 20 inimigos e i % 4 == 0 (0, 4, 8, 12, 16): exatamente 5 rapidas (1/4)
+	_assert_true(rapidas == 5, "Exatamente 1/4 dos inimigos devem ser da variante rapida (esperado 5 de 20, obteve %d)" % rapidas)
+
+
 func _assert_true(value: bool, message: String) -> void:
 	if not value:
 		failures += 1
 		printerr("FALHOU: %s" % message)
+
