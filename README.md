@@ -19,6 +19,16 @@
 | ![Exploração e Visão Tática](docs/screenshots/gameplay_exploracao.png) | ![Combate contra Ameaças](docs/screenshots/gameplay_combate.png) |
 | *Feixe de visão direta cônica, percepção periférica e sombras geométricas projetadas em tempo real.* | *Confronto contra Ameaças no escuro, gerenciamento de saúde crítica e escassez de munição.* |
 
+| Hub de Seleção de Cenários | Loja do Campus e Upgrades |
+| :---: | :---: |
+| ![Hub de Seleção de Cenários](docs/screenshots/hub_cenarios.png) | ![Loja do Campus e Upgrades](docs/screenshots/loja_upgrades.png) |
+| *Seleção tática entre setores acadêmicos (Zona Norte e Zona Sul).* | *Oficina de melhorias de armas, compra da Escopeta e aquisição de power-ups.* |
+
+| Coleta de Suprimentos | Gerenciamento de Saves |
+| :---: | :---: |
+| ![Coleta de Suprimentos](docs/screenshots/coleta_caixa.png) | ![Gerenciamento de Saves](docs/screenshots/selecao_saves.png) |
+| *Interação com caixas de recursos acadêmicos espalhadas pelo campus.* | *Painel com 4 slots de salvamento independentes e controle de versão.* |
+
 A experiência de jogo foi estruturada em um ciclo de gameplay coeso e imersivo:
 
 1. **Menu Principal e Gerenciamento de Saves**:
@@ -133,13 +143,16 @@ Projeto concebido e desenvolvido pelos discentes do curso de **Ciência da Compu
 
 ## 🗂️ 4. Código-Fonte, Assets, Documentação e Créditos
 
-### Estrutura do Código-Fonte
-O projeto adota uma arquitetura modular:
+### Estrutura do Código-Fonte e Documentação
+O projeto adota uma arquitetura modular acompanhada de documentação completa de Game Design:
+
+* 📄 **[Game Design Document (GDD) Completo](GDD.md)**: Especificação integral de mecânicas, regras, universo, armas, balanceamento numérico e arquitetura técnica.
 
 ```text
 faculandia/
 ├── project.godot                  # Configurações do projeto e mapeamento de inputs
 ├── Makefile                       # Automação de compilação, testes e execução
+├── GDD.md                         # Game Design Document (GDD Final) da disciplina
 ├── scenes/
 │   ├── world/                     # Cenas principais (Menu, Hub, Zonas, Loja)
 │   ├── objects/                   # Atores e objetos interativos (Player, Ameaça, Caixas)
