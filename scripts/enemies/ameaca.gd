@@ -57,6 +57,7 @@ var _last_nav_target: Vector2 = Vector2.INF
 var _stuck_check_pos: Vector2 = Vector2.INF
 var _stuck_frame_count: int = 0
 var _growl_timer: float = 0.0
+var _knockback_velocity: Vector2 = Vector2.ZERO
 
 var _debug_logger: AmeacaDebugLogger
 var _debug_visualizer: Node2D
@@ -334,12 +335,17 @@ func _physics_process(delta: float) -> void:
 	if move_direction.length_squared() > MIN_MOVEMENT_DISTANCE_SQUARED:
 		if not is_at_target:
 			rotation = move_direction.angle()
-		velocity = move_direction * speed
+		velocity = move_direction * speed + _knockback_velocity
 		if sprite and sprite is AnimatedSprite2D:
 			AnimationUtils.play_if_needed(sprite, &"walk")
 		move_and_slide()
+	elif _knockback_velocity.length_squared() > 1.0:
+		velocity = _knockback_velocity
+		move_and_slide()
 	else:
 		_stop_moving()
+
+	_knockback_velocity = _knockback_velocity.move_toward(Vector2.ZERO, 900.0 * delta)
 
 	# Deteccao de travamento: se tentando se mover via navmesh mas quase parado,
 	# forca recalculo do caminho e descola o zumbi da parede usando a normal/tangente da colisao.
@@ -452,6 +458,12 @@ func take_damage(amount: float) -> void:
 
 	if health <= 0.0:
 		die()
+
+
+func apply_knockback(impulse: Vector2) -> void:
+	if _is_dead:
+		return
+	_knockback_velocity += impulse
 
 
 func _play_hit_flash() -> void:

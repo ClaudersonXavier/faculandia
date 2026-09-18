@@ -26,16 +26,342 @@ texture = ExtResource("2_5jthc")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=494369872]
 anchor_mode = 0
 
-[node name="RecarregarMunicaoPistola" type="Button" parent="." unique_id=771715366]
-layout_mode = 0
-offset_left = 503.0
-offset_top = 400.0
-offset_right = 674.0
-offset_bottom = 457.0
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 14
-text = "Munição da Pistola 
-($0)"
+[node name="Titulo" type="Label" parent="." unique_id=1490507405]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 28
+text = "Loja de Armas"
+horizontal_alignment = 1
+
+[node name="DinheiroLoja" type="Label" parent="." unique_id=1740453106]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 65.0
+offset_right = 100.0
+offset_bottom = 98.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 22
+text = "$0"
+horizontal_alignment = 1
+
+[node name="PainelColunas" type="HBoxContainer" parent="." unique_id=1328849634]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -460.0
+offset_top = -215.0
+offset_right = 460.0
+offset_bottom = 195.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="ColunaPowerups" type="VBoxContainer" parent="PainelColunas" unique_id=89102341]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TituloPowerups" type="Label" parent="PainelColunas/ColunaPowerups"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "⭐ Power-ups"
+horizontal_alignment = 1
+
+[node name="LinhaLanterna" type="HBoxContainer" parent="PainelColunas/ColunaPowerups" unique_id=89102342]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoLanterna" type="Label" parent="PainelColunas/ColunaPowerups/LinhaLanterna" unique_id=89102343]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Lanterna: Nível 0/3 (75°)"
+
+[node name="ComprarLanterna" type="Button" parent="PainelColunas/ColunaPowerups/LinhaLanterna" unique_id=89102344]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($20)"
+
+[node name="LinhaSapatos" type="HBoxContainer" parent="PainelColunas/ColunaPowerups" unique_id=89102345]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoSapatos" type="Label" parent="PainelColunas/ColunaPowerups/LinhaSapatos" unique_id=89102346]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Sapatos: Bloqueado"
+
+[node name="ComprarSapatos" type="Button" parent="PainelColunas/ColunaPowerups/LinhaSapatos" unique_id=89102347]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($30)"
+
+[node name="LinhaCura" type="HBoxContainer" parent="PainelColunas/ColunaPowerups" unique_id=89102348]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoCura" type="Label" parent="PainelColunas/ColunaPowerups/LinhaCura" unique_id=89102349]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Cura (+Vida Máx)"
+
+[node name="ComprarCura" type="Button" parent="PainelColunas/ColunaPowerups/LinhaCura" unique_id=89102350]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaBoletim" type="HBoxContainer" parent="PainelColunas/ColunaPowerups" unique_id=89102351]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoBoletim" type="Label" parent="PainelColunas/ColunaPowerups/LinhaBoletim" unique_id=89102352]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Boletim (Contador HUD)"
+
+[node name="ComprarBoletim" type="Button" parent="PainelColunas/ColunaPowerups/LinhaBoletim" unique_id=89102353]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($25)"
+
+[node name="Separador1" type="VSeparator" parent="PainelColunas"]
+layout_mode = 2
+
+[node name="ColunaPistola" type="VBoxContainer" parent="PainelColunas"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TituloPistola" type="Label" parent="PainelColunas/ColunaPistola"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🔫 Pistola"
+horizontal_alignment = 1
+
+[node name="LinhaDano" type="HBoxContainer" parent="PainelColunas/ColunaPistola" unique_id=75212246]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoDano" type="Label" parent="PainelColunas/ColunaPistola/LinhaDano" unique_id=1315857561]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Dano: Nível 0/3 (7-9)"
+
+[node name="ComprarDano" type="Button" parent="PainelColunas/ColunaPistola/LinhaDano" unique_id=408787869]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaTambor" type="HBoxContainer" parent="PainelColunas/ColunaPistola" unique_id=1157074703]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoTambor" type="Label" parent="PainelColunas/ColunaPistola/LinhaTambor" unique_id=770524661]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Tambor: Nível 0/3 (7 tiros)"
+
+[node name="ComprarTambor" type="Button" parent="PainelColunas/ColunaPistola/LinhaTambor" unique_id=347746404]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaReserva" type="HBoxContainer" parent="PainelColunas/ColunaPistola" unique_id=1188887509]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoReserva" type="Label" parent="PainelColunas/ColunaPistola/LinhaReserva" unique_id=144885920]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Reserva: Nível 0/3 (14)"
+
+[node name="ComprarReserva" type="Button" parent="PainelColunas/ColunaPistola/LinhaReserva" unique_id=1152938076]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaCritico" type="HBoxContainer" parent="PainelColunas/ColunaPistola" unique_id=301489640]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoCritico" type="Label" parent="PainelColunas/ColunaPistola/LinhaCritico" unique_id=1629390517]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Crítico: Nível 0/3 (0%)"
+
+[node name="ComprarCritico" type="Button" parent="PainelColunas/ColunaPistola/LinhaCritico" unique_id=1955648258]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($15)"
+
+[node name="LinhaRecargaPistola" type="HBoxContainer" parent="PainelColunas/ColunaPistola" unique_id=89102354]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoMunicaoPistola" type="Label" parent="PainelColunas/ColunaPistola/LinhaRecargaPistola" unique_id=89102355]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Munição: 7/14"
+
+[node name="RecarregarMunicaoPistola" type="Button" parent="PainelColunas/ColunaPistola/LinhaRecargaPistola" unique_id=771715366]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 32)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Recarregar ($0)"
+
+[node name="Separador2" type="VSeparator" parent="PainelColunas"]
+layout_mode = 2
+
+[node name="ContainerShotgun" type="VBoxContainer" parent="PainelColunas"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BotaoComprarShotgun" type="Button" parent="PainelColunas/ContainerShotgun"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 15
+text = "💥 Comprar Escopeta ($50)"
+
+[node name="ColunaShotgun" type="VBoxContainer" parent="PainelColunas/ContainerShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TituloShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "💥 Escopeta"
+horizontal_alignment = 1
+
+[node name="LinhaDanoShotgun" type="HBoxContainer" parent="PainelColunas/ContainerShotgun/ColunaShotgun"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoDanoShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaDanoShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Dano: Nível 0/3 (3-5)"
+
+[node name="ComprarDanoShotgun" type="Button" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaDanoShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($20)"
+
+[node name="LinhaTuboShotgun" type="HBoxContainer" parent="PainelColunas/ContainerShotgun/ColunaShotgun"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoTuboShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaTuboShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Tubo: Nível 0/3 (2 tiros)"
+
+[node name="ComprarTuboShotgun" type="Button" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaTuboShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($20)"
+
+[node name="LinhaReservaShotgun" type="HBoxContainer" parent="PainelColunas/ContainerShotgun/ColunaShotgun"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoReservaShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaReservaShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Reserva: Nível 0/3 (4)"
+
+[node name="ComprarReservaShotgun" type="Button" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaReservaShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($20)"
+
+[node name="LinhaRecargaShotgun" type="HBoxContainer" parent="PainelColunas/ContainerShotgun/ColunaShotgun"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoRecargaShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaRecargaShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Recarga: Nível 0/3 (0.75s)"
+
+[node name="ComprarRecargaShotgun" type="Button" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaRecargaShotgun"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Comprar ($20)"
+
+[node name="LinhaAcaoRecargaShotgun" type="HBoxContainer" parent="PainelColunas/ContainerShotgun/ColunaShotgun" unique_id=89102356]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoMunicaoShotgun" type="Label" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaAcaoRecargaShotgun" unique_id=89102357]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Munição: 2/4"
+
+[node name="RecarregarMunicaoShotgun" type="Button" parent="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaAcaoRecargaShotgun"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 32)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Recarregar ($10)"
 
 [node name="VoltarAoJogo" type="Button" parent="." unique_id=24348053]
 layout_mode = 1
@@ -44,119 +370,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -73.0
-offset_top = -98.0
-offset_right = 73.0
-offset_bottom = -67.0
+offset_left = -100.0
+offset_top = -65.0
+offset_right = 100.0
+offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 0
 size_flags_horizontal = 4
 size_flags_vertical = 8
 theme_override_font_sizes/font_size = 15
 text = "Voltar para o jogo"
-
-[node name="Titulo" type="Label" parent="." unique_id=1490507405]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -136.0
-offset_top = 50.0
-offset_right = 136.0
-offset_bottom = 127.0
-grow_horizontal = 2
-size_flags_horizontal = 4
-size_flags_vertical = 8
-theme_override_font_sizes/font_size = 27
-text = "Loja (em construção)
-"
-
-[node name="PainelUpgrades" type="VBoxContainer" parent="." unique_id=1328849634]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -170.0
-offset_top = 150.0
-offset_right = 170.0
-offset_bottom = 367.0
-grow_horizontal = 2
-theme_override_constants/separation = 12
-
-[node name="DinheiroLoja" type="Label" parent="PainelUpgrades" unique_id=1740453106]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "$0"
-horizontal_alignment = 1
-
-[node name="LinhaDano" type="HBoxContainer" parent="PainelUpgrades" unique_id=75212246]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="InfoDano" type="Label" parent="PainelUpgrades/LinhaDano" unique_id=1315857561]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Dano: Nível 0/3 (7-9)"
-
-[node name="ComprarDano" type="Button" parent="PainelUpgrades/LinhaDano" unique_id=408787869]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Comprar ($15)"
-
-[node name="LinhaTambor" type="HBoxContainer" parent="PainelUpgrades" unique_id=1157074703]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="InfoTambor" type="Label" parent="PainelUpgrades/LinhaTambor" unique_id=770524661]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Tambor: Nível 0/3 (7 tiros)"
-
-[node name="ComprarTambor" type="Button" parent="PainelUpgrades/LinhaTambor" unique_id=347746404]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Comprar ($15)"
-
-[node name="LinhaReserva" type="HBoxContainer" parent="PainelUpgrades" unique_id=1188887509]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="InfoReserva" type="Label" parent="PainelUpgrades/LinhaReserva" unique_id=144885920]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Reserva máxima: Nível 0/3 (14)"
-
-[node name="ComprarReserva" type="Button" parent="PainelUpgrades/LinhaReserva" unique_id=1152938076]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Comprar ($15)"
-
-[node name="LinhaCritico" type="HBoxContainer" parent="PainelUpgrades" unique_id=301489640]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="InfoCritico" type="Label" parent="PainelUpgrades/LinhaCritico" unique_id=1629390517]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Crítico: Nível 0/3 (0%)"
-
-[node name="ComprarCritico" type="Button" parent="PainelUpgrades/LinhaCritico" unique_id=1955648258]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Comprar ($15)"
 
 [node name="ConfirmarPartidaSemReabastecer" type="ConfirmationDialog" parent="." unique_id=1797743046]
 unique_name_in_owner = true
@@ -165,6 +388,9 @@ dialog_text = "Certeza que vai partir sem reabastecer a munição?"
 
 [node name="menu_pause" parent="." unique_id=1170415874 instance=ExtResource("2_menu_pause")]
 
-[connection signal="pressed" from="RecarregarMunicaoPistola" to="." method="_on_recarregar_pressed"]
+[connection signal="pressed" from="PainelColunas/ColunaPistola/LinhaRecargaPistola/RecarregarMunicaoPistola" to="." method="_on_recarregar_pressed"]
+[connection signal="pressed" from="PainelColunas/ContainerShotgun/BotaoComprarShotgun" to="." method="_on_comprar_shotgun_pressed"]
+[connection signal="pressed" from="PainelColunas/ContainerShotgun/ColunaShotgun/LinhaAcaoRecargaShotgun/RecarregarMunicaoShotgun" to="." method="_on_recarregar_shotgun_pressed"]
 [connection signal="pressed" from="VoltarAoJogo" to="." method="_on_button_pressed"]
 [connection signal="confirmed" from="ConfirmarPartidaSemReabastecer" to="." method="_on_confirmation_dialog_confirmed"]
+

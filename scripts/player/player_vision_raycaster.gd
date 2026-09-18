@@ -31,7 +31,7 @@ func resolve_ray_hit(origin: Vector2, ray_dir: Vector2, distance: float, layer_m
 	if collider is CollisionObject2D:
 		return _get_collider_ray_exit_point(collider, origin, ray_dir, hit["position"], layer_mask)
 	elif collider is TileMapLayer:
-		return _march_exit_point(ray_dir, hit["position"], layer_mask)
+		return _get_tilemap_ray_exit_point(collider, origin, ray_dir, hit["position"], hit.get("normal", -ray_dir), layer_mask)
 	return hit["position"]
 
 
@@ -49,6 +49,8 @@ func get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: i
 		var collider = res["collider"]
 		if collider is CollisionObject2D:
 			for owner_id in collider.get_shape_owners():
+				if collider.is_shape_owner_disabled(owner_id):
+					continue
 				for shape_id in collider.shape_owner_get_shape_count(owner_id):
 					var col_shape = collider.shape_owner_get_shape(owner_id, shape_id)
 					var trans = collider.global_transform * collider.shape_owner_get_transform(owner_id)
@@ -81,11 +83,10 @@ func get_obstacle_corners_near(source_pos: Vector2, radius: float, layer_mask: i
 
 
 ## Calcula (uma unica vez por mapa+mascara) os cantos expostos de todas as
-## celulas usadas de um TileMapLayer. So valido enquanto as paredes forem
-## estaticas em tempo de execucao — se algum dia elas puderem ser destruidas
-## ou pintadas dinamicamente, essa cache precisa ser invalidada.
+## celulas usadas de um TileMapLayer de forma deduplicada.
 func _compute_tile_corners(tile_map: TileMapLayer, layer_mask: int, space_state: PhysicsDirectSpaceState2D) -> PackedVector2Array:
 	var out := PackedVector2Array()
+	var seen := {}
 	var ext := Vector2(tile_map.tile_set.tile_size) / 2.0
 	for cell in tile_map.get_used_cells():
 		var center: Vector2 = tile_map.to_global(tile_map.map_to_local(cell))
@@ -96,8 +97,11 @@ func _compute_tile_corners(tile_map: TileMapLayer, layer_mask: int, space_state:
 			center + Vector2(-ext.x, ext.y)
 		]
 		for c: Vector2 in raw_corners:
-			if _is_exposed_corner(space_state, c, layer_mask):
-				out.append(c)
+			var key := Vector2i(roundi(c.x), roundi(c.y))
+			if not seen.has(key):
+				seen[key] = true
+				if _is_exposed_corner(space_state, c, layer_mask):
+					out.append(c)
 	return out
 
 
@@ -108,7 +112,7 @@ func _is_exposed_corner(space_state: PhysicsDirectSpaceState2D, corner: Vector2,
 	var q_se := _is_point_in_obstacle(space_state, corner + Vector2(2.0, 2.0), layer_mask)
 
 	var wall_count := int(q_nw) + int(q_ne) + int(q_sw) + int(q_se)
-	if wall_count == 4:
+	if wall_count == 4 or wall_count == 3 or wall_count == 0:
 		return false
 	if (q_nw and q_ne and not q_sw and not q_se) or (q_sw and q_se and not q_nw and not q_ne):
 		return false
@@ -163,6 +167,45 @@ func _get_collider_ray_exit_point(collider: Object, ray_origin: Vector2, ray_dir
 	return final_exit_pos
 
 
+func _get_tilemap_ray_exit_point(tile_map: TileMapLayer, ray_origin: Vector2, ray_dir: Vector2, hit_pos: Vector2, hit_normal: Vector2, _layer_mask: int) -> Vector2:
+	if tile_map.tile_set == null:
+		return hit_pos
+
+	var tile_size := Vector2(tile_map.tile_set.tile_size)
+	var half_size := tile_size / 2.0
+	# Ponto ligeiramente para dentro do primeiro tile
+	var current_pos := hit_pos - hit_normal * 0.5
+	var last_valid_exit := hit_pos
+
+	for _step in 16:
+		var local_pos := tile_map.to_local(current_pos)
+		var cell := tile_map.local_to_map(local_pos)
+		if tile_map.get_cell_source_id(cell) == -1:
+			break
+
+		var cell_center := tile_map.to_global(tile_map.map_to_local(cell))
+		var rel_origin := ray_origin - cell_center
+		var t_max := INF
+		if absf(ray_dir.x) > 0.00001:
+			var t1 := (-half_size.x - rel_origin.x) / ray_dir.x
+			var t2 := (half_size.x - rel_origin.x) / ray_dir.x
+			t_max = minf(t_max, maxf(t1, t2))
+		if absf(ray_dir.y) > 0.00001:
+			var t1 := (-half_size.y - rel_origin.y) / ray_dir.y
+			var t2 := (half_size.y - rel_origin.y) / ray_dir.y
+			t_max = minf(t_max, maxf(t1, t2))
+
+		if t_max != INF and t_max > 0.0:
+			var exit_pt := ray_origin + ray_dir * t_max
+			last_valid_exit = exit_pt
+			# Checa se entra na celula seguinte
+			current_pos = exit_pt + ray_dir * 0.5
+		else:
+			break
+
+	return last_valid_exit
+
+
 func _march_exit_point(ray_dir: Vector2, hit_pos: Vector2, layer_mask: int) -> Vector2:
 	var space_state := _owner.get_world_2d().direct_space_state
 	var step := 4.0
@@ -174,7 +217,7 @@ func _march_exit_point(ray_dir: Vector2, hit_pos: Vector2, layer_mask: int) -> V
 		var next_pos := pos + ray_dir * step
 		var confirm_pos := next_pos + ray_dir * step
 		if not _is_point_in_obstacle(space_state, next_pos, layer_mask) and not _is_point_in_obstacle(space_state, confirm_pos, layer_mask):
-			return next_pos
+			return pos
 		pos = next_pos
 		traveled += step
 
@@ -186,6 +229,8 @@ func _calculate_col_obj_ray_exit(col_obj: CollisionObject2D, ray_origin: Vector2
 	var max_dist_sq := (hit_pos - ray_origin).length_squared()
 
 	for owner_id in col_obj.get_shape_owners():
+		if col_obj.is_shape_owner_disabled(owner_id):
+			continue
 		for shape_id in col_obj.shape_owner_get_shape_count(owner_id):
 			var shape := col_obj.shape_owner_get_shape(owner_id, shape_id)
 			var trans := col_obj.global_transform * col_obj.shape_owner_get_transform(owner_id)
@@ -205,16 +250,25 @@ func _calculate_shape_ray_exit(shape: Shape2D, trans: Transform2D, ray_origin: V
 	if shape is RectangleShape2D:
 		var rect := shape as RectangleShape2D
 		var extents := rect.size / 2.0
+		var t_min := -INF
 		var t_max := INF
 		if absf(local_dir.x) > 0.00001:
 			var t1 := (-extents.x - local_origin.x) / local_dir.x
 			var t2 := (extents.x - local_origin.x) / local_dir.x
+			t_min = maxf(t_min, minf(t1, t2))
 			t_max = minf(t_max, maxf(t1, t2))
+		elif absf(local_origin.x) > extents.x:
+			return hit_pos
+
 		if absf(local_dir.y) > 0.00001:
 			var t1 := (-extents.y - local_origin.y) / local_dir.y
 			var t2 := (extents.y - local_origin.y) / local_dir.y
+			t_min = maxf(t_min, minf(t1, t2))
 			t_max = minf(t_max, maxf(t1, t2))
-		if t_max != INF and t_max > 0.0:
+		elif absf(local_origin.y) > extents.y:
+			return hit_pos
+
+		if t_min <= t_max and t_max > 0.0:
 			var local_exit := local_origin + local_dir * t_max
 			return trans * local_exit
 

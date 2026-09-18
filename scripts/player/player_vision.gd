@@ -2,6 +2,7 @@ class_name PlayerVision
 extends Node2D
 
 const FRAGMENTO_PERCEPTIVEL_SHADER: Shader = preload("res://shaders/fragmento_perceptivel.gdshader")
+const UpgradesPowerupsScript := preload("res://scripts/world/upgrades_powerups.gd")
 
 const LAYER_DIRECT_VISION_OBSTACLE: int = PhysicsLayers.OBSTACULO | PhysicsLayers.OBSTACULO_BAIXO
 const LAYER_PERIPHERAL_VISION_OBSTACLE: int = PhysicsLayers.OBSTACULO
@@ -13,15 +14,15 @@ const LAYER_PERIPHERAL_VISION_OBSTACLE: int = PhysicsLayers.OBSTACULO
 @export var inner_light_radius: float = 50.0
 @export_range(8, 256, 1) var ray_count: int = 70
 @export_range(8, 256, 1) var light_ray_count: int = 20
-@export_range(32, 1152, 1) var omnidirectional_ray_count: int = 110
+@export_range(16, 1152, 1) var omnidirectional_ray_count: int = 48
 @export_flags_2d_physics var obstacle_layer: int = LAYER_DIRECT_VISION_OBSTACLE
 @export_flags_2d_physics var peripheral_obstacle_layer: int = LAYER_PERIPHERAL_VISION_OBSTACLE
 @export var visible_entity_group: StringName = &"visible_entities"
 @export var light_source_group: StringName = &"light_sources"
 @export var light_color: Color = Color(1.0, 0.83, 0.48, 0.28)
 @export var inner_light_color: Color = Color(1.0, 0.78, 0.36, 0.42)
-@export var min_move_to_rebuild: float = 2.0
-@export var min_angle_to_rebuild: float = 0.01
+@export var min_move_to_rebuild: float = 0.5
+@export var min_angle_to_rebuild: float = 0.005
 @export var draw_debug_polygons: bool = false
 
 
@@ -40,11 +41,25 @@ var _raycaster: PlayerVisionRaycaster
 
 
 func _ready() -> void:
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state != null:
+		vision_angle = UpgradesPowerupsScript.angulo_lanterna(game_state)
+		vision_distance = UpgradesPowerupsScript.alcance_lanterna(game_state)
 	_fragmento_perceptivel_material = ShaderMaterial.new()
 	_fragmento_perceptivel_material.shader = FRAGMENTO_PERCEPTIVEL_SHADER
 	_raycaster = PlayerVisionRaycaster.new(self)
 	_create_visuals()
 	_rebuild(true)
+
+
+func _process(_delta: float) -> void:
+	if player == null:
+		return
+	global_position = player.global_position
+	_rebuild(false)
+	_update_overlay_points()
+	if not debug_vision_active:
+		_update_fragmento_perceptivel_material()
 
 
 func _physics_process(_delta: float) -> void:
@@ -57,8 +72,6 @@ func _physics_process(_delta: float) -> void:
 	if player == null:
 		return
 
-	global_position = player.global_position
-	_rebuild(false)
 	_update_visible_entities()
 
 
@@ -141,47 +154,12 @@ func _rebuild(force: bool) -> void:
 func _cast_cone(aim_angle: float) -> PackedVector2Array:
 	var result := PackedVector2Array()
 	var half_angle := deg_to_rad(vision_angle * 0.5)
-	var angles: Array[float] = []
+	var count := 160
+	var steps := count - 1
 
-	var steps = max(ray_count - 1, 1)
-	for index in ray_count:
+	for index in count:
 		var t := float(index) / float(steps)
-		angles.append(aim_angle - half_angle + (half_angle * 2.0 * t))
-
-	var corners: PackedVector2Array = _raycaster.get_obstacle_corners_near(player.global_position, vision_distance, obstacle_layer)
-	for corner: Vector2 in corners:
-		var to_corner: Vector2 = corner - player.global_position
-		var corner_angle: float = to_corner.angle()
-		var diff := absf(angle_difference(aim_angle, corner_angle))
-		if diff <= half_angle:
-			angles.append(corner_angle - 0.0002)
-			angles.append(corner_angle)
-			angles.append(corner_angle + 0.0002)
-
-	# Filtra angulos dentro do cone
-	var filtered_angles: Array[float] = []
-	for ang in angles:
-		var diff := absf(angle_difference(aim_angle, ang))
-		if diff <= half_angle + 0.0005:
-			filtered_angles.append(ang)
-
-	var start_angle := aim_angle - half_angle
-	filtered_angles.sort_custom(func(a: float, b: float) -> bool:
-		return wrapf(a - start_angle, 0.0, TAU) < wrapf(b - start_angle, 0.0, TAU)
-	)
-
-	# Limita total para nao estourar MAX_VISION_POINTS (192) no shader
-	var max_points := 188
-	var final_angles: Array[float] = []
-	if filtered_angles.size() > max_points:
-		var step_skip := float(filtered_angles.size()) / float(max_points)
-		for i in max_points:
-			var idx := mini(int(round(float(i) * step_skip)), filtered_angles.size() - 1)
-			final_angles.append(filtered_angles[idx])
-	else:
-		final_angles = filtered_angles
-
-	for angle in final_angles:
+		var angle := aim_angle - half_angle + (half_angle * 2.0 * t)
 		var ray_dir := Vector2.RIGHT.rotated(angle)
 		result.append(_raycaster.resolve_ray_hit(player.global_position, ray_dir, vision_distance, obstacle_layer, [player.get_rid()]))
 	return result
@@ -202,9 +180,20 @@ func get_omnidirectional_visibility_points() -> PackedVector2Array:
 	return _last_omnidirectional_points
 
 
+var _static_light_cache: Dictionary = {}
+
+
 func get_light_visibility_points(source: Node2D) -> PackedVector2Array:
+	var instance_id := source.get_instance_id()
+	var is_static: bool = source.get_meta("is_static", true)
+	if is_static and _static_light_cache.has(instance_id):
+		return _static_light_cache[instance_id]
+
 	var radius: float = source.get_meta("light_radius", 0.0)
-	return _cast_light(source.global_position, radius)
+	var points := _cast_light(source.global_position, radius)
+	if is_static:
+		_static_light_cache[instance_id] = points
+	return points
 
 
 func _get_light_emitter_positions(source: Node2D) -> PackedVector2Array:
@@ -226,14 +215,14 @@ func _cast_light(source_pos: Vector2, radius: float) -> PackedVector2Array:
 	var result := PackedVector2Array()
 	var angles: Array[float] = []
 	for index in light_ray_count:
-		angles.append(TAU * float(index) / float(light_ray_count))
+		angles.append(wrapf(TAU * float(index) / float(light_ray_count), 0.0, TAU))
 
 	var corners: PackedVector2Array = _raycaster.get_obstacle_corners_near(source_pos, radius, obstacle_layer)
 	for corner: Vector2 in corners:
-		var angle: float = (corner - source_pos).angle()
-		angles.append(angle - 0.0001)
+		var angle: float = wrapf((corner - source_pos).angle(), 0.0, TAU)
+		angles.append(wrapf(angle - 0.0001, 0.0, TAU))
 		angles.append(angle)
-		angles.append(angle + 0.0001)
+		angles.append(wrapf(angle + 0.0001, 0.0, TAU))
 
 	var sorted_angles := angles.duplicate()
 	sorted_angles.sort()

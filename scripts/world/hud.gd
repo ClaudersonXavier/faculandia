@@ -83,16 +83,29 @@ func _process(_delta: float) -> void:
 	if densidade_ameaca_label != null:
 		_atualizar_densidade_de_ameaca()
 
-	if not weapon:
+	var arma_atual: Weapon = weapon
+	var jogador := _find_player()
+	if jogador != null and jogador.get("weapon") is Weapon:
+		arma_atual = jogador.get("weapon") as Weapon
+
+	if not arma_atual:
 		return
 
 	if ammo_label != null:
-		var mun_pente: int = game_state.municao_pente if game_state != null else weapon.current_ammo
-		var mun_reserva: int = game_state.municao_reserva if game_state != null else 0
+		var campo_pnt := arma_atual._campo_pente()
+		var campo_res := arma_atual._campo_reserva()
+		var mun_pente: int
+		var mun_reserva: int
+		if jogador != null and game_state != null and game_state.get(campo_pnt) != null:
+			mun_pente = int(game_state.get(campo_pnt))
+			mun_reserva = int(game_state.get(campo_res))
+		else:
+			mun_pente = arma_atual.current_ammo
+			mun_reserva = arma_atual.magazine_size
 		ammo_label.text = str(mun_pente) + " / " + str(mun_reserva)
 	if reload_label != null:
 		reload_label.text = "Recarregando..."
-		reload_label.visible = weapon.is_reloading
+		reload_label.visible = arma_atual.is_reloading
 
 
 ## Conta direto na arvore (nao no snapshot de ZonaPopulador, que so atualiza
@@ -119,5 +132,9 @@ func _atualizar_densidade_de_ameaca() -> void:
 		texto = "Alta"
 		cor = COR_DENSIDADE_ALTA
 
-	densidade_ameaca_label.text = texto
+	var game_state = get_node_or_null("/root/GameState")
+	if game_state != null and bool(game_state.get("powerup_boletim")):
+		densidade_ameaca_label.text = "%s (%d)" % [texto, vivas]
+	else:
+		densidade_ameaca_label.text = texto
 	densidade_ameaca_label.add_theme_color_override("font_color", cor)

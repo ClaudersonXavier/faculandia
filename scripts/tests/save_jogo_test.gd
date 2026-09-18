@@ -41,6 +41,10 @@ func _run() -> void:
 	_test_estado_de_vida_faltante_cai_no_padrao()
 	_test_vida_round_trip_e_cai_para_padrao_quando_ausente()
 	_test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes()
+	_test_shotgun_campos_round_trip()
+	_test_shotgun_campos_faltantes_caem_no_padrao()
+	_test_powerups_e_caixas_campos_round_trip()
+	_test_powerups_e_caixas_faltantes_caem_no_padrao()
 	_test_reset_volta_para_padroes()
 	_test_cena_inexistente_cai_para_cena_inicial()
 
@@ -63,6 +67,7 @@ func _run() -> void:
 	_test_zona_malformada_nao_derruba_as_outras()
 	_test_montar_secoes_inclui_secao_mundo()
 	_test_aplicar_restaura_snapshots_em_memoria()
+	_test_iniciar_nova_partida_limpa_snapshots_de_mundo()
 
 	_limpar()
 	_liberar_estado()
@@ -283,6 +288,89 @@ func _test_niveis_de_upgrade_round_trip_e_caem_para_padrao_quando_ausentes() -> 
 	var dados := estado.to_dict()
 	for chave in ["nivel_dano", "nivel_tambor", "nivel_reserva", "nivel_critico"]:
 		_assert_true(dados.has(chave), "to_dict deve conter o campo '%s'" % chave)
+	estado.free()
+
+
+func _test_shotgun_campos_round_trip() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({
+		"shotgun_pente": 3,
+		"shotgun_reserva": 8,
+		"shotgun_reserva_maxima": 10,
+		"possui_shotgun": true,
+		"shotgun_nivel_dano": 2,
+		"shotgun_nivel_tubo": 1,
+		"shotgun_nivel_reserva": 3,
+		"shotgun_nivel_recarga": 2,
+		"arma_ativa": "shotgun",
+	})
+	_assert_true(estado.shotgun_pente == 3, "shotgun_pente deve ser preservado")
+	_assert_true(estado.shotgun_reserva == 8, "shotgun_reserva deve ser preservado")
+	_assert_true(estado.shotgun_reserva_maxima == 10, "shotgun_reserva_maxima deve ser preservado")
+	_assert_true(estado.possui_shotgun == true, "possui_shotgun deve ser preservado")
+	_assert_true(estado.shotgun_nivel_dano == 2, "shotgun_nivel_dano deve ser preservado")
+	_assert_true(estado.shotgun_nivel_tubo == 1, "shotgun_nivel_tubo deve ser preservado")
+	_assert_true(estado.shotgun_nivel_reserva == 3, "shotgun_nivel_reserva deve ser preservado")
+	_assert_true(estado.shotgun_nivel_recarga == 2, "shotgun_nivel_recarga deve ser preservado")
+	_assert_true(estado.arma_ativa == "shotgun", "arma_ativa deve ser preservado")
+
+	var dict := estado.to_dict()
+	var novo := EstadoDoJogoScript.new()
+	novo.from_dict(dict)
+	_assert_true(novo.possui_shotgun == true, "round trip to_dict/from_dict deve manter possui_shotgun")
+	_assert_true(novo.shotgun_pente == 3, "round trip deve manter shotgun_pente")
+	_assert_true(novo.arma_ativa == "shotgun", "round trip deve manter arma_ativa")
+	estado.free()
+	novo.free()
+
+
+func _test_shotgun_campos_faltantes_caem_no_padrao() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({})
+	_assert_true(estado.shotgun_pente == 0, "shotgun_pente default deve ser 0")
+	_assert_true(estado.shotgun_reserva == 0, "shotgun_reserva default deve ser 0")
+	_assert_true(estado.shotgun_reserva_maxima == 4, "shotgun_reserva_maxima default deve ser 4")
+	_assert_true(estado.possui_shotgun == false, "possui_shotgun default deve ser false")
+	_assert_true(estado.shotgun_nivel_dano == 0, "shotgun_nivel_dano default deve ser 0")
+	_assert_true(estado.shotgun_nivel_tubo == 0, "shotgun_nivel_tubo default deve ser 0")
+	_assert_true(estado.shotgun_nivel_reserva == 0, "shotgun_nivel_reserva default deve ser 0")
+	_assert_true(estado.shotgun_nivel_recarga == 0, "shotgun_nivel_recarga default deve ser 0")
+	_assert_true(estado.arma_ativa == "pistola", "arma_ativa default deve ser pistola")
+	estado.free()
+
+
+func _test_powerups_e_caixas_campos_round_trip() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({
+		"powerup_lanterna_nivel": 2,
+		"powerup_sapatos_nivel": 1,
+		"powerup_boletim": true,
+		"caixas_coletadas": ["zn_caixa_1", "zs_caixa_2"],
+	})
+	_assert_true(estado.powerup_lanterna_nivel == 2, "powerup_lanterna_nivel deve ser preservado")
+	_assert_true(estado.powerup_sapatos_nivel == 1, "powerup_sapatos_nivel deve ser preservado")
+	_assert_true(estado.powerup_boletim == true, "powerup_boletim deve ser preservado")
+	_assert_true(estado.caixas_coletadas.size() == 2, "caixas_coletadas deve ter tamanho 2")
+	_assert_true(estado.caixas_coletadas.has("zn_caixa_1"), "caixas_coletadas deve conter zn_caixa_1")
+
+	var dict := estado.to_dict()
+	var novo := EstadoDoJogoScript.new()
+	novo.from_dict(dict)
+	_assert_true(novo.powerup_lanterna_nivel == 2, "round trip deve manter powerup_lanterna_nivel")
+	_assert_true(novo.powerup_sapatos_nivel == 1, "round trip deve manter powerup_sapatos_nivel")
+	_assert_true(novo.powerup_boletim == true, "round trip deve manter powerup_boletim")
+	_assert_true(novo.caixas_coletadas.size() == 2, "round trip deve manter caixas_coletadas")
+	estado.free()
+	novo.free()
+
+
+func _test_powerups_e_caixas_faltantes_caem_no_padrao() -> void:
+	var estado := EstadoDoJogoScript.new()
+	estado.from_dict({})
+	_assert_true(estado.powerup_lanterna_nivel == 0, "powerup_lanterna_nivel default deve ser 0")
+	_assert_true(estado.powerup_sapatos_nivel == 0, "powerup_sapatos_nivel default deve ser 0")
+	_assert_true(estado.powerup_boletim == false, "powerup_boletim default deve ser false")
+	_assert_true(estado.caixas_coletadas.is_empty(), "caixas_coletadas default deve ser vazio")
 	estado.free()
 
 
@@ -546,6 +634,31 @@ func _test_aplicar_restaura_snapshots_em_memoria() -> void:
 	var restaurado := ZonaPopuladorScript.obter_snapshot(cena)
 	_assert_true(restaurado.size() == 1, "snapshot restaurado deve ter a mesma quantidade de entradas")
 	_assert_true(restaurado[0]["estado"] == ZonaPopuladorScript.ESTADO_MORTO, "estado da entrada restaurada deve ser preservado")
+	_limpar()
+
+
+func _test_iniciar_nova_partida_limpa_snapshots_de_mundo() -> void:
+	_limpar()
+	var cena := SaveJogoScript.CENA_ZONA_NORTE
+	# Simula que uma partida anterior registrou zumbis mortos
+	var inimigos_mortos: Array = [
+		{"id": 0, "pos": Vector2(100, 100), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+		{"id": 1, "pos": Vector2(200, 200), "estado": ZonaPopuladorScript.ESTADO_LOOTEADO},
+	]
+	ZonaPopuladorScript.registrar_snapshot(cena, inimigos_mortos)
+	_assert_true(ZonaPopuladorScript.tem_snapshot(cena), "deve ter snapshot registrado antes de novo jogo")
+
+	# Inicia nova partida
+	SaveJogoScript.iniciar_nova_partida(1, PREFIXO_TESTE)
+
+	# Memoria deve estar limpa de snapshots da partida anterior
+	_assert_false(ZonaPopuladorScript.tem_snapshot(cena), "iniciar_nova_partida deve limpar snapshots em memoria")
+
+	# Disco do novo save deve ter secao mundo vazia
+	var dados := SaveSlotsScript.ler(1, PREFIXO_TESTE)
+	var mundo: Dictionary = dados.get("mundo", {})
+	_assert_true(mundo.is_empty(), "novo jogo gravado em disco deve ter secao mundo vazia")
+
 	_limpar()
 
 

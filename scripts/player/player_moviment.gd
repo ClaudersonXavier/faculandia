@@ -17,7 +17,9 @@ signal died
 @export var hit_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0)
 @export var hit_flash_duration: float = 0.1
 
-@onready var weapon: Node2D = get_node_or_null("Weapon")
+var weapon: Weapon = null
+var _trocando_arma: bool = false
+const TEMPO_TROCA_ARMA: float = 0.35
 
 const HIT_FLASH_COLOR := Color(1.0, 0.3, 0.3, 1.0)
 const HIT_FLASH_DURATION := 0.15
@@ -38,6 +40,14 @@ var aim_angle: float = 0.0
 var aim_direction: Vector2 = Vector2.RIGHT
 var health: float = 100.0
 
+const UpgradesPowerupsScript := preload("res://scripts/world/upgrades_powerups.gd")
+
+const DURACAO_DASH: float = 0.18
+const VELOCIDADE_DASH: float = 380.0
+var _dash_cooldown_timer: float = 0.0
+var _dash_duration_remaining: float = 0.0
+var _dash_direction: Vector2 = Vector2.ZERO
+
 var _distance_walked: float = 0.0
 var _last_step_position: Vector2 = Vector2.INF
 var _is_backpedaling_state: bool = false
@@ -45,6 +55,10 @@ var _damage_invulnerability_remaining: float = 0.0
 var _is_dead: bool = false
 var _hit_flash_tween: Tween = null
 var _passo_player: AudioStreamPlayer
+
+
+func _enter_tree() -> void:
+	add_to_group(&"player")
 
 
 func _ready() -> void:
@@ -79,7 +93,79 @@ func _ready() -> void:
 		else:
 			position = Vector2(60, 50)
 		game_state.voltando_da_loja = false
+	_inicializar_armas()
 	_iniciar_som_de_passo()
+
+
+func obter_armas() -> Dictionary:
+	var dict := {}
+	var p = get_node_or_null("Weapon")
+	if p == null:
+		p = get_node_or_null("Pistola")
+	if p is Weapon:
+		dict["pistola"] = p
+	var s = get_node_or_null("Shotgun")
+	if s is Weapon:
+		dict["shotgun"] = s
+	return dict
+
+
+func _inicializar_armas() -> void:
+	var game_state = get_node_or_null("/root/GameState")
+	var armas := obter_armas()
+	var arma_inicial := "pistola"
+	if game_state and game_state.get("arma_ativa") != null:
+		arma_inicial = String(game_state.get("arma_ativa"))
+	if arma_inicial == "shotgun" and game_state and not bool(game_state.get("possui_shotgun")):
+		arma_inicial = "pistola"
+
+	if armas.has(arma_inicial):
+		weapon = armas[arma_inicial]
+	elif not armas.is_empty():
+		weapon = armas.values()[0]
+
+	for nome: String in armas:
+		var w: Weapon = armas[nome]
+		var ativa := (w == weapon)
+		w.visible = ativa
+		w.set_process(ativa)
+		w.set_physics_process(ativa)
+
+
+func trocar_arma(nome: String) -> void:
+	if _trocando_arma or _is_dead:
+		return
+	var game_state = get_node_or_null("/root/GameState")
+	if nome == "shotgun" and game_state and not bool(game_state.get("possui_shotgun")):
+		return
+	var armas := obter_armas()
+	if not armas.has(nome):
+		return
+	var nova_arma: Weapon = armas[nome]
+	if nova_arma == weapon:
+		return
+
+	_trocando_arma = true
+	if weapon != null:
+		weapon.cancelar_recarga()
+		weapon.visible = false
+		weapon.set_process(false)
+		weapon.set_physics_process(false)
+
+	await get_tree().create_timer(TEMPO_TROCA_ARMA).timeout
+	if _is_dead or not is_inside_tree():
+		_trocando_arma = false
+		return
+
+	weapon = nova_arma
+	if weapon != null:
+		weapon.visible = true
+		weapon.set_process(true)
+		weapon.set_physics_process(true)
+
+	if game_state:
+		game_state.set("arma_ativa", nome)
+	_trocando_arma = false
 
 
 func _iniciar_som_de_passo() -> void:
@@ -199,8 +285,17 @@ func _atualizar_som_de_passo() -> void:
 	_passo_player.volume_db = VOLUME_PASSO_MUDO_DB if esta_parado else VOLUME_PASSO_AUDIVEL_DB
 
 
+func _play_dash_effect() -> void:
+	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+	modulate = Color(0.5, 0.8, 1.0, 0.8)
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, DURACAO_DASH)
+
+
 func _physics_process(delta: float) -> void:
 	_damage_invulnerability_remaining = maxf(_damage_invulnerability_remaining - delta, 0.0)
+	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
 	if _is_dead:
 		return
 
@@ -209,7 +304,21 @@ func _physics_process(delta: float) -> void:
 	aim_angle = aim_direction.angle()
 
 	var input_dir := get_movement_input()
-	apply_movement(input_dir, delta)
+	if _dash_duration_remaining > 0.0:
+		_dash_duration_remaining = maxf(_dash_duration_remaining - delta, 0.0)
+		velocity = _dash_direction * VELOCIDADE_DASH
+		_damage_invulnerability_remaining = maxf(_damage_invulnerability_remaining, 0.1)
+	else:
+		apply_movement(input_dir, delta)
+		if Input.is_action_just_pressed(&"dash") and _dash_cooldown_timer <= 0.0 and input_dir != Vector2.ZERO:
+			var game_state = get_node_or_null("/root/GameState")
+			var recarga: float = UpgradesPowerupsScript.recarga_dash(game_state) if game_state != null else 0.0
+			if recarga > 0.0:
+				_dash_direction = input_dir.normalized()
+				_dash_duration_remaining = DURACAO_DASH
+				_dash_cooldown_timer = recarga
+				_play_dash_effect()
+
 	update_animation()
 	_atualizar_som_de_passo()
 
@@ -239,10 +348,16 @@ func _physics_process(delta: float) -> void:
 		NoiseBus.emit(global_position, footstep_noise_radius, &"footstep", self)
 		_distance_walked -= footstep_distance_threshold
 
-	if Input.is_action_just_pressed("shoot") and weapon != null:
+	if not _trocando_arma and not _is_dead:
+		if Input.is_action_just_pressed("weapon_1"):
+			trocar_arma("pistola")
+		elif Input.is_action_just_pressed("weapon_2"):
+			trocar_arma("shotgun")
+
+	if Input.is_action_just_pressed("shoot") and weapon != null and not _trocando_arma:
 		weapon.shoot(aim_direction, aim_angle)
 
-	if Input.is_action_just_pressed("reload") and weapon != null:
+	if Input.is_action_just_pressed("reload") and weapon != null and not _trocando_arma:
 		weapon.reload()
 
 

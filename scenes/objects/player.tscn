@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://gm7dyni7wdu7" path="res://scripts/player/player_moviment.gd" id="1_moviment"]
 [ext_resource type="Script" uid="uid://bb406q67khtjw" path="res://scripts/weapons/pistol.gd" id="4_pistol"]
+[ext_resource type="Script" path="res://scripts/weapons/shotgun.gd" id="4_shotgun"]
 [ext_resource type="Texture2D" uid="uid://cbk4cauan8rwa" path="res://resources/sprites/items/pistola.png" id="5_pistola"]
+[ext_resource type="Texture2D" path="res://resources/sprites/items/shotgun.png" id="5_shotgun"]
 [ext_resource type="Script" uid="uid://rtvqkjufbuxe" path="res://scripts/player/player_vision.gd" id="6_vision"]
 [ext_resource type="Texture2D" uid="uid://dgyxv3k008vx5" path="res://resources/sprites/characters/player.png" id="7_player_tex"]
 
@@ -78,6 +80,18 @@ texture = ExtResource("5_pistola")
 
 [node name="muzzle_marker" type="Marker2D" parent="Weapon" unique_id=1572946475]
 position = Vector2(16, 3)
+
+[node name="Shotgun" type="Node2D" parent="."]
+visible = false
+z_index = 1
+script = ExtResource("4_shotgun")
+
+[node name="Sprite2D" type="Sprite2D" parent="Shotgun"]
+position = Vector2(8, 3)
+texture = ExtResource("5_shotgun")
+
+[node name="muzzle_marker" type="Marker2D" parent="Shotgun"]
+position = Vector2(18, 3)
 
 [node name="PlayerVision" type="Node2D" parent="." unique_id=799377294 node_paths=PackedStringArray("player")]
 script = ExtResource("6_vision")

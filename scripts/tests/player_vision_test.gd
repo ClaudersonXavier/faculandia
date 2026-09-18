@@ -48,6 +48,7 @@ func _run() -> void:
 	await _test_quinas_internas_entre_paredes_conectadas_sao_filtradas()
 	await _test_paredes_conectadas_sao_tratadas_como_bloco_unico()
 	await _test_caixas_conectadas_sao_tratadas_como_bloco_unico()
+	await _test_caixa_cena_nao_deixa_espaco_vazio_iluminado_atras_dela()
 	await _test_parede_exposta_a_luz_ou_visao_e_perceptivel()
 
 	if failures > 0:
@@ -646,6 +647,36 @@ func _test_caixas_conectadas_sao_tratadas_como_bloco_unico() -> void:
 			break
 
 	_assert_true(reached_back_of_c2, "Caixas conectadas lado a lado devem ser atravessadas como um unico bloco continuo")
+
+	fixture.root.queue_free()
+
+
+func _test_caixa_cena_nao_deixa_espaco_vazio_iluminado_atras_dela() -> void:
+	var fixture := _create_fixture()
+	fixture.vision.set_aim_position(Vector2(200, 0))
+
+	var caixa_scene := load("res://scenes/objects/caixa.tscn") as PackedScene
+	var caixa := caixa_scene.instantiate() as StaticBody2D
+	caixa.global_position = Vector2(100, 0)
+	fixture.root.add_child(caixa)
+	await physics_frame
+	fixture.vision._rebuild(true)
+
+	var cone_points: PackedVector2Array = fixture.vision._cast_cone(0.0)
+	var ray_reached_visible_back := false
+	var ray_overshot_empty_space := false
+
+	# A caixa esta em x=100. O sprite visivel tem x de 88 a 111 (centro 100 - 0.5 = 99.5, extents 11.5).
+	# A face traseira visivel da caixa fica em x = 111.0.
+	for pt in cone_points:
+		if abs(pt.y) < 10.0:
+			if pt.x >= 110.5 and pt.x <= 112.5:
+				ray_reached_visible_back = true
+			elif pt.x > 112.5 and pt.x < 180.0:
+				ray_overshot_empty_space = true
+
+	_assert_true(ray_reached_visible_back, "Os raios da visao direta devem alcancar a face traseira visivel da caixa")
+	_assert_false(ray_overshot_empty_space, "Nenhum raio deve vazar para espaco vazio alem da face traseira da caixa")
 
 	fixture.root.queue_free()
 

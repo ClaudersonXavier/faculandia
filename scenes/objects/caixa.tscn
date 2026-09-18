@@ -1,16 +1,46 @@
 [gd_scene format=3 uid="uid://bmmrdbvsqhaj1"]
 
 [ext_resource type="Texture2D" uid="uid://v80b5vv8e8uu" path="res://resources/sprites/environment/caixa.png" id="1_a26xw"]
+[ext_resource type="Script" path="res://scripts/world/caixa_suprimentos.gd" id="2_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_i2vea"]
-size = Vector2(32, 32)
+size = Vector2(23, 25)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interacao"]
+radius = 36.0
 
 [node name="Caixa" type="StaticBody2D" unique_id=357911904]
 collision_layer = 8
 collision_mask = 0
+script = ExtResource("2_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1333699854]
 texture = ExtResource("1_a26xw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1467763343]
+position = Vector2(-0.5, 0.5)
 shape = SubResource("RectangleShape2D_i2vea")
+
+[node name="AreaInteracao" type="Area2D" parent="." unique_id=1467763344]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AreaInteracao" unique_id=1467763345]
+shape = SubResource("CircleShape2D_interacao")
+
+[node name="PromptLabel" type="Label" parent="AreaInteracao" unique_id=1467763346]
+top_level = true
+visible = false
+offset_left = -70.0
+offset_top = -28.0
+offset_right = 70.0
+offset_bottom = -5.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 8
+text = "Aperte 'E' para abrir [+$15]"
+horizontal_alignment = 1
+
+[connection signal="body_entered" from="AreaInteracao" to="." method="_on_area_interacao_body_entered"]
+[connection signal="body_exited" from="AreaInteracao" to="." method="_on_area_interacao_body_exited"]
